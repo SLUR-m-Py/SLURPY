@@ -21,7 +21,7 @@ If the above installation command hangs, we recommend removing macs2 from the li
 ```
 pip install macs2
 ```
-A full list of the python libraries and their versions used to develop slurpy are listed within python.dependencies.txt]().
+A full list of the python libraries and their versions used to develop slurpy are listed within [python.dependencies.txt](https://github.com/SLUR-m-Py/SLURPY/blob/main/python.dependencies.txt).
 
 ## Installation
 Downloading the repository as a .zip archive is easiest. For developers a simple clone command with git works too:
@@ -62,15 +62,16 @@ cd ~/2501_001
 ln -s /path/to/SLURPY
 ```
 
-Within the project directory ensure the paired fastqs are listed or linked within a sub direcotry ./fastqs
+Within the project directory ensure the paired fastqs are listed or linked within a subdirectory 
+“./fastqs”. 
 
 ```
 ls -l ./fastqs/*.fastq.gz
 ```
 ### Envoking slurpy
-The help menu (-h) of slurpy lists all the avaialbe arugments and default settings. Be sure to activate the conda environment "bioenv". 
+The help menu (-h) of slurpy lists all the available arguments and default settings. Be sure to activate the conda environment "bioenv". 
 ```
-## Activate our computing envornment
+## Activate our computing environment
 conda activate bioenv 
 
 ## Call the help menu
@@ -87,7 +88,7 @@ options:
   -B 16, --parallel-bwa 16
                         Number of parallel bwa alignments to run (default: 16). Controls the number of bwa jobs submitted at once to slurm.
   -P tb, --partition tb
-                        The type of partiton jobs formatted by slurpy run on (default: tb).
+                        The type of partition jobs formatted by slurpy run on (default: tb).
   -M chrM, --mtDNA chrM
                         Name of the mitochondrial contig (default: chrM).
   -Q 30, --map-threshold 30
@@ -116,13 +117,14 @@ options:
   --clean               If included will run clean up script at end of run. The default behavior is false, can be run after pipeline.
 
 ```
-
+### For ATAC-seq experiments
 To call the slurpy pipeline to analyze an ATAC-seq experiment run:
 
 ```
 ./SLURPY/slurpy -e atac -r /path/to/reference/file.fasta
 ```
 
+### For ChIP-seq experiments 
 To run slurpy to analyze a ChIP-seq experiment run:
 
 ```

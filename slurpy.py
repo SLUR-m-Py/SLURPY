@@ -434,14 +434,14 @@ pipeline_steps   = ['fastp', 'bwa', 'split', 'merge', 'mark', 'filter','macs2','
 e_help = "The experiment type (default: wgs). Valid options include: %s."%joined_protocols
 r_help = "Path to input reference bwa index used in analysis." 
 F_help = "The number of splits to make for each pair of input fastq files (default: %s). Controls the total number of splits across the run."%splitsize
-f_help = "The number of threads used in fastp to split input fastq files (default: %s). Note: must be an even multiple of the nubmer of splits."%splitsize
+f_help = "The number of threads used in fastp to split input fastq files (default: %s). Note: must be an even multiple of the number of splits."%splitsize
 b_help = "The number of threads used per bwa alignment on split input fastq files (default: %s)."%bwathreads
-n_help = "Run name used to name output files. Default behaviour is to use the current parent directory."
+n_help = "Run name used to name output files. Default behavior is to use the current parent directory."
 M_help = "Name of the mitochondrial contig (default: %s)."%mito_contig
 B_help = "Number of parallel bwa alignments to run (default: %s). Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
-P_help = "The type of partiton jubs formated by slurpy run on (default: %s)."%part
+P_help = "The type of partition jobs formatted by slurpy run on (default: %s)."%part
 R_help = "Step within the pipeline to re-run from. Options (in order) include: %s."%', '.join(pipeline_steps)
-Q_help = "Mapping quality threshold to filter aligments (default: %s)."%map_q_thres
+Q_help = "Mapping quality threshold to filter alignments (default: %s)."%map_q_thres
 c_help = "Path to control or input bam files used in ChIP-seq experiments."
 g_help = "Size of the genome being analyzed, used as parameter for macs2. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens."
 
@@ -449,9 +449,9 @@ g_help = "Size of the genome being analyzed, used as parameter for macs2. Inputs
 restart_help  = "Flag to force the pipeline to reset and run from start."
 runlocal_help = "Disables sbatch submission and submits the script via bash to a local os."
 debug_help    = "A flag to run in verbose mode, printing sbatch commands. Default behavior is false."
-mark_help     = "Pass this flag to skip marking and removing duplicates. Defalut behavior is false (conduct duplicate marking)."
+mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
 broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs2. See macs2 callpeak --help for more details."
-clean_help    = "If included will run clean up script at end of run. The defualt behavior is false, can be run after pipeline."
+clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
 
 ## Set metavars
 c_metavar = './path/to/control.bam'
