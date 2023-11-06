@@ -55,10 +55,10 @@ INFO: We are ready to run slurpy!
 
 ## Running slurpy
 ### Setting up a project directory
-Currently the ATAC- and ChIP-seq protocols are fully functional. To run slurpy, change the current directory to the target project (in the example below 2501_001) and soft link to the path of the slurpy executables.
+Currently the ATAC- and ChIP-seq protocols are fully functional. To run slurpy, change the current directory to the target project (in the example below, the project is named 2501_001) and soft link to the path of the slurpy executables.
 
 ```
-cd ~/2501_001
+cd /path/to/project/directory/2501_001
 ln -s /path/to/SLURPY
 ```
 
