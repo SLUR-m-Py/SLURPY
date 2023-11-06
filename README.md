@@ -121,14 +121,14 @@ options:
 To call the slurpy pipeline to analyze an ATAC-seq experiment run:
 
 ```
-./SLURPY/slurpy -e atac -r /path/to/reference/file.fasta
+./SLURPY/slurpy.py -e atac -r /path/to/reference/file.fasta
 ```
 
 ### For ChIP-seq experiments 
 To run slurpy to analyze a ChIP-seq experiment run:
 
 ```
-./SLURPY/slurpy -e chip -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam
+./SLURPY/slurpy.py -e chip -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam
 ```
 
 ## Dependencies
