@@ -1,5 +1,5 @@
 # SLURPY
-
+SLUR(M)-PY; (pronounced slurpy) a slurm-pythonic pipeline for the alignment and analysis of paired-end sequencing data; from ATAC-seq to Hi-C
 ## Setting up the computing environment
 Slurpy was developed using anaconda (python v 3.10.13). 
 We recommend using conda to manage the python environment needed by slurpy.
