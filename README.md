@@ -6,7 +6,7 @@ Slurpy was developed using anaconda (python v 3.10.13).
 We recommend using conda to manage the python environment needed by slurpy.
 Below are commands needed to set up the "bioenv" for running slurpy. 
 
-"""
+```
 ## Make a python environment named bioenv 
 conda create -n bioenv 
 
@@ -15,13 +15,13 @@ conda activate bioenv
 
 ## Use conda to install needed mods
 conda install numpy pandas matplotlib seaborn pysam samtools bwa macs2
-"""
+```
 
 If the above installation command hangs, we recommend removing macs2 from the list of libraries and trying again. Then installing macs2 via pip.
 
-"""
+```
 pip install macs2
-"""
+```
 
 ## Installation
 Downloading the repository as a .zip archive is easiest. For developers a clone command with git:
