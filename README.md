@@ -75,7 +75,7 @@ The help menu (-h) of slurpy lists all the available arguments and default setti
 conda activate bioenv 
 
 ## Call the help menu
-./SLURPY/slurpy -h 
+./SLURPY/slurpy.py -h 
 
 Calls the slurpy pipeline ( v 8.0.0 ) for alignment of pair-end reads to a reference genome. Example call: ./slurpy -e atac -r ../../REFERENCES/ENCODEREF/AUTOSOMES/GRCh38.fasta
 
