@@ -21,9 +21,10 @@ If the above installation command hangs, we recommend removing macs2 from the li
 ```
 pip install macs2
 ```
+A full list of the python libraries and their versions used to develop slurpy are listed within python.dependencies.txt]().
 
 ## Installation
-Downloading the repository as a .zip archive is easiest. For developers a clone command with git:
+Downloading the repository as a .zip archive is easiest. For developers a simple clone command with git works too:
 
 ```
 git clone https://github.com/SLUR-m-Py/SLURPY.git
@@ -37,7 +38,7 @@ chmod +x *.py
 ```
 
 ### Checking the python environment 
-Once within the slrupy directory, run the environment checking script, "modcheck.py".
+Once within the slrupy directory, run the environment checking script, [modcheck.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/modcheck.py).
 
 ```
 ## Activate the computing environment
@@ -54,7 +55,7 @@ INFO: We are ready to run slurpy!
 
 ## Running slurpy
 ### Setting up a project directory
-Currently the ATAC- and ChIP-seq portocols are fully functional. To run slurpy, change the current directory to the target project (in the example below 2501_001) and soft link to the path of the slurpy executables.
+Currently the ATAC- and ChIP-seq protocols are fully functional. To run slurpy, change the current directory to the target project (in the example below 2501_001) and soft link to the path of the slurpy executables.
 
 ```
 cd ~/2501_001
@@ -86,19 +87,19 @@ options:
   -B 16, --parallel-bwa 16
                         Number of parallel bwa alignments to run (default: 16). Controls the number of bwa jobs submitted at once to slurm.
   -P tb, --partition tb
-                        The type of partiton jubs formated by slurpy run on (default: tb).
+                        The type of partiton jobs formatted by slurpy run on (default: tb).
   -M chrM, --mtDNA chrM
                         Name of the mitochondrial contig (default: chrM).
   -Q 30, --map-threshold 30
-                        Mapping quality threshold to filter aligments (default: 30).
+                        Mapping quality threshold to filter alignments (default: 30).
   -f 16, --fastp-threads 16
-                        The number of threads used in fastp to split input fastq files (default: 16). Note: must be an even multiple of the nubmer of splits.
+                        The number of threads used in fastp to split input fastq files (default: 16). Note: must be an even multiple of the number of splits.
   -b 4, --bwa-threads 4
                         The number of threads used per bwa alignment on split input fastq files (default: 4).
   -s 4, --sam-threads 4
                         The number of threads used per bwa alignment on split input fastq files (default: 4).
   -n name, --run-name name
-                        Run name used to name output files. Default behaviour is to use the current parent directory.
+                        Run name used to name output files. Default behavior is to use the current parent directory.
   -c ./path/to/control.bam [./path/to/control.bam ...], --controls ./path/to/control.bam [./path/to/control.bam ...]
                         Path to control or input bam files used in ChIP-seq experiments.
   -g bp, --genome-size bp
@@ -110,19 +111,19 @@ options:
   --restart             Flag to force the pipeline to reset and run from start.
   --runlocal            Disables sbatch submission and submits the script via bash to a local os.
   --debug               A flag to run in verbose mode, printing sbatch commands. Default behavior is false.
-  --skip-dedup          Pass this flag to skip marking and removing duplicates. Defalut behavior is false (conduct duplicate marking).
+  --skip-dedup          Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
   --broad               Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs2. See macs2 callpeak --help for more details.
-  --clean               If included will run clean up script at end of run. The defualt behavior is false, can be run after pipeline.
+  --clean               If included will run clean up script at end of run. The default behavior is false, can be run after pipeline.
 
 ```
 
-To run slurpy to analyze an ATAC-seq experiment run:
+To call the slurpy pipeline to analyze an ATAC-seq experiment run:
 
 ```
 ./SLURPY/slurpy -e atac -r /path/to/reference/file.fasta
 ```
 
-To run slurpy in analyze a ChIP-seq experiment run:
+To run slurpy to analyze a ChIP-seq experiment run:
 
 ```
 ./SLURPY/slurpy -e chip -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam
@@ -131,7 +132,7 @@ To run slurpy in analyze a ChIP-seq experiment run:
 ## Dependencies
 Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in samtools is also required with the minimum version of 1.15.1. 
 
-### Additional linex core commands:
+### Additional linux core commands:
 * cat 
 * rm
-* echo 
+* echo
