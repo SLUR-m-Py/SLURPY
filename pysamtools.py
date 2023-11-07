@@ -63,13 +63,13 @@ def splitbam(inbam):
 def outnames(inbam,mito):
     """Format and return the name of output txt, bam, and bedpe files."""
     ## Format the name of output files 
-    name_out_bam     = splitbam(inbam) + '.mapped.bam'    ## The output bam name
+    name_out_txt     = splitbam(inbam) + '.mapped.txt'    ## The output bam name
     name_placed_txt  = splitbam(inbam) + '.placed.txt'    ## The placed reads (one mate mapped) bam file  
     name_mito_txt    = splitbam(inbam) + '.%s.txt'%mito   ## The mitochondrial mapped reads
     name_unmap_txt   = splitbam(inbam) + '.unmapped.txt'  ## The unmapped read pairs txt file
     name_out_bedpe   = splitbam(inbam) + '.bedpe'         ## The bedpe file 
     ## Return names
-    return name_out_bam, name_placed_txt, name_mito_txt, name_unmap_txt, name_out_bedpe
+    return name_out_txt, name_placed_txt, name_mito_txt, name_unmap_txt, name_out_bedpe
 
 ## Ftn for returning split sub names
 def splitsubnames(mito):
