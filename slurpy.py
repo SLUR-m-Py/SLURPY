@@ -803,13 +803,13 @@ if __name__ == "__main__":
     ## Add fragment diagnostic plots 
     if experi_mode == 'atac':
         ## Format the fragment histogram distribution for atac seq samples 
-        frag_calc_commands = f'{scriptsdir}/pymacs2.py -r {run_name}\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam ' + save_dist_name
+        frag_calc_commands = f'{scriptsdir}/pymacs2.py\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam ' + save_dist_name
     ## Add fragment diagnostic plots for chip mode 
     elif experi_mode == 'chip':
         ## Format the contorl samples
         joined_controls = ' '.join(chip_control)
         ## Format the fragment commands
-        frag_calc_commands = f'{scriptsdir}/pymacs2.py -r {run_name}\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam {joined_controls} ' + save_dist_name
+        frag_calc_commands = f'{scriptsdir}/pymacs2.py\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam {joined_controls} ' + save_dist_name
     else: ## Otherwise pass a new line character 
         frag_calc_commands = '\n'
 

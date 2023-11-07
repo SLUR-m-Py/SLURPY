@@ -124,7 +124,6 @@ savepath, dplace = './frip.stats.csv', 4
 ## Set help messages
 b_help = "Path(s) to input BAM files."
 p_help = "Path(s) to input peak (BED) files from macs2."
-r_help = "Short name of run used in analysis (Default: None)." 
 s_help = "Path and name of output diagnostic statistics (Default when short name is not provided: %s)."%savepath
 d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
 
@@ -141,6 +140,8 @@ if __name__ == "__main__":
     ## Load bam ftn 
     from pysamtools import loadbam, isbam, hasix
 
+    ## load in path exists ftn from 
+
     ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser
     parser = argparse.ArgumentParser(description=description)
@@ -148,7 +149,6 @@ if __name__ == "__main__":
     ## Add optional arguments
     parser.add_argument("-b", "--bam-files",  dest="b", required=False, type=list, help=b_help, default=[],nargs='+')
     parser.add_argument("-p", "--bed-files",  dest="p", required=False, type=list, help=p_help, default=[],nargs='+')
-    parser.add_argument("-r", "--run-name",   dest="r", required=False, type=str,  help=r_help, default=None        )   
     parser.add_argument("-s", "--save-path",  dest="s", required=False, type=str,  help=s_help, default=None        )  
     parser.add_argument("-d", "--decimals",   dest="d", required=False, type=int,  help=d_help, default=dplace      )
 
@@ -159,23 +159,15 @@ if __name__ == "__main__":
     ## Gather inputs 
     bams_paths, peak_paths, run_name, save_path, dplace = args.b, args.p, args.r, args.s, args.d
 
-    ## Re-assign bam paths form the local aligned dir 
-    if len(bams_paths):
-        pass 
-    else: ## Gather the primary mapped bam files from the aligned dir if run name was passed 
-        bams_paths = sortglob(f'./{aligndir}/{run_name}*.primary.*.bam') if run_name else []
+    ## Re-assign bam paths form the local aligned dir by gathering the primary mapped bam files from the aligned dir if run name was passed 
+    bams_paths = bams_paths if len(bams_paths) else sortglob(f'./{aligndir}/*.primary.*.bam') 
 
-    ## Re-assign bed paths from local macs2 dirc
-    if len(peak_paths):
-        pass 
-    else: ## if we were passed a run name, gather the peaks from the macs2 dir
-        peak_paths = sortglob(f'./{macs2dir}/{run_name}*_peaks.*Peak') if run_name else []
+    ## Re-assign bed paths from local macs2 dir if we were passed a run name, gather the peaks from the macs2 dir
+    peak_paths = peak_paths if len(peak_paths) else sortglob(f'./{macs2dir}/*_peaks.*Peak') 
 
     ## Reset the save path if none was given 
-    if save_path: 
-        pass 
-    else: ## if not, and run name was given, define the save path or default to the current path
-        save_path = f'./{diagdir}/{run_name}.frip.stats.csv' if run_name else savepath
+
+    save_path = save_path if save_path else f'./{diagdir}/frip.stats.csv' if run_name else savepath
 
     ## Check we have paths 
     assert len(bams_paths), "ERROR: No bam files were detected!"
