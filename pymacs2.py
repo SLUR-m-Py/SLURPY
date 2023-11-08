@@ -119,12 +119,12 @@ def makemap(inbam):
 description = 'Calculates the fraction of reads within peaks from input bam and bed files.'
 
 ## Set defaults
-savepath, dplace = './frip.stats.csv', 4
+savename, dplace = './frip.stats.csv', 4
 
 ## Set help messages
 b_help = "Path(s) to input BAM files."
 p_help = "Path(s) to input peak (BED) files from macs2."
-s_help = "Path and name of output diagnostic statistics (Default when short name is not provided: %s)."%savepath
+s_help = "Path and name of output diagnostic statistics."
 d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 
-    bams_paths, peak_paths, run_name, save_path, dplace = args.b, args.p, args.r, args.s, args.d
+    bams_paths, peak_paths, save_path, dplace = args.b, args.p, args.s, args.d
 
     ## Re-assign bam paths form the local aligned dir by gathering the primary mapped bam files from the aligned dir if run name was passed 
     bams_paths = bams_paths if len(bams_paths) else sortglob(f'./{aligndir}/*.primary.*.bam') 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     ## Reset the save path if none was given 
 
-    save_path = save_path if save_path else f'./{diagdir}/frip.stats.csv' if run_name else savepath
+    save_path = save_path if save_path else f'./{diagdir}/{savename}' 
 
     ## Check we have paths 
     assert len(bams_paths), "ERROR: No bam files were detected!"
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     ## Format into a df
     peak_info = pd.DataFrame(peak_info,columns = ['Peak File','Summits','Peaks','FRiP','BP'])
     ## Calculate the perecnt genome
-    peak_info['Percent'] = round(peak_info.BP/genomesize,dplace)
+    peak_info['Percent'] = round(100*peak_info.BP/genomesize,dplace)
     ## Save the peak info
     peak_info.to_csv(save_path,index=False)
 ## End of file 

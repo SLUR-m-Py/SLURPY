@@ -947,8 +947,9 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'macs2','filter',stamp,partition,group='Experiment')
 
     ## ----------------------------------------------- SUBMITTING COUNT COMMANDS ------------------------------------------------------------ ## 
+    above_step = 'macs2' if experi_mode in ['atac','chip'] else 'filter'
     ## Submit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','filter',stamp,partition,group='Experiment')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',above_step,stamp,partition,group='Experiment')
 
     ## ------------------------------------------------ SUBMITTING TIME COMMANDS ------------------------------------------------------------ ## 
     ## Set the above step
