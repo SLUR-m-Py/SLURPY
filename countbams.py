@@ -40,12 +40,6 @@ def ismarked(m):
     ## Return negative bool 
     return m == 'marked'
 
-## Write ftn for splitting file name
-#def splitfilename(inbam):
-#    """Splits an input bam file name."""
-#    ## Return the split file 
-#    return inbam.split('/')[-1].split('.bam')[0]
-
 ## Write ftn for gathering bam map names
 def bamnames(inbam):
     """Parses the endding bam file name."""
@@ -214,6 +208,12 @@ if __name__ == "__main__":
 
     ## Make a color dictionary 
     colordict = dict(zip(thebamcounts.Mapping.unique(),mycolors))
+
+    ## Loadin the correct backend for matplotlib
+    import matplotlib
+
+    ## Set the needed backend 
+    matplotlib.use('Agg')
 
     ## Load in matplot lib 
     from matplotlib import pyplot as plt

@@ -208,6 +208,12 @@ if __name__ == "__main__":
     ## Parse the arguments
     args = parser.parse_args()
 
+    ## Loadin the correct backend for matplotlib
+    import matplotlib
+
+    ## Set the agg backend 
+    matplotlib.use('Agg')
+
     ## Set required vars
     bampaths, windowsize, excludes, deltabp, savepath, maxix, legloc = args.b, args.W, args.X, args.D, args.S, args.M, args.L
 
