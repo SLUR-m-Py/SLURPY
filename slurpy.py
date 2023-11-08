@@ -832,7 +832,7 @@ if __name__ == "__main__":
         macs2_report, macs2_filename = reportname(run_name,'macs2'), f'{comsdir}/macs2.{run_name}.sh'
     
         ## Format the command to macs2
-        macs2_commands = peakattack(filteredbams,run_name,macs2_report,incontrols=chip_control,gsize=gsize,broad=broadpeak) + [f'{scriptsdir}/pymacs2.py\n',f'echo Finished calculating FrIP from macs2 >> {macs2_report}\n']
+        macs2_commands = peakattack(filteredbams,run_name,macs2_report,incontrols=chip_control,gsize=gsize,broad=broadpeak) + [f'{scriptsdir}/pymacs2.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'echo Finished calculating FrIP from macs2 >> {macs2_report}\n']
 
         ## Write the macs2 commands to file
         writetofile(macs2_filename, sbatch(macs2_filename,1,the_cwd) + macs2_commands, debug)

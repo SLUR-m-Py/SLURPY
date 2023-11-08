@@ -166,7 +166,6 @@ if __name__ == "__main__":
     peak_paths = peak_paths if len(peak_paths) else sortglob(f'./{macs2dir}/*_peaks.*Peak') 
 
     ## Reset the save path if none was given 
-
     save_path = save_path if save_path else f'./{diagdir}/{savename}' 
 
     ## Check we have paths 
