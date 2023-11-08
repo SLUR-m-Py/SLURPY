@@ -28,4 +28,7 @@ DATA/*.csv
 FIGURES/*.png
 FIGURES/*.pdf
 
+## Ignore vstudio code 
+.vscode/*.json
+
 ## End of file 
