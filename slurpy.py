@@ -803,13 +803,13 @@ if __name__ == "__main__":
     ## Add fragment diagnostic plots 
     if experi_mode == 'atac':
         ## Format the fragment histogram distribution for atac seq samples 
-        frag_calc_commands = f'{scriptsdir}/pymacs2.py\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam ' + save_dist_name
+        frag_calc_commands = f'{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam ' + save_dist_name
     ## Add fragment diagnostic plots for chip mode 
     elif experi_mode == 'chip':
         ## Format the contorl samples
         joined_controls = ' '.join(chip_control)
         ## Format the fragment commands
-        frag_calc_commands = f'{scriptsdir}/pymacs2.py\n{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam {joined_controls} ' + save_dist_name
+        frag_calc_commands = f'{scriptsdir}/fragmentdist.py -b ./{aligndir}/*.primary.*.bam {joined_controls} ' + save_dist_name
     else: ## Otherwise pass a new line character 
         frag_calc_commands = '\n'
 
@@ -832,7 +832,7 @@ if __name__ == "__main__":
         macs2_report, macs2_filename = reportname(run_name,'macs2'), f'{comsdir}/macs2.{run_name}.sh'
     
         ## Format the command to macs2
-        macs2_commands = peakattack(filteredbams,run_name,macs2_report,incontrols=chip_control,gsize=gsize,broad=broadpeak)
+        macs2_commands = peakattack(filteredbams,run_name,macs2_report,incontrols=chip_control,gsize=gsize,broad=broadpeak) + [f'{scriptsdir}/pymacs2.py\n',f'echo Finished calculating FrIP from macs2 >> {macs2_report}\n']
 
         ## Write the macs2 commands to file
         writetofile(macs2_filename, sbatch(macs2_filename,1,the_cwd) + macs2_commands, debug)
@@ -947,9 +947,8 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'macs2','filter',stamp,partition,group='Experiment')
 
     ## ----------------------------------------------- SUBMITTING COUNT COMMANDS ------------------------------------------------------------ ## 
-    above_step = 'macs2' if experi_mode in ['atac','chip'] else 'filter'
     ## Submit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',above_step,stamp,partition,group='Experiment')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','filter',stamp,partition,group='Experiment')
 
     ## ------------------------------------------------ SUBMITTING TIME COMMANDS ------------------------------------------------------------ ## 
     ## Set the above step
