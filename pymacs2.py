@@ -20,6 +20,9 @@ Los Alamos, NM 87545
 croth@lanl.gov
 """
 ## ------------------------------------------------------------- MACS2 Functions ----------------------------------------------------------------- ## 
+## Load in pandas 
+import pandas as pd 
+
 ## Ftn for formating length parameter
 def formatlen(minlen):
     """Formats and returns the max length flag and parameter for a call to macs2."""
@@ -132,10 +135,10 @@ d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dp
 if __name__ == "__main__":
     ## ------------------------------------------- MODULE LOADING ---------------------------------------------------- ## 
     ## Load in pandas and arg parser
-    import pandas as pd, argparse 
+    import argparse 
 
     ## Ftn for parsing files 
-    from slurpy import sortglob, aligndir, macs2dir, diagdir
+    from defaults import sortglob, aligndir, macs2dir, diagdir
 
     ## Load bam ftn 
     from pysamtools import loadbam, isbam, hasix
