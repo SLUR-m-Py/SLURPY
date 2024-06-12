@@ -115,30 +115,32 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = hiclite_descr)
 
     ## Add the required argument
-    parser.add_argument("-r", "--refix",          dest="r", type=str,  required=True, help = r_help,  metavar = './path/to/reference.bwaix'                  ) 
+    parser.add_argument("-r", "--refix",          dest="r", type=str,  required=True, help = r_help,  metavar = './path/to/reference.bwaix'                    ) 
     
     ## Add the default arguments
-    parser.add_argument("-F", "--fastp-splits",   dest="F", type=int,  required=False, help = F_help, metavar = splitsize,            default = splitsize    )
-    parser.add_argument("-B", "--parallel-bwa",   dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,          default = parallelbwa  )
-    parser.add_argument("-P", "--partition",      dest="P", type=str,  required=False, help = P_help, metavar = part,                 default = part         ) 
-    parser.add_argument("-M", "--mtDNA",          dest="M", type=str,  required=False, help = M_help, metavar = mito,                 default = mito         )
-    parser.add_argument("-Q", "--map-threshold",  dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,          default = map_q_thres  )
-    parser.add_argument("-R", "--rerun-from",     dest="R", type=str,  required=False, help = R_help, metavar = 'step',               default = None         )
-    parser.add_argument("-q", "--fastq",          dest="q", type=str,  required=False, help = q_help, metavar = '.fastq.gz',          default = fends        )
+    parser.add_argument("-F", "--fastp-splits",   dest="F", type=int,  required=False, help = F_help, metavar = splitsize,              default = splitsize    )
+    parser.add_argument("-B", "--parallel-bwa",   dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
+    parser.add_argument("-P", "--partition",      dest="P", type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
+    parser.add_argument("-M", "--mtDNA",          dest="M", type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
+    parser.add_argument("-Q", "--map-threshold",  dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
+    parser.add_argument("-R", "--rerun-from",     dest="R", type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
+    parser.add_argument("-q", "--fastq",          dest="q", type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
 
     ## Set number of threads 
-    parser.add_argument("-f", "--fastp-threads",  dest="f", type=int,  required=False, help = f_help, metavar = fastpthreads,         default = fastpthreads )
-    parser.add_argument("-b", "--bwa-threads",    dest="b", type=int,  required=False, help = b_help, metavar = bwathreads,           default = bwathreads   )
-    parser.add_argument("-t", "--dask-threads",   dest="t", type=int,  required=False, help = t_help, metavar = daskthreads,          default = daskthreads  )
+    parser.add_argument("-f", "--fastp-threads",  dest="f", type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
+    parser.add_argument("-b", "--bwa-threads",    dest="b", type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
+    parser.add_argument("-t", "--dask-threads",   dest="t", type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
 
     ## Set values for Hi-C analysis 
-    parser.add_argument("-n", "--run-name",       dest="n", type=str,  required=False, help = n_help, metavar = 'name',               default = None         )
-    parser.add_argument("-E", "--error-distance", dest="E", type=int,  required=False, help = E_help, metavar = 'bp',                 default = error_dist   )
-    parser.add_argument("-C", "--self-circle",    dest="C", type=int,  required=False, help = C_help, metavar = 'bp',                 default = circle_dist  )
-    parser.add_argument("-L", "--library",        dest="L", type=str,  required=False, help = L_help, metavar = 'MboI',               default = lib_default  )
-    parser.add_argument("-D", "--mindist",        dest="D", type=int,  required=False, help = D_help, metavar = 'n',                  default = set_distance )
-    parser.add_argument("-Z", "--chunksize",      dest="Z", type=int,  required=False, help = Z_help, metavar = 'n',                  default = chunks       )
-    parser.add_argument("-G", "--genomelist",     dest="G", type=str,  required=False, help = G_help, metavar = './path/to/list.tsv', default = None         )
+    parser.add_argument("-n", "--run-name",       dest="n", type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
+    parser.add_argument("-E", "--error-distance", dest="E", type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
+    parser.add_argument("-C", "--self-circle",    dest="C", type=int,  required=False, help = C_help, metavar = 'bp',                   default = circle_dist  )
+    parser.add_argument("-L", "--library",        dest="L", type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
+    parser.add_argument("-D", "--mindist",        dest="D", type=int,  required=False, help = D_help, metavar = 'n',                    default = set_distance )
+    parser.add_argument("-Z", "--chunksize",      dest="Z", type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunks       )
+    parser.add_argument("-G", "--genomelist",     dest="G", type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = None         )
+    parser.add_argument("-J", "--jar-path",       dest="J", type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
+    parser.add_argument("-S", "--bin-sizes",      dest="S", nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
 
     ## Set boolean flags 
     parser.add_argument("--restart",              dest="start",  help = restart_help,  action = 'store_true')
@@ -180,6 +182,7 @@ if __name__ == "__main__":
     set_distance    = inputs.D       ##     Overall minimum intra-chromosomal contact distance allowed 
     chunk_size      = inputs.Z       ##     Chunk size (row number) to load in with pandas 
     pathtochrom     = inputs.G       ##     Path to list of chromosomes to use 
+    jarpath         = inputs.J       ##     Path to juicer jar file 
                                      ##
     ## Set boolean vars              ##
     hardreset       = inputs.start   ##     Resetart the slurpy run, removing previous

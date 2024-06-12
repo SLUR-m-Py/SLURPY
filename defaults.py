@@ -516,23 +516,31 @@ def submitbwa(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, times
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      Hi-C and ATAC-seq DEFAULT VARIABLE SETTING  
-splitsize    = 64            ##      The number of splits made by fastp 
-bwathreads   = 4             ##      Number of threads used by calls to bwa 
-samthreads   = 4             ##      Number of threads used by calls to samtools 
-daskthreads  = 4             ##      Number of threads used by calls to dask df 
-parallelbwa  = splitsize     ##      Number of parallel runs of bwa 
-fastpthreads = 8             ##      Number of threads in fastp 
-part         = 'tb'          ##      Defalut partition 
-map_q_thres  = 30            ##      Minimum mapping quality threhosld 
-error_dist   = 10000         ##      The idstance to check for erros 
-circle_dist  = 30000         ##      The distance to check for self circles 
-lib_default  = 'Arima'       ##      Defalut library used to make Hi-C experimetns 
-chunks       = 50000         ##      Chunks size for parsing with pandas
-set_distance = 0             ##      Minimum distance of Hi-C contacts 
-hicsep       = ' '           ##      Text deliminator 
-line_count   = 10**7         ##      Number of lines 
-fends        = '.fastq.gz'   ##      End of fastq fiels 
-mito         = 'chrM'        ##      The name of the mitocondrial contig (in humns)
+splitsize    = 64            ##     The number of splits made by fastp 
+bwathreads   = 4             ##     Number of threads used by calls to bwa 
+samthreads   = 4             ##     Number of threads used by calls to samtools 
+daskthreads  = 4             ##     Number of threads used by calls to dask df 
+parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
+fastpthreads = 8             ##     Number of threads in fastp 
+part         = 'tb'          ##     Defalut partition 
+map_q_thres  = 30            ##     Minimum mapping quality threhosld 
+error_dist   = 10000         ##     The idstance to check for erros 
+circle_dist  = 30000         ##     The distance to check for self circles 
+lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
+chunks       = 50000         ##     Chunks size for parsing with pandas
+set_distance = 0             ##     Minimum distance of Hi-C contacts 
+hicsep       = ' '           ##     Text deliminator 
+line_count   = 10**7         ##     Number of lines 
+fends        = '.fastq.gz'   ##     End of fastq fiels 
+mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
+binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
+                1000000,
+                 500000,
+                 250000,
+                 100000,
+                  50000,
+                  25000,
+                  10000]
 
 ## Set file ends used in this script and other filtering stages 
 hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
@@ -570,6 +578,8 @@ Z_help = "Number of rows (default: %s) loaded into pandas at a time. WARNING: wh
 q_help = "The file extension of input fastq files (default: %s)"%fends
 t_help = "The number of threads used in calls to functions and calculations with pandas and dask dataframe(s) (default: %s)."%daskthreads
 s_help = "The number of threads used in calls to samtools (default: %s)."%samthreads
+J_help = "Path to juicer jar file for juicer pre command. Required for .hic file creation."
+S_help = "Chromosome resolution (i.e. bin sizes) for .hic files. Default: %s"%', '.join(map(str,binsizes))
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
