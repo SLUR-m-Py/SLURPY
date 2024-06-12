@@ -53,22 +53,28 @@ def loadsam(inpath:str,chunks:int):
     return pd.read_csv(inpath, sep='\t', comment='@', names=samnames, usecols=samnames, chunksize=chunks, dtype=samdict)
 
 ## Ftn for checking if input file is a sam 
-def issam(inpath):
+def issam(inpath:str) -> bool:
     """Returns boolean on test that file extension is sam."""
     ## Checks if a fucntion is a sam file 
     return inpath.split('.')[-1] == 'sam'
 
 ## Ftn for loading in reference in fasta file format 
-def loadref(inpath):
+def loadref(inpath:str) -> list:
     """Returns a list of sequences from within input fasta file."""
     ## Return the records in the loaded reference 
     return [r for r in SeqIO.parse(inpath,format='fasta')]
 
 ## Ftn for getting list of chromosomes
-def getchrlist(inpath):
+def getchrlist(inpath:str) -> list:
     """Returns a list of sequences ids from within input fasta file."""
     ## Return the records in the loaded reference 
     return [r.id for r in SeqIO.parse(inpath,format='fasta')]
+
+## Ftn for returing chrom
+def chromdf(inpath:str) -> list:
+    """Returns a pandas dataframe made from the tuples of sequences ids and lenghts from within an input fasta file."""
+    ## Return the records in the loaded reference 
+    return pd.DataFrame([(r.id,len(r.seq)) for r in SeqIO.parse(inpath,format='fasta')])
 
 ## Rreturns a signle chromeosome
 def byseq(refs,chrom):

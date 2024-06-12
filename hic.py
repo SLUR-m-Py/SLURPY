@@ -37,7 +37,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ## Load in ftns and variables from defaults
 from defaults import *
 ## Load in ftns from other libraries
-from pysamtools import checksam, writetofile, getchrlist
+from pysamtools import checksam, writetofile, chromdf
 ## Bring in bwa mem ftn for hic
 from pybwatools import bwamem_hic
  
@@ -102,6 +102,20 @@ def hicsorter(inpaths:list, outname:str, script='sort') -> tuple:
     ## Return the commands and the report 
     return command_lines, report 
 
+## Ftn for calling juicer's pre command
+def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str, script='juicerpre') -> tuple:
+    """
+    java -Xmx49152m -Xms49152m -jar $jarpath pre -j 5 -r 500000,250000,200000,150000,100000,50000,25000,10000,5000,1000 $1 ${1}.hic $2
+    """
+    ## Format the report name 
+    report = reportname(outhic+'.bam',script)
+    ## Set the java command for the passed juicer jar file 
+    prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
+              f'echo Finished formating Hi-C contacts into a .hic file on path: {outhic} >> {report}\n']
+
+    ## Return the pre and report
+    return prestr, report
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -122,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("-B", "--parallel-bwa",   dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
     parser.add_argument("-P", "--partition",      dest="P", type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
     parser.add_argument("-M", "--mtDNA",          dest="M", type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
+    parser.add_argument("-X", "--exclude",        dest="X", nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
     parser.add_argument("-Q", "--map-threshold",  dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
     parser.add_argument("-R", "--rerun-from",     dest="R", type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
     parser.add_argument("-q", "--fastq",          dest="q", type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
@@ -140,6 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("-Z", "--chunksize",      dest="Z", type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunks       )
     parser.add_argument("-G", "--genomelist",     dest="G", type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = None         )
     parser.add_argument("-J", "--jar-path",       dest="J", type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
+    parser.add_argument("-x", "--Xmemory",        dest="x", type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S", nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
 
     ## Set boolean flags 
@@ -165,6 +181,7 @@ if __name__ == "__main__":
     bwa_runs        = inputs.B       ##     Set the number of parallel runs of bwa 
     partition       = inputs.P       ##     Set the partition 
     mito            = inputs.M       ##     Set the mito contig name 
+    excludes        = inputs.X       ##     List of chromosomes to exclude from analysis 
     mapq            = inputs.Q       ##     Set the mapping quality threshold 
     rerun           = inputs.R       ##     Setp to rerun pipeline from 
     fend            = inputs.q       ##     End of the input fastq files 
@@ -183,6 +200,8 @@ if __name__ == "__main__":
     chunk_size      = inputs.Z       ##     Chunk size (row number) to load in with pandas 
     pathtochrom     = inputs.G       ##     Path to list of chromosomes to use 
     jarpath         = inputs.J       ##     Path to juicer jar file 
+    xmemory         = inputs.x       ##     Amount of memory passed to juicer pre command 
+    binsizes        = inputs.S       ##     Bins / resolutions used in hi-c analysis 
                                      ##
     ## Set boolean vars              ##
     hardreset       = inputs.start   ##     Resetart the slurpy run, removing previous
@@ -226,25 +245,39 @@ if __name__ == "__main__":
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
-    ##      CHROMOSOME GATHERING 
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## If a path was passed 
-    if pathtochrom: ## Check that it exists 
-        assert fileexists(pathtochrom), "ERROR: A non-existant input path for the list of chromosomes was passed!"
-        ## Set the list of chromosomes 
-        chrlist = readtable(pathtochrom)[0].values
-    else: ## Bring in the list of chromosomes from the fasta file
-        chrlist = getchrlist(reference_path)
-    ## Remove mito
-    chrlist = [c for c in chrlist if c != mito]
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+
+    ##      CHROMOSOME GATHERING 
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## If a path was passed and exists 
+    if pathtochrom and fileexists(pathtochrom): 
+        ## Set the list of chromosomes 
+        chrlist = readtable(pathtochrom)[0].values
+
+    ## Make a dataframe of the files 
+    else: ## Bring in the list of chromosomes from the fasta file
+        pathtochrom = aligndir + '/' + reference_path.split('/')[-1].split('.fa')[0] + '.txt'
+        ## IF, the path to chrom form the reference file path already exists 
+        if fileexists(pathtochrom):
+            chrbed = readtable(pathtochrom)
+        else:
+            ## Gather tupes of chromosome ids and lengths 
+            chrbed = chromdf(reference_path)
+            ## Save out the chrbed as an .txt file for next time or further analysis 
+            chrbed.to_csv(pathtochrom,sep=' ',index=False,header=False)
+        ## Set the list of chromosomes 
+        chrlist = chrbed[0].values
+
+    ## Expand exlcude list to include mitochondria contic 
+    excludes.append(mito)
+        
+    ## Remove mito
+    chrlist = [c for c in chrlist if (c not in excludes)]
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -460,18 +493,35 @@ if __name__ == "__main__":
         ##      SORT the Hi-C Contacts 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## Set the output file 
-        outhicpath = newcatfile.split('.txt')[0] + ('.sorted.txt' if skipduplicates else '.nodups.sorted.txt')
+        outtxtpath = newcatfile.split('.txt')[0] + ('.sorted.txt' if skipduplicates else '.nodups.sorted.txt')
         ## Print if we are skipping duplicates
         ifprint('INFO: Skipping duplicate marking.',skipduplicates)
 
         ## Sort and saveout the the concatonated hic file 
-        sort_coms, sort_report = hicsorter(chrom_cats,outhicpath)
+        sort_coms, sort_report = hicsorter(chrom_cats,outtxtpath)
         ## make concat file name
         sort_file = f'{comsdir}/sort.{sample_name}.{bamend}.sh'
         ## Write the concat command to file
         writetofile(sort_file, sbatch(sort_file,dask_threads,the_cwd) + sort_coms, debug)
         ## Append the concat command
         command_files.append((sort_file,'afterok:',sample_name,experi_mode,'sort','',sort_report))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+
+        ##      Make .hic file(s) with Juicer's pre command 
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## IF we have a valid jar path
+        if jarpath and fileexists(jarpath):
+            ## Set the output hic path
+            outhicpath = outtxtpath.split('.txt')[0] + '.hic'
+            ## Sort and saveout the the concatonated hic file 
+            jpre_coms, jpre_report = juicerpre(outtxtpath,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom,fastp_threads)
+            ## make concat file name
+            jpre_file = f'{comsdir}/juicerpre.{sample_name}.{bamend}.sh'
+            ## Write the concat command to file
+            writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd) + jpre_coms, debug)
+            ## Append the concat command
+            command_files.append((jpre_file,'afterok:',sample_name,experi_mode,'juicerpre','',jpre_report))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## <- This indent marks all the following commands run post aligment and filtering of individual samples 
     
@@ -558,16 +608,21 @@ if __name__ == "__main__":
     ##      9) SUBMITTING SORTTING COMMANDS         
     ## Submit the sort commands and append to sub 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'sort','split',stamp,partition,group='Experiment' if postmerging else 'Sample',debug=debug) 
-    ##
-    ##      10) SUBMITTING COUNT COMMANDS 
-    ## Submit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','sort',stamp,partition,group='Experiment',debug=debug) 
-    ##
-    ##      11) SUBMITTING TIME COMMANDS 
-    ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','count',stamp,partition,group='Experiment',debug=debug) 
     ## 
-    ##      12) CLEAN UP COMMANDS 
+    ##      10) Hi-C file creation
+    ## Call the juicer pre command for hic file creation if jarpath was passed 
+    if jarpath and fileexists(jarpath):
+        sub_sbatchs = sub_sbatchs + submitdependency(command_files,'juicerpre','sort',stamp,partition,group='Experiment' if postmerging else 'Sample',debug=debug)
+    ## 
+    ##      11) SUBMITTING COUNT COMMANDS 
+    ## Submit the count command 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','juicerpre',stamp,partition,group='Experiment',debug=debug) 
+    ##
+    ##      12) SUBMITTING TIME COMMANDS 
+    ## Submit time stamp 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','juicerpre',stamp,partition,group='Experiment',debug=debug) 
+    ## 
+    ##      13) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','timestamp',stamp,partition,group='Experiment',debug=debug) 
     ## That is what we call a twelve step program :-)

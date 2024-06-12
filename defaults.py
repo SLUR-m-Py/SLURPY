@@ -533,6 +533,7 @@ hicsep       = ' '           ##     Text deliminator
 line_count   = 10**7         ##     Number of lines 
 fends        = '.fastq.gz'   ##     End of fastq fiels 
 mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
+xmemory      = 49152
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
                 1000000,
                  500000,
@@ -548,7 +549,7 @@ hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors'
 ## Set protocols and pipe lien steps
 basic_pipeline  = ['fastp', 'bwa', 'split', 'concat', 'count', 'clean']
 pipeline_steps  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'macs2', 'count', 'clean']
-hic_pipeline    = ['fastp', 'bwa', 'pre', 'post', 'filter', 'concat', 'split', 'sort', 'count', 'clean']
+hic_pipeline    = ['fastp', 'bwa', 'pre', 'post', 'filter', 'concat', 'split', 'sort', 'juicerpre', 'count', 'clean']
 
 ## Define options for fastpeel ftn
 fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
@@ -564,6 +565,7 @@ f_help = "The number of threads used in fastp to split input fastq files (defaul
 b_help = "The number of threads used per bwa alignment on split input fastq files (default: %s)."%bwathreads
 n_help = "Run name used to name output files. Default behavior is to use the current parent directory."
 M_help = "Name of the mitochondrial contig (default: %s)."%mito
+X_help = "List of chromosomes/contigs to exclude from analysis (default: none)."
 B_help = "Number of parallel bwa alignments to run (default: %s). Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
 P_help = "The type of partition jobs formatted by slurpy run on (default: %s)."%part
 Q_help = "Mapping quality threshold to filter alignments (default: %s)."%map_q_thres
@@ -580,6 +582,7 @@ t_help = "The number of threads used in calls to functions and calculations with
 s_help = "The number of threads used in calls to samtools (default: %s)."%samthreads
 J_help = "Path to juicer jar file for juicer pre command. Required for .hic file creation."
 S_help = "Chromosome resolution (i.e. bin sizes) for .hic files. Default: %s"%', '.join(map(str,binsizes))
+x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command (Default: %s)."%xmemory
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
