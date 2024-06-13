@@ -128,7 +128,7 @@ def addfslash(inpath:str) -> str:
     return inpath if (inpath[-1] == '/') else inpath + '/'
 
 ## Write dict on extensions
-extdict = dictzip(['tsv','bed','txt','csv'],['\t','\t',' ',','])
+extdict = dictzip(['tsv','fai','bed','txt','csv'],['\t','\t','\t',' ',','])
 
 ## Ftn set setp
 def setsep(ext:str) -> str:
@@ -605,6 +605,13 @@ peaks_help    = "A boolean flag to skip peak calling via macs2."
 c_metavar = './path/to/control.bam'
 g_metavar = 'bp'
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      INFO MESSAGES
+## Set messages printed to user 
+directormaking  = 'INFO: Making local directories.'
+chromgathering  = 'INFO: Gathering chromosomes for processing.' 
+formatingfastq  = 'INFO: Formatting jobs.'
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      ERROR MESSAGES

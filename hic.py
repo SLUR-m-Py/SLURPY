@@ -252,35 +252,6 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-    ##      CHROMOSOME GATHERING 
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## If a path was passed and exists 
-    if pathtochrom and fileexists(pathtochrom): 
-        ## Set the list of chromosomes 
-        chrlist = readtable(pathtochrom)[0].values
-
-    ## Make a dataframe of the files 
-    else: ## Bring in the list of chromosomes from the fasta file
-        pathtochrom = aligndir + '/' + reference_path.split('/')[-1].split('.fa')[0] + '.txt'
-        ## IF, the path to chrom form the reference file path already exists 
-        if fileexists(pathtochrom):
-            chrbed = readtable(pathtochrom)
-        else:
-            ## Gather tupes of chromosome ids and lengths 
-            chrbed = chromdf(reference_path)
-            ## Save out the chrbed as an .txt file for next time or further analysis 
-            chrbed.to_csv(pathtochrom,sep=' ',index=False,header=False)
-        ## Set the list of chromosomes 
-        chrlist = chrbed[0].values
-
-    ## Expand exlcude list to include mitochondria contic 
-    excludes.append(mito)
-        
-    ## Remove mito
-    chrlist = [c for c in chrlist if (c not in excludes)]
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
     ##      MORE MODULE LOADING (and time stamp setting)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Load in the list dir ftn 
@@ -299,6 +270,8 @@ if __name__ == "__main__":
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Let the user know we are making directories 
+    print(directormaking)
     ## Get the current working dir
     the_cwd = gcwd()
     ## If the run name is none
@@ -314,6 +287,49 @@ if __name__ == "__main__":
     bwaix_coms, bwaix_report = bwaindex(reference_path)
     ## Write the bwa index command and sbatch to file 
     writetofile(bwa_ix_jobname, sbatch(bwa_ix_jobname,1,headpath(reference_path)) + bwaix_coms, debug)
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+    ##      CHROMOSOME GATHERING 
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Inform the user we are gathering chromosomes
+    print(chromgathering)
+    ## Set fai path
+    fai_path = reference_path + '.fai'
+    ## Set new path to chrom
+    newpathtochrom = aligndir + '/' + reference_path.split('/')[-1].split('.fa')[0] + '.txt'
+    ## If a path of chrom file was passed and exists 
+    if pathtochrom and fileexists(pathtochrom): 
+        ## Set the list of chromosomes 
+        chrlist = readtable(pathtochrom)[0].values
+    elif fileexists(fai_path):
+        ## Patch path
+        pathtochrom = newpathtochrom
+        ## Load in the fai file fromt he reference 
+        chrbed = readtable(fai_path)
+        ## SAve out the bed file 
+        chrbed[[0,1]].to_csv(pathtochrom,sep=' ',index=False,header=False)
+        ## Set the list of chromosomes 
+        chrlist = chrbed[0].values
+    ## Make a dataframe of the files 
+    else: ## Bring in the list of chromosomes from the fasta file
+        ## Patch chrom 
+        pathtochrom = newpathtochrom
+        ## IF, the path to chrom form the reference file path already exists 
+        if fileexists(pathtochrom):
+            chrbed = readtable(pathtochrom)
+        else:
+            ## Gather tupes of chromosome ids and lengths 
+            chrbed = chromdf(reference_path)
+            ## Save out the chrbed as an .txt file for next time or further analysis 
+            chrbed.to_csv(pathtochrom,sep=' ',index=False,header=False)
+        ## Set the list of chromosomes 
+        chrlist = chrbed[0].values
+
+    ## Expand exlcude list to include mitochondria contic 
+    excludes.append(mito)
+        
+    ## Remove mito
+    chrlist = [c for c in chrlist if (c not in excludes)]
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -344,6 +360,8 @@ if __name__ == "__main__":
 
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Inform user we are formating jobs
+    print(formatingfastq)
     ## Gather the fastqs 
     in_fastqs = getfastqs(fastqdir+'/*.gz')
     ## Assert we have fastq files
@@ -510,8 +528,10 @@ if __name__ == "__main__":
 
         ##      Make .hic file(s) with Juicer's pre command 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## Set if jar was passed
+        jargiven = jarpath and fileexists(jarpath)
         ## IF we have a valid jar path
-        if jarpath and fileexists(jarpath):
+        if jargiven:
             ## Set the output hic path
             outhicpath = outtxtpath.split('.txt')[0] + '.hic'
             ## Sort and saveout the the concatonated hic file 
@@ -611,16 +631,16 @@ if __name__ == "__main__":
     ## 
     ##      10) Hi-C file creation
     ## Call the juicer pre command for hic file creation if jarpath was passed 
-    if jarpath and fileexists(jarpath):
+    if jargiven:
         sub_sbatchs = sub_sbatchs + submitdependency(command_files,'juicerpre','sort',stamp,partition,group='Experiment' if postmerging else 'Sample',debug=debug)
     ## 
     ##      11) SUBMITTING COUNT COMMANDS 
     ## Submit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','juicerpre',stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','juicerpre' if jargiven else 'sort',stamp,partition,group='Experiment',debug=debug) 
     ##
     ##      12) SUBMITTING TIME COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','juicerpre',stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','juicerpre' if jargiven else 'sort',stamp,partition,group='Experiment',debug=debug) 
     ## 
     ##      13) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
