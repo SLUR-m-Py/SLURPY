@@ -11,11 +11,11 @@ conda create -n bioenv
 
 ## Activate the environment
 conda activate bioenv 
-'''
+```
 
 After making a new conda environment install needed packages.
 
-'''
+```
 ## Use conda to install needed mods
 conda install numpy pandas matplotlib seaborn pysam samtools biopython dask samblaster bwa macs2
 ```
