@@ -28,7 +28,7 @@ squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 """
 ## List slurpy command for VERO analysis
 """
-./SLURPY/atacseq.py -r /panfs/biopan04/epier/Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 -g 2744115311 -G ../../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed
+./SLURPY/atacseq.py -r ../Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 -g 2744115311 -G ../../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed
 
 """
 
@@ -497,7 +497,7 @@ if __name__ == "__main__":
     ##      COUNTING COMMANDS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## List the count commands 
-    count_commands = [f'{scriptsdir}/countbams.py {run_name}\n', frag_calc_commands, f'echo Finished counting bam files in {aligndir} dir. >> {count_report}\n']
+    count_commands = [f'{scriptsdir}/countbams.py {run_name}\n', frag_calc_commands, f'{scriptsdir}/myecho.py Finished counting bam files in {aligndir} dir. {count_report}\n']
     ## Wriet the coutn command to file
     writetofile(counting_filename,sbatch(counting_filename,1,the_cwd) + count_commands, debug)
     ## Append the counting command
@@ -516,7 +516,7 @@ if __name__ == "__main__":
         ## Format the macs2 call report name
         macs2_report, macs2_filename = reportname(run_name,'macs2'), f'{comsdir}/macs2.{run_name}.sh'
         ## Format the command to macs2
-        macs2_commands = peakattack(filteredbams,run_name,macs2_report,gsize=gsize,broad=broadpeak,incontrols=chip_control) + [f'{scriptsdir}/pymacs2.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'echo Finished calculating FrIP from macs2 >> {macs2_report}\n']
+        macs2_commands = peakattack(filteredbams,run_name,macs2_report,gsize=gsize,broad=broadpeak,incontrols=chip_control) + [f'{scriptsdir}/pymacs2.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{scriptsdir}/myecho.py Finished calculating FrIP from macs2 {macs2_report}\n']
         ## Write the macs2 commands to file
         writetofile(macs2_filename, sbatch(macs2_filename,1,the_cwd) + macs2_commands, debug)
         ## Append the macs2 command 
@@ -531,7 +531,7 @@ if __name__ == "__main__":
     timestampsh      = f'{comsdir}/time.stamp.sh'                       ##     Name of the .sh bash file 
     timestamp_report = reportname(run_name,f'timestamp.{stamp}')        ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{scriptsdir}/endstamp.py {timestamp_file} {stamp}\n', f'echo Finished SLURPY run of sample: {run_name}. >> {timestamp_report}\n']
+    times_commands = [f'{scriptsdir}/endstamp.py {timestamp_file} {stamp}\n', f'{scriptsdir}/myecho.py Finished SLURPY run of sample: {run_name}. {timestamp_report}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd) + times_commands, False)
     ## Append the timestamp command to file
