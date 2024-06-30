@@ -28,7 +28,7 @@ squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 """
 ## List slurpy command for VERO analysis
 """
-./SLURPY/wgs.py -r /panfs/biopan04/epier/Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 
+./SLURPY/wgs.py -r ../Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 
 
 """
 
@@ -39,7 +39,7 @@ from defaults import *
 ## Load in ftns from other libraries
 from pysamtools import checksam, writetofile, txttobam, outnames
 ## Bring in ftns from atac-seq analysis 
-from atac import fastpeel, prepbwamem, splitcommand
+from peaks import fastpeel, prepbwamem, splitcommand
 
 ## Set description   
 basic_descr = "Processing pipeline for paired-end sequencing data."
