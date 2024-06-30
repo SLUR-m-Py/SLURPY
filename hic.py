@@ -631,16 +631,19 @@ if __name__ == "__main__":
     ## 
     ##      10) Hi-C file creation
     ## Call the juicer pre command for hic file creation if jarpath was passed 
-    if jargiven:
-        sub_sbatchs = sub_sbatchs + submitdependency(command_files,'juicerpre','sort',stamp,partition,group='Experiment' if postmerging else 'Sample',debug=debug)
+    jar_batch = submitdependency(command_files,'juicerpre','sort',stamp,partition,group='Experiment' if postmerging else 'Sample',debug=debug) if jargiven else []
+    ## Add to sub sbatchs 
+    sub_sbatchs = sub_sbatchs + jar_batch
+    ## Setnext step 
+    next_step = 'juicerpre' if jargiven else 'sort'
     ## 
     ##      11) SUBMITTING COUNT COMMANDS 
     ## Submit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','juicerpre' if jargiven else 'sort',stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','sort',stamp,partition,group='Experiment',debug=debug) 
     ##
     ##      12) SUBMITTING TIME COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','juicerpre' if jargiven else 'sort',stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',next_step,stamp,partition,group='Experiment',debug=debug) 
     ## 
     ##      13) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 

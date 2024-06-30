@@ -66,22 +66,28 @@ def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, z=4, options=fastp_opts,
     split2   = f'{splitsdir}/{basename(r2)}'                 ##      Create the second split name 
     report   = reportname(getsamplename(r1),script)          ##      Format the report name
     failed   = f'{splitsdir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
-    ## Format the initial run of fastp to filter reads and trim addaptors
-    wash = fastcut(r1,r2,temp1,temp2,report,0) + f' --unpaired1 {single1} --unpaired2 {single2} --failed_out {failed} --thread {w} ' + ' '.join(options[:2]) + '\n'
-    ## Format the call to fastp the first time 
-    fastp_header0, fastp_json0, fastp_html0 = fastcut(temp1,temp2,split1,split2,report,1)
-    ## Call fastp again to split the files
-    cut = fastp_header0 + f' -s {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
-    ## Forma the second call to fastp header, json, and html 
-    fastp_header1, fastp_json1, fastp_html1 = fastcut(r1,r2,split1,split2,report,1)
-    ## Call fastp again to split the files
-    slice = fastp_header1 + f' -s {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
+    ## Format commands if filtering, then splitting is being performed
+    ## Call the first run of fastp, json, and json are also returend
+    fastp_header0, fastp_json0, fastp_html0 = fastcut(r1,r2,temp1,temp2,report,0)
+    ## Set initial filerting
+    initial_filtering = fastp_header0 + f' --unpaired1 {single1} --unpaired2 {single2} --failed_out {failed} --thread {w} ' + ' '.join(options[:2]) + '\n'
+    ## Call the second run of fastp to split reads into splits, return aslo json, and html 
+    fastp_header1, fastp_json1, fastp_html1 = fastcut(temp1,temp2,split1,split2,report,1)
+    ## Call fastp the second time to split reads
+    split_filtered = fastp_header1 + f' -s {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
+
+    ## Format command if just splitting is begin performed
+    fastp_header, fastp_json, fastp_html = fastcut(r1,r2,split1,split2,report,0)
+    ## Call fastp the second time to split reads
+    just_split = fastp_header + f' -s {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
+
     ## Call the fast dry command and format the remove command 
     dry, throwout = fastdry(r1,r2,report), f'rm {temp1} {temp2}\n'
     ## Format the mv commands for the html and json
     mvh, mvj = f'mv {fastp_json0} {diagdir}/\n', f'mv {fastp_html0} {diagdir}/\n'
-    ## Format and return the command based on the experiment type (ie if it is hi-c or not)
-    return [slice,dry,mvh,mvj] if inhic(exptype) else [wash,cut,throwout,dry,mvh,mvj], report 
+
+    ## Return the comands depenent aupon if we are spliting or filtering, and the reprot 
+    return [just_split,dry,mvh,mvj] if inhic(exptype) else [initial_filtering,split_filtered,throwout,dry,mvh,mvj], report
 
 ## Define ftn for formaiting fastq files for bwa mem in paried end mode 
 def prepbwamem(r1:str, r2:str, refix:str, t:int) -> tuple:
@@ -590,10 +596,12 @@ if __name__ == "__main__":
     sub_macs2 = [] if skippeaks else submitdependency(command_files,'macs2','filter',stamp,partition,group='Experiment',debug=debug)
     ## Append macs2 calls
     sub_sbatchs = sub_sbatchs + sub_macs2
+    ## Set next step
+    next_step = ['count'] if skippeaks else ['macs2','count']
     ##
     ##      10) SUBMITTING TIME COMMANDS 
     ## Submit time stamp, map the above steps/commands the time stamp needs to wait on 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',['count'] if skippeaks else ['macs2','count'],stamp,partition,group='Experiment',debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',next_step,stamp,partition,group='Experiment',debug=debug)
     ## 
     ##      11) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
