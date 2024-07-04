@@ -29,26 +29,42 @@ from os.path import getsize
 import numpy as np 
 ## -------------------------------------------------------------------- ##
 
+## Define ftns
+def checkforerror(inpath):
+    with open(inpath,'r') as inhandle:
+        for l in inhandle:
+            if ('ERROR' in l) or ('Error' in l) or ('error' in l):
+                k = True
+            else:
+                k = False
+    ## Return the check 
+    return k
+
 ## -------------------------------------------------------------------- ##
 ##      ANALYSIS of ERROR LOGS
 ## Bring in the error logs 
 all_error_logs = sortglob(f'./{debugdir}/*.err')
-## Filter the error logs for non bwa and fastp logs
-error_logs =  np.array([k for k in all_error_logs if ('bwa' not in k) and ('fastp' not in k)])
+## Filter the error logs for those with text only within them
+error_logs = np.array([k for k in all_error_logs if getsize(k)])
 ## Gather the sizes 
-error_sizes = np.array([getsize(k) for k in error_logs])
+error_counts = np.array([checkforerror(k) for k in error_logs])
 ## -------------------------------------------------------------------- ##
 
 ## -------------------------------------------------------------------- ##
 ##      CHECK ERROR STATUS
 ## Check if we have non-zeros
-if np.sum(error_sizes):
+if np.sum(error_counts):
     ## Gather the logs with erros 
-    has_errors = error_logs[(error_sizes > 0)]
+    has_errors = error_logs[error_counts]
+    ## calc total erros
+    total_erros = len(has_errors)
+
+    ## Set if log vs logs based on error count
+    lvls = 'logs' if total_erros > 1 else 'log'
 
     ## Print the number of errors
-    print(f'WARNING: Errors were detected in {len(has_errors)} log(s)!')
-    print("WARNING: Check the following log(s):\n")
+    print(f'WARNING: Errors were detected in {total_erros} {lvls}!')
+    print(f'WARNING: Check the following {lvls}:\n')
     ## Print the logs with erros
     [print("\t%s"%f) for f in has_errors]
 

@@ -427,7 +427,7 @@ def genomesize(inputsize, referencepath:str, mtDNA:str, sep='\t', header=None) -
     if inputsize: ## If the input size is not none 
         genome_size = inputsize
     else: ## Load in the size dataframe 
-        size_df = pd.read_csv(referencepath+'.fai',sep=sep,header=header)
+        size_df = pd.read_csv(referencepath,sep=sep,header=header)
         ## Calculate genome size
         genome_size = size_df[~(size_df[0].isin(makelist(mtDNA)))][1].sum()
     ## Return the size
@@ -570,7 +570,7 @@ B_help = "Number of parallel bwa alignments to run (default: %s). Controls the n
 P_help = "The type of partition jobs formatted by slurpy run on (default: %s)."%part
 Q_help = "Mapping quality threshold to filter alignments (default: %s)."%map_q_thres
 c_help = "Path to control or input bam files used in ChIP-seq experiments."
-G_help = "Path to list of chromosomes (by name) to include in final Hi-C analysis. Must be a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
+G_help = "Path to list of chromosomes (by name) to include in final analysis. Must be a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
 g_help = "Size of the genome being analyzed, used as parameter for macs2. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
 C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Passing zero (0) will skip this check (default: %s bp)."%circle_dist 
 E_help = "Linear genomic distance to parse left and right oriented, intra-chromosomal Hi-C pairs for missing restriciton site(s). Passing zero (0) will skip this check (default: %s bp)."%error_dist
