@@ -235,6 +235,20 @@ def isbwaix(inref:str, indexends = ['amb', 'ann', 'bwt', 'pac', 'sa']) -> int:
     ## Check if each of these files exist: amb, ann, bwt, pac and sa
     return sum([pathexists(inref+'.'+fe) for fe in indexends]) == len(indexends)
 
+## Ftn for readin an ann file from bwa index
+def readann(inpath:str) -> list:
+    """Parses an input reference .ann file from bwa index to generate chromosome dataframe of contig names and lengths."""
+    ## open and read in the lines
+    with open(inpath,'r') as inhandle:
+        ## Take up to the third column of each line
+        newlines = [l.split(' ')[:3] for l in inhandle]
+        inhandle.close()
+    ## Gather chromosomes
+    contigs = [l[1] for l in newlines[1::2]]
+    lengths = [int(l[1]) for l in newlines[2::2]]
+    ## Format and return a dataframe
+    return pd.DataFrame(list(zip(contigs,lengths)))
+    
 ## Ftn for formating an sbatch text
 def sbatch(nameojob:str, cpus:int, cwd:str, errordir=None, partition=None, nodes=1, tasks=1, runtime='200:00:00') -> list:
     """Generates the sbatch settings for a script with a give input jobname, cpu count, working directory, and others."""

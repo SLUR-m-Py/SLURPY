@@ -29,16 +29,22 @@ from os.path import getsize
 import numpy as np 
 ## -------------------------------------------------------------------- ##
 
-## Define ftns
-def checkforerror(inpath):
+## -------------------------------------------------------------------- ##
+##      Define Functions 
+## Write function for checking for the word error in txt
+def checkforerror(inpath:str) -> bool:
+    """Checks for the words ERROR, Error, or error within text from a given input path. Returns boolean upon first occurance."""
+    k = False
     with open(inpath,'r') as inhandle:
         for l in inhandle:
             if ('ERROR' in l) or ('Error' in l) or ('error' in l):
                 k = True
+                break 
             else:
-                k = False
+                pass 
     ## Return the check 
     return k
+## -------------------------------------------------------------------- ##
 
 ## -------------------------------------------------------------------- ##
 ##      ANALYSIS of ERROR LOGS
