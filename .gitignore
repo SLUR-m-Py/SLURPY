@@ -31,4 +31,7 @@ FIGURES/*.pdf
 ## Ignore vstudio code 
 .vscode/*.json
 
+## Ignore .hic files
+**.hic
+
 ## End of file 
