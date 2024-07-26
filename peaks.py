@@ -213,7 +213,7 @@ if __name__ == "__main__":
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
-    reference_path = t2t_refpath if reference_path in ['T2T','t2t','T2t','t2T'] else reference_path
+    reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
     ## Gather a list of chromosomes 
-    chrlist = gathering(reference_path,pathtochrom,excludes)
+    chrlist,genome_size = gathering(reference_path,pathtochrom,excludes)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -528,7 +528,8 @@ if __name__ == "__main__":
         print("INFO: Skipping peak calling.")
     else: 
         ## Gather the genome size 
-        gsize = genomesize(g_size,reference_path,mito)
+        #gsize = genomesize(g_size,reference_path,mito)
+        gsize = g_size if g_size else genome_size
         ## Format the macs2 call report name
         macs2_report, macs2_filename = reportname(run_name,'macs2'), f'{comsdir}/macs2.{run_name}.sh'
         ## Format the command to macs2

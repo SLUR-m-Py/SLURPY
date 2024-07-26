@@ -434,18 +434,20 @@ def filterbam(inbam:str, M:str, threads:int, chrlist:list, script='filter') -> t
     ## Format and return commands
     return outbam, [bam_filter_command, echo_command], report
 
-## Ftn for setting genomesize
-def genomesize(inputsize, referencepath:str, mtDNA:str, sep='\t', header=None) -> int:
-    """Calculate the genome size given an input size or path to reference genome .fai file."""
-    ## set the genome size, load in the ref fai file and gahter the chromsome lengths 
-    if inputsize: ## If the input size is not none 
-        genome_size = inputsize
-    else: ## Load in the size dataframe 
-        size_df = pd.read_csv(referencepath,sep=sep,header=header)
-        ## Calculate genome size
-        genome_size = size_df[~(size_df[0].isin(makelist(mtDNA)))][1].sum()
-    ## Return the size
-    return genome_size
+### Ftn for setting genomesize
+#def genomesize(inputsize, referencepath:str, mtDNA:str, sep='\t', header=None) -> int:
+#    """Calculate the genome size given an input size or path to reference genome .fai file."""
+#    ## set the genome size, load in the ref fai file and gahter the chromsome lengths 
+#    if inputsize: ## If the input size is not none 
+#        genome_size = inputsize
+#    else: ## Load in the size dataframe 
+#        size_df = pd.read_csv(referencepath,sep=sep,header=header)
+#        ## Gather the reference 
+#        size_cols = size_df.columns().tolist()
+#        ## Calculate genome size
+#        genome_size = size_df[~(size_df[size_cols[0]].isin(makelist(mtDNA)))][size_cols[1]].sum()
+#    ## Return the size
+#    return genome_size
 
 ## Ftn for formating command control dataframe and restarting
 def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:str, bwaid:int, cols=['Jobfile','Dependency','Sample','Experiment','Operation','AfterID','Report']) -> tuple:

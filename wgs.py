@@ -213,7 +213,7 @@ if __name__ == "__main__":
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
-    reference_path = t2t_refpath if reference_path in ['T2T','t2t','T2t','t2T'] else reference_path
+    reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
