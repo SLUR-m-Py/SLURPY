@@ -151,8 +151,3 @@ To run slurpy to analyze a ChIP-seq experiment run:
 
 ## Dependencies
 Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in samtools is also required with the minimum version of 1.15.1. 
-
-### Additional linux core commands:
-* cat 
-* rm
-* echo

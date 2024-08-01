@@ -1,4 +1,11 @@
-
+#!/usr/bin/env python
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
+## Chrommapy.py: Library of fucntions for formating chromosomes, lit of chromosomes, and there lengths
 ## Load in functions and variables from defaults
 from defaults import aligndir, fileexists, readtable, readann
 
@@ -51,4 +58,4 @@ def gathering(path_to_ref,path_to_chrom,list_exclude) -> tuple:
     gsize = chrbed[(chrbed[0].isin(chrlist))][1].sum()
 
     ## Return the chromosome list and genomesize
-    return chrlist, gsize 
+    return chrlist, gsize, path_to_chrom 

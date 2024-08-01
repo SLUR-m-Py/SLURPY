@@ -297,7 +297,7 @@ if __name__ == "__main__":
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
     ## Gather a list of chromosomes 
-    chrlist,genome_size = gathering(reference_path,pathtochrom,excludes)
+    chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -564,7 +564,7 @@ if __name__ == "__main__":
         remove_sh     = f'{comsdir}/cleanup.sh'        ##   Set the bash file name 
         remove_report = reportname(run_name,'clean')   ##   Set the report 
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd) + [f'rm -rf {bamtmpdir} {splitsdir}\n', f'gzip ./{aligndir}/*.txt\n'], debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd) + [f'{scriptsdir}/remove.py {bamtmpdir} {splitsdir}\n', f'{scriptsdir}/gzipy.py ./{aligndir}/*.txt\n'], debug)
         ## Append the clean up command to file
         command_files.append((remove_sh,'afterok:',run_name,experi_mode,'clean','',remove_report))
     else: ## Otherwise do nothing
