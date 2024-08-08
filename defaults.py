@@ -549,15 +549,20 @@ hicsep       = ' '           ##     Text deliminator
 line_count   = 10**7         ##     Number of lines 
 fends        = '.fastq.gz'   ##     End of fastq fiels 
 mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
-xmemory      = 49152
+xmemory      = 49152         ##     Sets the memory used by juicer pre command 
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
+                2000000,
                 1000000,
+                 750000,
                  500000,
                  250000,
+                 200000,
                  100000,
+                  75000,
                   50000,
                   25000,
-                  10000]
+                  10000,
+                  5000]
 
 ## Set file ends used in this script and other filtering stages 
 hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
@@ -597,7 +602,7 @@ q_help = "The file extension of input fastq files (default: %s)"%fends
 t_help = "The number of threads used in calls to functions and calculations with pandas and dask dataframe(s) (default: %s)."%daskthreads
 s_help = "The number of threads used in calls to samtools (default: %s)."%samthreads
 J_help = "Path to juicer jar file for juicer pre command. Required for .hic file creation."
-S_help = "Chromosome resolution (i.e. bin sizes) for .hic files. Default: %s"%', '.join(map(str,binsizes))
+S_help = "Space seperated list of chromosome resolutions (i.e. bin sizes) for .hic files. Default: %s"%' '.join(map(str,binsizes))
 x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command (Default: %s)."%xmemory
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
