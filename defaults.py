@@ -32,6 +32,8 @@ from os import makedirs, remove
 from pysamtools import ifprint, splitbam, makelist, dictzip, samblaster, getprimary
 ## Load in pandas
 import pandas as pd 
+## Load in date and time
+from datetime import datetime
 ## Load in rm tree
 from shutil import rmtree
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -528,6 +530,21 @@ def submitbwa(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, times
                 ifprint(intext,debugmode)
     ## Return command df and subsbatchs 
     return command_df, subsbatchs 
+
+## Ftn for writing command output logs
+def writeparams(script:str,runname:str,sstamp,inputs):
+    ## Format the start time stamp 
+    dt1 = datetime.fromtimestamp(sstamp)
+    ## Set the output path
+    outpath = f'{debugdir}/run.parameters.{script}.{runname}.{sstamp}.txt'
+    ## Open and writeout 
+    with open(outpath,'w') as fout:
+        fout.write(f'{script} run on {dt1}\n')
+        fout.write('\n'.join([str(i[0]) + "=" + str(i[1]) for i in (vars(inputs)).items()]))
+    ## Close output path
+    fout.close()
+    pass 
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -639,5 +656,6 @@ formatingfastq  = 'INFO: Formatting jobs.'
 fastqserror = "ERROR: Unable to detect a fastqs directory holding fastq files!"
 missingfqs  = "ERROR: No fastq.gz files were detected!"
 not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
+noref_path  = "ERROR: We could not find the provided input path -- %s -- of the reference file!"
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

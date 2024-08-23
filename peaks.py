@@ -166,9 +166,6 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-
-
-
     ##      PASS ARGUMENTS & SET VARIABLES 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set required variables
@@ -208,6 +205,9 @@ if __name__ == "__main__":
 
 
     
+
+    
+    
     
     
     ##      ROTH SETTINGS
@@ -219,8 +219,9 @@ if __name__ == "__main__":
 
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Check that the fastq path exists
+    ## Check that the fastq and reference paths exists
     assert pathexists(fastqdir), fastqserror
+    assert pathexists(reference_path), noref_path%reference_path 
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
     assert checksam(), not_sam_err 
     ## If needed reset that the fastp threads and splits such that they are a multiple of each
@@ -284,6 +285,13 @@ if __name__ == "__main__":
     bwaix_coms, bwaix_report = bwaindex(reference_path)
     ## Write the bwa index command and sbatch to file 
     writetofile(bwa_ix_jobname, sbatch(bwa_ix_jobname,1,headpath(reference_path)) + bwaix_coms, debug)
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+
+    ##      WRITING OUT PARAMS
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    writeparams('hic.py',run_name,stamp,inputs)
+
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
