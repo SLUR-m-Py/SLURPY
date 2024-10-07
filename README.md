@@ -12,16 +12,10 @@ conda create -n bioenv
 
 ## Activate the environment
 conda activate bioenv 
-```
 
-After making a new conda environment install needed packages.
-
-```
-## Use conda to install needed mods
-conda install numpy pandas matplotlib seaborn dask 
-
-## Bring in mods from bioconda
-conda install -c bioconda biopython pysam samtools bwa
+## After making a new conda environment install needed packages.
+## Use conda to install needed mods, and bring in mods from bioconda
+conda install numpy pandas matplotlib seaborn dask biopython pysam samtools bwa -c bioconda 
 ```
 
 For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use macs3 (the latest version of macs2).
