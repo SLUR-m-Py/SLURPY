@@ -29,7 +29,7 @@ from os.path import basename, exists as pathexists, getsize as getfilesize
 ## Bring in make dirs
 from os import makedirs, remove 
 ## Bring in our costum ftns from pysamtools 
-from pysamtools import ifprint, splitbam, makelist, dictzip, samblaster, getprimary
+from pysamtools import ifprint, splitbam, makelist, dictzip, getprimary
 ## Load in pandas
 import pandas as pd 
 ## Load in date and time
@@ -63,7 +63,7 @@ fastqdir   = 'fastqs'        ##      The directory holding fastq files
 aligndir   = 'aligned'       ##      Holds final aligments 
 splitsdir  = 'splits'        ##      Temporary dir for split fastq 
 comsdir    = 'commands'      ##      Folder for holding all command files 
-macs2dir   = 'macs2'         ##      Has results from macs2 
+macs3dir   = 'macs3'         ##      Has results from macs3 
 hicdir     = 'hic'           ##      Has hic resluts 
 diagdir    = 'diagnostics'   ##      Plots for diagnostics are held here 
 bamtmpdir  = 'bamtmp'        ##      A temporary dir for hodling bam files from split fastq aligments 
@@ -280,7 +280,7 @@ def sbatch(nameojob:str, cpus:int, cwd:str, errordir=None, partition=None, nodes
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:
     """Formats the start of a call to fastp given inputs (i,I), outputs (o,O), and the report name (r)."""
     ## Format the fall and return
-    return f'fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
+    return f'{scriptsdir}/fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
 
 ## Ftn for returning a boolean if in hic
 def inhic(inexp:str) -> bool:
@@ -313,6 +313,12 @@ def loadscript(inpath:str) -> list:
     infile.close()
     ## Return all but the first line 
     return scriptlines[1:] + ['\n']
+
+## Ftn for callign samblaster
+def samblaster(inbam,outbam,report,threads) -> str:
+    """Formats a call to samtools and samblaster given inputs."""
+    ## Return the samtools and samblaster command 
+    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | {scriptsdir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
 
 ## Ftn for formating samblaster command
 def markduplicates(inbam:str, threads:int, script='mark') -> tuple:
@@ -586,7 +592,7 @@ hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors'
 
 ## Set protocols and pipe lien steps
 basic_pipeline  = ['fastp', 'bwa', 'split', 'concat', 'count', 'clean']
-pipeline_steps  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'macs2', 'count', 'clean']
+pipeline_steps  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'macs3', 'count', 'clean']
 hic_pipeline    = ['fastp', 'bwa', 'pre', 'post', 'filter', 'concat', 'split', 'sort', 'juicerpre', 'count', 'clean']
 
 ## Define options for fastpeel ftn
@@ -609,7 +615,7 @@ P_help = "The type of partition jobs formatted by slurpy run on (default: %s)."%
 Q_help = "Mapping quality threshold to filter alignments (default: %s)."%map_q_thres
 c_help = "Path to control or input bam files used in ChIP-seq experiments."
 G_help = "Path to list of chromosomes (by name) to include in final analysis. Must be a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
-g_help = "Size of the genome being analyzed, used as parameter for macs2. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
+g_help = "Size of the genome being analyzed, used as parameter for macs3. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
 C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Passing zero (0) will skip this check (default: %s bp)."%circle_dist 
 E_help = "Linear genomic distance to parse left and right oriented, intra-chromosomal Hi-C pairs for missing restriciton site(s). Passing zero (0) will skip this check (default: %s bp)."%error_dist
 L_help = "The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Options include Arima, MboI, DpnII, Sau3AI, and HindIII (default: %s). Passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped."%lib_default
@@ -630,11 +636,11 @@ restart_help  = "Flag to force the pipeline to reset and run from start."
 runlocal_help = "Disables sbatch submission and submits the script via bash to a local os."
 debug_help    = "A flag to run in verbose mode, printing sbatch commands. Default behavior is false."
 mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
-broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs2. See macs2 callpeak --help for more details."
+broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details."
 clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
 skipq_help    = "Flag to skip initial quality control and filtering with fastp (i.e. only split reads)."
 merge_help    = "Passing this flag will merge across all pairs of fastqs for final output."
-peaks_help    = "A boolean flag to skip peak calling via macs2."
+peaks_help    = "A boolean flag to skip peak calling via macs3."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##

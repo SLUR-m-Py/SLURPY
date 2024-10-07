@@ -34,7 +34,7 @@ import pandas as pd
 
 ## ----------------------------------- GENERAL FUNCTIONS --------------------------------- ##
 ## Ftn for making a dicitonary for zipped lists
-def dictzip(a,b):
+def dictzip(a,b) -> dict:
     """Makes a dictionary from zipped items in lists a and b."""
     ## Return the zipped dicts
     return dict(zip(a,b))
@@ -103,7 +103,7 @@ def ifprint(message,bool):
     return bool 
 
 ## Ftn for comparing the lengths of two arrays
-def lencomp(a,b):
+def lencomp(a,b) -> bool: 
     """Checks if the lengths of lists a and b are equal."""
     ## Check that a and b have the same length
     return (len(a) - len(b)) == 0
@@ -115,7 +115,7 @@ def splitbam(inbam):
     return inbam.split('.bam')[0]
 
 ## Set ftn for making bam file names
-def outnames(inbam,mito):
+def outnames(inbam,mito) -> tuple: 
     """Format and return the name of output txt, bam, and bedpe files."""
     ## Format the name of output files 
     name_out_txt     = splitbam(inbam) + '.mapped.txt'    ## The output bam name
@@ -127,38 +127,13 @@ def outnames(inbam,mito):
     return name_out_txt, name_placed_txt, name_mito_txt, name_unmap_txt, name_out_bedpe
 
 ## Ftn for returning split sub names
-def splitsubnames(mito):
+def splitsubnames(mito) -> list: 
     """Returns a formated list of middle names of split bam file."""
     ## return the list of sub names
     return ['mapped','placed','unmapped',mito,'collisions'] 
 
 ## Ftn for commenting out command lines for debuging
-#def debuglines(intxt):
-#    ## Initilizse new lines and counter
-#    newlines, c = [], 0
-#    ## Iterate thru the input txt lines 
-#    for i,l in enumerate(intxt):
-#        ## If this is the first line, ie the shebang
-#        if (i ==0) and (l[0] == '#'):
-#            newlines.append('#!/usr/bin/env bash\n')
-#        ## If the first chracter is already a comment like #SBATCH
-#        elif (l[0] == '#') and (l[1] != '!'):
-#            newlines.append(l)
-#        ## If it is an echo statment, leave it as is 
-#        elif l.split(' ')[0]=='echo':
-#            newlines.append('sleep 10\n'+l)
-#            c = c + 1
-#        else: ## Othewise, comment out the lines 
-#            newlines.append('##'+l)
-#    ## If no sleep command was added
-#    if c == 0:
-#        ## Adppend the sleep command and the last line un-commented
-#        newlines.append('sleep 10\n' + l.split('#')[-1])
-#    ## Return the commented out lines 
-#    return newlines 
-
-## Ftn for commenting out command lines for debuging
-def debuglines(intxt):
+def debuglines(intxt) -> list: 
     ## Initilizse new lines and counter
     newlines = []
     ## Iterate thru the input txt lines 
@@ -188,13 +163,13 @@ def writetofile(inpath,intxt,debug,mode='w'):
     return inpath
 
 ## Write a ftn for formating lines for printing
-def display(inlines,sep='\n'):
+def display(inlines,sep='\n') -> str:
     """Formats input lines for printing to screen."""
     ## Joins the lines in limes
     return sep.join(inlines)
 
 ## Ftn for writing a set of read names
-def writeset(outfile,inset,mode='w'):
+def writeset(outfile,inset,mode='w'): 
     """Writes a file of a give set of read names."""
     ## Open a file for writing, we add a return carage to the display of the set to make sure the counts match
     return writetofile(outfile, display(list(inset))+'\n', False, mode=mode)
@@ -241,7 +216,7 @@ def hasix(inbam):
     return isfile(inbam+'.bai') or isfile(inbam+'.csi')
 
 ## Write ftns used in analysis ftn for loading a bam
-def loadbam(inpath,bool=True):
+def loadbam(inpath,bool=True): 
     """Reads in bam file in binary format."""
     ## Return the alignment file
     return pysam.AlignmentFile(inpath,'rb',check_sq=bool)
@@ -311,7 +286,7 @@ def txttobam(intxt):
     return intxt.split('.txt')[0] + '.bam'
 
 ## Ftn for counting 
-def bamcount(inbam,countfile,threads):
+def bamcount(inbam,countfile,threads) -> str:
     """Formats the view commadn to count primary aligments within a bam file."""
     ## Format the view command to count 
     return f'samtools view -c -F 256 -f 64 -@ {threads} {inbam} > {countfile}\n'
@@ -324,20 +299,14 @@ def bambyreadname(inbam,readfile,threads,opts='-b'):
     ## Formats the call to samtools for makign a bam file from list of read names and index said file
     return f'samtools view {opts} -N {readfile} -@ {threads} {inbam} | samtools sort -@ {threads} -o {outbam} -O BAM --write-index\n', outbam 
 
-## Ftn for callign samblaster
-def samblaster(inbam,outbam,report,threads):
-    """Formats a call to samtools and samblaster given inputs."""
-    ## Return the samtools and samblaster command 
-    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
-
 ## Ftn for formating flag
-def dupflag(bool):
+def dupflag(bool) -> str: 
     """returns a lower or upper case F for samtools view commands given boolean."""
     ## Format the samtool flag
     return '-f' if bool else '-F'
 
 ## Ftn for formating sort command removing duplicates
-def dupsort(bamin,bamout,threads,keep=False,dupint=1024):
+def dupsort(bamin,bamout,threads,keep=False,dupint=1024) -> str:
     """Formats samtoosl view and sort command to keep or remove duplicates given flags in opts."""
     ## Return the formated txt 
     return f'samtools view -@ {threads} {dupflag(keep)} {dupint} -Shb {bamin} | samtools sort -@ {threads} - -o {bamout} -O BAM --write-index\n'
@@ -349,7 +318,7 @@ def formatchroms(chromosomes: list) -> str:
     return ' '.join(chromosomes) if chromosomes else ''
 
 ## Ftn for filtering primary
-def getprimary(inbam,mapq,threads,outbam,chroms=None):
+def getprimary(inbam,mapq,threads,outbam,chroms=None) -> str:
     """Formats a samtools view command with the -e flag to return primary aligments from an input bam file (inbam) at a given mapping quality (mapq) and returns aligments within an output bam file (outbam)."""
     ## Return the samtools commands 
     return f'samtools view -@ {threads} -f 3 -F 1024 -b {inbam} -e "!([XA] || [SA]) && mapq>={mapq}" {formatchroms(chroms)} | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'

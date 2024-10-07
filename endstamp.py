@@ -44,8 +44,5 @@ runtime = dt2 - dt1
 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
 
 ## Write the timestamp to file 
-writetofile(filename,
-    ['START TIME: %s %s\n'%(dt1,sstamp),
-     'END TIME: %s %s\n'%(dt2,estamp),
-     'RUN TIME: %s %s\n'%(runtime,' ')],False)
+writetofile(filename,['START TIME: %s %s\n'%(dt1,sstamp),'END TIME: %s %s\n'%(dt2,estamp),'RUN TIME: %s %s\n'%(runtime,' ')],False)
 ## End of file 

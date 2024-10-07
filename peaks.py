@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all 
 """
-squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'mpi' | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 
 
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--bwa-threads",   dest="b", type=int,  required=False, help = b_help, metavar = bwathreads,           default = bwathreads )
     parser.add_argument("-t", "--sam-threads",   dest="t", type=int,  required=False, help = s_help, metavar = samthreads,           default = samthreads )
 
-    ## Set values for macs2
+    ## Set values for macs3
     parser.add_argument("-n", "--run-name",      dest="n", type=str,  required=False, help = n_help, metavar = 'name',               default = None       )
     parser.add_argument("-g", "--genome-size",   dest="g", type=str,  required=False, help = g_help, metavar = g_metavar,            default = None       )
     parser.add_argument("-c", "--controls",      dest="c", nargs='+', required=False, help = c_help, metavar = c_metavar,            default = None       )
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     bwa_threads     = inputs.b       ##     Number of threads in bwa alignments
     sam_threads     = inputs.t       ##     Number of samtools threads 
                                      ##
-    ## Set values for macs2          ## 
+    ## Set values for macs3          ## 
     run_name        = inputs.n       ##     The name of the samples 
     g_size          = inputs.g       ##     Size of the genome   
     chip_control    = inputs.c       ##     Set the input control for chip experimetn
@@ -197,10 +197,10 @@ if __name__ == "__main__":
     debug           = inputs.debug   ##     Run in debug mode 
     skipduplicates  = inputs.mark    ##     Boolean to mark duplicates
     sfastp          = inputs.sfast   ##     Flag to skip fastp filtering 
-    ifbroad         = inputs.broad   ##     Boolean to activate broader peak calling in macs2 
+    ifbroad         = inputs.broad   ##     Boolean to activate broader peak calling in macs3 
     ifclean         = inputs.clean   ##     Flag to run clean up script 
     postmerging     = inputs.merge   ##     Forces premerge of outputs 
-    skippeaks       = inputs.peaks   ##     Skips peak calling with macs2 
+    skippeaks       = inputs.peaks   ##     Skips peak calling with macs3 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -231,8 +231,8 @@ if __name__ == "__main__":
     ## Initilizse list for sbatch
     sub_sbatchs = []
 
-    ## apppend the macs2 dir to the group
-    grouped_dirs.append(macs2dir)
+    ## apppend the macs3 dir to the group
+    grouped_dirs.append(macs3dir)
 
     ## Check our control files if they were passed 
     if chip_control:
@@ -260,8 +260,8 @@ if __name__ == "__main__":
     ## Set the unique time stamp
     stamp = time.time()
 
-    ## Load in macs2 ftns
-    from pymacs2 import peakattack
+    ## Load in macs3 ftns
+    from pymacs3 import peakattack
     ## Set the broad pkeack
     broadpeak = '--broad' if ifbroad else ''
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -538,14 +538,14 @@ if __name__ == "__main__":
         ## Gather the genome size 
         #gsize = genomesize(g_size,reference_path,mito)
         gsize = g_size if g_size else genome_size
-        ## Format the macs2 call report name
-        macs2_report, macs2_filename = reportname(run_name,'macs2'), f'{comsdir}/macs2.{run_name}.sh'
-        ## Format the command to macs2
-        macs2_commands = peakattack(filteredbams,run_name,macs2_report,gsize=gsize,broad=broadpeak,incontrols=chip_control) + [f'{scriptsdir}/pymacs2.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{scriptsdir}/myecho.py Finished calculating FrIP from macs2 {macs2_report}\n']
-        ## Write the macs2 commands to file
-        writetofile(macs2_filename, sbatch(macs2_filename,1,the_cwd) + macs2_commands, debug)
-        ## Append the macs2 command 
-        command_files.append((macs2_filename,'afterok:',run_name,experi_mode,'macs2','',macs2_report))
+        ## Format the macs3 call report name
+        macs3_report, macs3_filename = reportname(run_name,'macs3'), f'{comsdir}/macs3.{run_name}.sh'
+        ## Format the command to macs3
+        macs3_commands = peakattack(filteredbams,run_name,macs3_report,gsize=gsize,broad=broadpeak,incontrols=chip_control) + [f'{scriptsdir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{scriptsdir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+        ## Write the macs3 commands to file
+        writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd) + macs3_commands, debug)
+        ## Append the macs3 command 
+        command_files.append((macs3_filename,'afterok:',run_name,experi_mode,'macs3','',macs3_report))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -617,12 +617,12 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count','filter',stamp,partition,group='Experiment',debug=debug)
     ##
     ##      9) SUBMITTING COUNTING COMMANDS      
-    ## Submit the call to macs2 if calling peaks 
-    sub_macs2 = [] if skippeaks else submitdependency(command_files,'macs2','filter',stamp,partition,group='Experiment',debug=debug)
-    ## Append macs2 calls
-    sub_sbatchs = sub_sbatchs + sub_macs2
+    ## Submit the call to macs3 if calling peaks 
+    sub_macs3 = [] if skippeaks else submitdependency(command_files,'macs3','filter',stamp,partition,group='Experiment',debug=debug)
+    ## Append macs3 calls
+    sub_sbatchs = sub_sbatchs + sub_macs3
     ## Set next step
-    next_step = ['count'] if skippeaks else ['macs2','count']
+    next_step = ['count'] if skippeaks else ['macs3','count']
     ##
     ##      10) SUBMITTING TIME COMMANDS 
     ## Submit time stamp, map the above steps/commands the time stamp needs to wait on 

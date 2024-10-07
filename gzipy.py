@@ -14,10 +14,16 @@ from os.path import exists
 from os import remove
 
 ## Set the error message
+no_file_error =  "ERROR: The input file path -- %s -- could not be found!"
 rm_file_error = "ERROR: Unable to gzip and remove input file: %s"
 
 ## Define ftn for gzippin 
-def gzipfile(infilepath,outfilepath):
+def gzipfile(infilepath:str,outfilepath:str):
+    """
+    Given an input file string (INFILEPATH), this functions "gzips" the contents into a clone file (OUTFILEPATH) with the extension .gz."
+    """
+    ## Check our work 
+    assert exists(infilepath), no_file_error%infilepath
     ## Open the input file as binar 
     with open(infilepath, 'rb') as f_in:
         ## open the output gzip file 

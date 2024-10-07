@@ -24,7 +24,7 @@ croth@lanl.gov
 import fanc, numpy as np, pandas as pd
 
 ## Load in narrow peak file 
-from pymacs2 import loadnarrowpeak
+from pymacs3 import loadnarrowpeak
 
 ## Bring in matplot lib 
 from matplotlib import pyplot as plt

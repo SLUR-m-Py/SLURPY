@@ -1,8 +1,9 @@
 # SLURPY
 [SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.biorxiv.org/content/10.1101/2024.05.18.594827v2)
+
 ## Setting up the computing environment
-Slurpy was developed using anaconda (python v 3.10.13). 
-We recommend using conda to manage the python environment needed by slurpy.
+SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.10.13) for a linex OS on a high-performance computing cluster. 
+We recommend using conda to manage the python environment needed by SLUR(M)-py. 
 Below are commands needed to set up the "bioenv" for running slurpy. 
 
 ```
@@ -20,14 +21,16 @@ After making a new conda environment install needed packages.
 conda install numpy pandas matplotlib seaborn dask 
 
 ## Bring in mods from bioconda
-conda install -c bioconda biopython pysam samtools bwa samblaster macs2
+conda install -c bioconda biopython pysam samtools bwa
 ```
 
-If the above installation command hangs, we recommend removing macs2 from the list of libraries and trying again. Then installing macs2 via pip.
+For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use macs3 (the latest version of macs2).
+We recommend installing macs3 via pip (shown below). 
 
 ```
-pip install macs2
+pip install macs3
 ```
+
 A full list of the python libraries and their versions used to develop slurpy are listed within [python.dependencies.txt](https://github.com/SLUR-m-Py/SLURPY/blob/main/python.dependencies.txt).
 
 ## Installation
@@ -42,6 +45,69 @@ Once slurpy is downloaded (and expanded), change the current directory to the lo
 ```
 cd ./SLURPY
 chmod +x *.py 
+
+```
+
+## Dependencies 
+
+Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in samtools is also required with the minimum version of 1.15.1. 
+
+
+#### fastp 
+For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
+The fastp executable needs to be within the "SLURPY" directory. After downloading move this executable to the SLURPY directory:
+
+```
+## Change directorys
+cd ./SLURPY
+
+## download the latest build, you may need to install wget
+conda install wget
+wget http://opengene.org/fastp/fastp
+
+## Modify the executable with chmod
+chmod a+x ./fastp
+
+## Check that fastp works
+./fastp -h
+
+```
+
+#### samblaster 
+For marking (and removing) duplicates we utilize the fast software [samblaster](https://github.com/GregoryFaust/samblaster).
+A gzipped, taf file with the latest verion of samblaster can be found here.
+We use version v.0.1.26. 
+Download the tar file, move it into the SLURPY directory, unzip it and then use 'make' as shwon below:
+
+```
+## Move or copy the tar file into the slurpy directory, unzip it
+mv samblaster-v.0.1.26.tar.gz ./SLURPY/
+gunzip ./SLUPY/samblaster-v.0.1.26.tar.gz
+
+## Expand the tar file 
+tar -xvf samblaster-v.0.1.26.tar
+
+## Change directories and run the make command
+cd samblaster-v.0.1.26
+make 
+
+## Navigate a directy up, and link samblaster
+cd ../
+ln -s ./samblaster-v.0.1.26/samblaster
+
+## Check that samblaster works
+./samblaster -h 
+
+```
+
+#### juicer tools (optional)
+Here we currently use Juicer tools (specifically the juicer pre command) to process and format penultimate forms of Hi-C data (.txt) into a final .hic file. 
+The juicer jar files are hosted on the downloads page of the [juicer github](https://github.com/aidenlab/juicer/wiki/Download). 
+Downloading a jar file into the SLURPY directory makes calls to format .hic data easier (shown later). 
+
+```
+## Move the jar file into the slurpy directory
+mv juicer_tools_1.22.01.jar ./SLURPY
 ```
 
 ### Checking the python environment 
@@ -60,7 +126,7 @@ INFO: Modules loaded correctly.
 INFO: We are ready to run slurpy!
 ```
 
-## Running slurpy
+## Running slurpy, examples
 ### Setting up a project directory
 Currently the ATAC- and ChIP-seq protocols are fully functional. To run slurpy, change the current directory to the target project (in the example below, the project is named 2501_001) and soft link to the path of the slurpy executables.
 
@@ -148,6 +214,3 @@ To run slurpy to analyze a ChIP-seq experiment run:
 ```
 ./SLURPY/peaks.py -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam
 ```
-
-## Dependencies
-Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in samtools is also required with the minimum version of 1.15.1. 
