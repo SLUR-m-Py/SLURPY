@@ -94,7 +94,7 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     report = reportname(outhic+'.bam','hic.pre',i='6C')
     ## Set the java command for the passed juicer jar file 
     prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
-              f'{subscriptdir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
+              f'{pipelinedir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
 
     ## Return the pre and report
     return prestr, report
@@ -426,7 +426,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{hicscriptdir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
+            hiccat_coms = [f'{pipelinedir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
 
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.valid.{chrom}.sh'
@@ -443,7 +443,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{hicscriptdir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
+            hiccat_coms = [f'{pipelinedir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
             
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.{fname}.sh'
@@ -502,7 +502,7 @@ if __name__ == "__main__":
             for i,coi in enumerate(chrlist):
                 ## Set the report, commands, and gxg script file name 
                 gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                gxg_commands = [f'{hicscriptdir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                gxg_commands = [f'{pipelinedir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
                 gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
                 ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
                 writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo)+gxg_commands, debug)
@@ -517,7 +517,7 @@ if __name__ == "__main__":
             ## make a report
             short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
             ## Format the command
-            short_commands = [f'{hicscriptdir}/toshort.py -i {newcatfile}\n'] 
+            short_commands = [f'{pipelinedir}/toshort.py -i {newcatfile}\n'] 
             ## Set command file 
             short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
             ## Wriet the short command to file
@@ -551,7 +551,7 @@ if __name__ == "__main__":
     timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{subscriptdir}/endstamp.py {timestamp_file} {stamp}\n']
+    times_commands = [f'{pipelinedir}/endstamp.py {timestamp_file} {stamp}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo) + times_commands, False)
     ## Append the timestamp command to file
@@ -567,7 +567,7 @@ if __name__ == "__main__":
         remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'        ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{subscriptdir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{subscriptdir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{subscriptdir}/gzipy.py ./{aligndir}/*.short\n'], debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{pipelinedir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{pipelinedir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{pipelinedir}/gzipy.py ./{aligndir}/*.short\n'], debug)
         ## Append the clean up command to file
         command_files.append((remove_sh,run_name,experi_mode,'clean',remove_repo,0,''))
     else: ## Otherwise do nothing

@@ -62,8 +62,8 @@ diagdir       = 'diagnostics'          ##       Plots for diagnostics are held h
 bamtmpdir     = 'bamtmp'               ##       A temporary dir for hodling bam files from split fastq aligments 
 bedtmpdir     = 'bedpe'                ##       Tempeory bedpe dir
 scriptsdir    = './SLURPY'             ##       The script directory holding this file
-subscriptdir  = './SLURPY/scripts'     ##       New scripts direcotry 
-hicscriptdir  = './SLURPY/scripts/hic' ##       hic scripts direcotry 
+pipelinedir   = './SLURPY/pipeline'     ##       New scripts direcotry 
+
 ## Group the dirs 
 #grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bamtmpdir]
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -291,7 +291,7 @@ def fastdry(r1:str, r2:str, report:str) -> str:
     ## reformat the report 
     #report = report if report.split('.')[-1] == 'txt' else report + '.txt'
     ## Format and return the echo command
-    return f'{subscriptdir}/myecho.py Finished filtering and splitting on: {r1} {r2} {report}\n'
+    return f'{pipelinedir}/myecho.py Finished filtering and splitting on: {r1} {r2} {report}\n'
 
 ## Ftn for formating report
 def reportname(inbam:str, script:str, i=0) -> str:
@@ -329,7 +329,7 @@ def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
     ## Format the output bams and the report name 
     outbam, report = f'{aligndir}/{basenobam(inbam)}.marked.bam', reportname(inbam,script,i=pix) 
     ## Format the sam-blaster and echo command
-    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'{subscriptdir}/myecho.py Finished marking duplicates in {outbam} {report}\n'
+    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'{pipelinedir}/myecho.py Finished marking duplicates in {outbam} {report}\n'
     ## Return the samblaster command and ecco chommand 
     return outbam, [blast_command, echo_command], report
 
@@ -337,7 +337,7 @@ def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
 def splitecho(inbam:str, report: str, script:str) -> str:
     """Formats an echo statment for the split command."""
     ## Return the formated command 
-    return f'{subscriptdir}/myecho.py Finished splitting {inbam} using {script} {report}\n'
+    return f'{pipelinedir}/myecho.py Finished splitting {inbam} using {script} {report}\n'
 
 ## Write ftn for making a directory
 def dirmaker(dirpath:str):
@@ -361,7 +361,7 @@ def headpath(inpath:str) -> str:
 def bwaindex(refpath:str,script='index') -> tuple:
     """Formats command to index a reference via bwa."""
     ## return the index commands
-    return [f'bwa index {refpath}\n', f'{subscriptdir}/myecho.py Finished indexing reference on path {refpath} {reportname(refpath,script)}\n'], reportname(refpath,script)
+    return [f'bwa index {refpath}\n', f'{pipelinedir}/myecho.py Finished indexing reference on path {refpath} {reportname(refpath,script)}\n'], reportname(refpath,script)
 
 ## Ftn for formating job ids
 def formatids(cdf:pd.DataFrame, op:list, joinon=',') -> str:
@@ -421,7 +421,7 @@ def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tup
     ## Format report name and the merge-bam command
     report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
     ## Format the echo command and count command 
-    echo_merge_command = f'{subscriptdir}/myecho.py Finished merging bam files into {outbam} {report}\n'
+    echo_merge_command = f'{pipelinedir}/myecho.py Finished merging bam files into {outbam} {report}\n'
     ## Return the formated merge command
     return [merge_bam_command,echo_merge_command], report
 
@@ -436,7 +436,7 @@ def filterbam(inbam:str, M:str, threads:int, chrlist:list, pix:int) -> tuple:
     ## Format the report name and out bam name 
     report, outbam = reportname(inbam,'filter',i=pix), splitbam(inbam) + f'.primary.q{M}.bam'
     ## Format filter command and the echo command 
-    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'{subscriptdir}/myecho.py Finished filtering {inbam} at mapping quality of {M} {report}\n'
+    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'{pipelinedir}/myecho.py Finished filtering {inbam} at mapping quality of {M} {report}\n'
     ## Format and return commands
     return outbam, [bam_filter_command, echo_command], report
 

@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all 
 """
-squeue -u croth | grep 'mpi' | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 
 
 
