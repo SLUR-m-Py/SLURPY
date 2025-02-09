@@ -6,9 +6,9 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, hicscriptdir
+from .defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, hicscriptdir
 ## Load in write to file from pysam tools 
-from defaults.tools.pysamtools import writetofile
+from .defaults.tools.pysamtools import writetofile
 ## load in sleep
 from time import sleep
 
@@ -43,7 +43,7 @@ def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:st
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from defaults.parameters import s_help,r_help,b_help,P_help,L_help, debug_help, refmetavar,bwathreads,part, lib_default
+from .defaults.parameters import s_help,r_help,b_help,P_help,L_help, debug_help, refmetavar,bwathreads,part, lib_default
 
 c_help = 'The current working directory'
 l_help = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
