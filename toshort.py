@@ -4,13 +4,12 @@
 #SBATCH --error=%x.%j.err               ## Name stderr
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
-#SBATCH --cpus-per-task=8               ## Number of tasks to be launched
+#SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=tb                  ## Set the partition
 ## bring in mods
 import dask.dataframe as dd 
 ## Brin in defaults
-from .gxgcounts import file_end, hicsep
-
+from gxgcounts import file_end, hicsep
 """
 Juicer short format:
 
@@ -23,10 +22,8 @@ frag: the fragment, if using dummy var must be different for the pair
 """
 ## Set use columns
 use_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2']
-
 ## Generate a pre cursor to a .hic flie
 desc = "Converts an input bedpe file (representing Hi-C contacts from SLURPY) to a short formated text file for juicer pre command."
-
 ## Set help message
 I_help = "Input path to a bedpe file from SLURPY Hi-C pipeline."
 
