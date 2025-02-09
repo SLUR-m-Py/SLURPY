@@ -9,9 +9,9 @@ import sys
 ## Append pipelien
 sys.path.append('/SLURPY/pipeline')
 ## Bring in ftns and variables from defaluts 
-from .defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, pipelinedir
+from defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, pipelinedir
 ## Load in write to file from pysam tools 
-from .defaults.tools.pysamtools import writetofile
+from defaults.tools.pysamtools import writetofile
 ## load in sleep
 from time import sleep
 
