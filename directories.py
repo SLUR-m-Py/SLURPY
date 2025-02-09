@@ -3,7 +3,7 @@
 ## Set directory names 
 debugdir    = 'debug'                ##       Hold logs for debug 
 fastqdir    = 'fastqs'               ##       The directory holding fastq files 
-aligndir    = 'final'                ##       Holds final aligments 
+aligndir    = 'aligned'              ##       Holds final aligments 
 splitsdir   = 'splits'               ##       Temporary dir for split fastq 
 comsdir     = 'scripts'              ##       Folder for holding all command files 
 macs3dir    = 'macs3'                ##       Has results from macs3 
