@@ -4,7 +4,10 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
-
+## Load in sys
+import sys 
+## Append pipelien
+sys.path.append('/SLURPY/pipeline')
 ## Bring in ftns and variables from defaluts 
 from .defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, pipelinedir
 ## Load in write to file from pysam tools 
