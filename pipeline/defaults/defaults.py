@@ -29,7 +29,7 @@ from os.path import basename, exists as pathexists, getsize as getfilesize
 ## Bring in make dirs
 from os import makedirs, remove 
 ## Bring in our costum ftns from pysamtools 
-from tools.pysamtools import ifprint, splitbam, splitsam, makelist, dictzip, getprimary
+from .tools.pysamtools import ifprint, splitbam, splitsam, makelist, dictzip, getprimary
 ## Load in pandas
 import pandas as pd 
 ## Load in date and time
