@@ -34,7 +34,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in vars from parameter space
-from defaults.parameters import *
+from defaults.parameters import pipe_help, h_pipe
 ## Load in ftns and variables from defaults
 from defaults.defaults import *
 ## Load in ftns from other libraries
@@ -100,6 +100,15 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     return prestr, report
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      PARAMETER LOADING    
+## Load in default help messages
+from defaults.parameters import r_help,F_help,B_help,P_help,M_help,X_help,Q_help,q_help,a_help,N_help,f_help,b_help,t_help,n_help,E_help,L_help,Z_help,G_help,J_help,x_help,S_help,A_help
+## Load in defulat help mesages for boolean vars
+from defaults.parameters import short_help,restart_help,debug_help,mark_help,clean_help,merge_help
+## Load in defalut paramters
+from defaults.parameters import refmetavar,splitsize,parallelbwa,part,mito,map_q_thres,fastpthreads,bwathreads,daskthreads,xmemory,fends,nice,error_dist,lib_default,chunksize,binsizes
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -196,6 +205,8 @@ if __name__ == "__main__":
     
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Bring in ref paths from parameters
+    from defaults.parameters import t2t_refpath,t2t_gffpath
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
     reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
     feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
@@ -203,6 +214,8 @@ if __name__ == "__main__":
 
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in error messages
+    from defaults.parameters import fastqserror,noref_path, not_sam_err
     ## Check that the fastq and reference path exists
     assert pathexists(fastqdir), fastqserror
     assert pathexists(reference_path), noref_path%reference_path 
@@ -260,6 +273,8 @@ if __name__ == "__main__":
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in messages from param space
+    from defaults.parameters import directormaking
     ## Let the user know we are making directories 
     print(directormaking)
     ## Get the current working dir
@@ -318,6 +333,8 @@ if __name__ == "__main__":
 
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Bring in fastq messageing
+    from defaults.parameters import formatingfastq, missingfqs
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
@@ -329,6 +346,8 @@ if __name__ == "__main__":
 
     ##      SAMPLE NAME MAKING AND HANDELING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in pipeline from params
+    from defaults.parameters import hic_pipeline
     ## iterate thru the pairs 
     for fastqix, (r1,r2) in enumerate(in_fastqs):
         ## Gather the sample name, exp mode, and fastp command file 
@@ -368,7 +387,7 @@ if __name__ == "__main__":
         command_files.append((bwa_master_file,sample_name,experi_mode,hic_pipeline[pix],bwa_master_repo,0,''))
 
 
-        ##      FILTER BEDPE / Hi-C CONTACTS
+        ##      MASTER FILTER BEDPE / Hi-C CONTACTS JOB SUBMISSION 
         ## --------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 2. Set the setp in pipeline and the new bedbe file name
         pix = 2

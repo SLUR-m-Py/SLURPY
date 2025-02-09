@@ -235,7 +235,7 @@ if __name__ == "__main__":
     sub_sbatchs = []
 
     ## Load in macs3 ftns
-    from scripts.pymacs3 import peakattack
+    from pipeline.pymacs3 import peakattack
     ## Set the broad pkeack
     broadpeak = '--broad' if ifbroad else ''
 
