@@ -37,7 +37,7 @@ from datetime import datetime
 ## Load in rm tree
 from shutil import rmtree
 ## Bring in vars from prep run
-from defaults.parameters import fakejobid, runlocal
+from parameters import fakejobid, runlocal
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## Set Juicer columns and data types 

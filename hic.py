@@ -33,7 +33,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## Load in vars from prep run
+## Load in vars from parameter space
 from defaults.parameters import *
 ## Load in ftns and variables from defaults
 from defaults.defaults import *
