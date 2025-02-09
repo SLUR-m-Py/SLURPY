@@ -6,7 +6,7 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists
-from directories import splitsdir, comsdir, debugdir, bamtmpdir, slurpydir
+from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
         ## Set the out file
-        outfile   = f'{bamtmpdir}/{i}.{sample_name}.bedpe'
+        outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
         ## format the command 
         bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
         bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'

@@ -572,7 +572,7 @@ if __name__ == "__main__":
     ## 6B. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
-        remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'        ##   Set the bash file name 
+        remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'           ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n'], debug)

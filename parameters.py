@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+## Set the run local var
+runlocal = False 
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -26,12 +28,8 @@ squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 
 """
-
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      VARIABLE SETTING
-## Set the run local var
-runlocal = False 
 ## Fake job id used for debugging only 
 fakejobid = 666666         
 ## Path to human t2t ref on canopus and my local machine 
@@ -43,14 +41,16 @@ else:
     t2t_gffpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gff'
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## SET thread cound 
+threads = 12
 ##      Hi-C and ATAC-seq DEFAULT VARIABLE SETTING  
-splitsize    = 10000000      ##     The number of splits made by fastp 
-bwathreads   = 4             ##     Number of threads used by calls to bwa 
-samthreads   = 4             ##     Number of threads used by calls to samtools 
-daskthreads  = 4             ##     Number of threads used by calls to dask df 
+splitsize    = 10**7         ##     The number of splits made by fastp 
+bwathreads   = threads       ##     Number of threads used by calls to bwa 
+samthreads   = threads       ##     Number of threads used by calls to samtools 
+daskthreads  = threads       ##     Number of threads used by calls to dask df 
 parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
-fastpthreads = 12            ##     Number of threads in fastp 
-part         = 'tb'          ##     Defalut partition 
+fastpthreads = threads       ##     Number of threads in fastp 
+part         = 'tb,mpi'      ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
 error_dist   = 10000         ##     The idstance to check for erros 
 circle_dist  = 10000         ##     The distance to check for self circles 
@@ -76,7 +76,6 @@ binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C anal
                   10000,
                   5000]
 
-
 ## Define options for fastpeel ftn
 fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
 
@@ -90,7 +89,6 @@ c_metavar  = './path/to/control.bam'
 g_metavar  = 'bp'
 refmetavar = './path/to/reference.fasta'  
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
 
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -128,6 +126,7 @@ pipe_help = "Step within the pipeline to re-run from. Options include: %s"
 R_help   = pipe_help
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      BOOLEAN HELP MESSAGES
 ## Set help messages for bollean vars
@@ -142,6 +141,7 @@ merge_help    = "Passing this flag will merge across all pairs of fastqs for fin
 peaks_help    = "A boolean flag to skip peak calling via macs3."
 short_help    = "A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      INFO MESSAGES
@@ -213,119 +213,4 @@ def resetinputs(indict,expmod):
             indict[row.Parameter] = newinput
     ## Return modifyied dictionary 
     return indict
-
-## If the script is envoked by name 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
-    ## Make the parse
-    parser = argparse.ArgumentParser(description = slurpy_descr)
-
-    ## Add the required argument
-    parser.add_argument("-e","--experiment",      dest="e", type=str,  required=True, help = e_help,  metavar = 'hic, atac, chip, or wgs'                      )
-    parser.add_argument("-r", "--reference-path", dest="r", type=str,  required=True, help = r_help,  metavar = refmetavar                                     ) 
-    
-    ## Add the default arguments
-    parser.add_argument("-F", "--fastp-splits",   dest="F", type=int,  required=False, help = F_help, metavar = splitsize,              default = splitsize    )
-    parser.add_argument("-B", "--parallel-bwa",   dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
-    parser.add_argument("-P", "--partition",      dest="P", type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
-    parser.add_argument("-M", "--mtDNA",          dest="M", type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
-    parser.add_argument("-X", "--exclude",        dest="X", nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = 'none'       )
-    parser.add_argument("-Q", "--map-threshold",  dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
-    parser.add_argument("-R", "--rerun-from",     dest="R", type=str,  required=False, help = R_help, metavar = 'step',                 default = 'none'       )
-    parser.add_argument("-q", "--fastq",          dest="q", type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
-    parser.add_argument("-a", "--afterok",        dest="a", type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
-
-    ## Set number of threads 
-    parser.add_argument("-f", "--fastp-threads",  dest="f", type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
-    parser.add_argument("-b", "--bwa-threads",    dest="b", type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
-    parser.add_argument("-t", "--dask-threads",   dest="t", type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
-
-    ## Set values for Hi-C analysis 
-    parser.add_argument("-n", "--run-name",       dest="n", type=str,  required=False, help = n_help, metavar = 'name',                 default = 'none'       )
-    parser.add_argument("-E", "--error-distance", dest="E", type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
-    parser.add_argument("-L", "--library",        dest="L", type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
-    #parser.add_argument("-D", "--mindist",        dest="D", type=int,  required=False, help = D_help, metavar = 'n',                    default = same_fragm   )
-    parser.add_argument("-Z", "--chunksize",      dest="Z", type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
-    parser.add_argument("-G", "--genomelist",     dest="G", type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = 'none'       )
-    parser.add_argument("-J", "--jar-path",       dest="J", type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = 'none'       )
-    parser.add_argument("-x", "--Xmemory",        dest="x", type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
-    parser.add_argument("-S", "--bin-sizes",      dest="S",  nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
-    parser.add_argument("-gxg","--features",      dest="gxg", type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
-
-    ## Set value for ATAC-seq / peaks analysis
-    parser.add_argument("-g", "--genome-size",   dest="g", type=str,   required=False, help = g_help, metavar = g_metavar,              default = None         )
-    parser.add_argument("-c", "--controls",      dest="c", nargs='+',  required=False, help = c_help, metavar = c_metavar,              default = None         )
-
-    ## Set boolean flags for Hi-C 
-    parser.add_argument("--toshort",              dest="toshort",     help = short_help,    action = 'store_true')
-
-    ## Boolean flags for all analsyis 
-    parser.add_argument("--restart",              dest="restart",     help = restart_help,  action = 'store_true')
-    parser.add_argument("--debug",                dest="debug",       help = debug_help,    action = 'store_true')
-    parser.add_argument("--skipdedup",            dest="skipdedup",   help = mark_help,     action = 'store_true')
-    parser.add_argument("--clean",                dest="clean",       help = clean_help,    action = 'store_true')
-    parser.add_argument("--merge",                dest="merge",       help = merge_help,    action = 'store_true')
-
-    ## Set additional boolean flags for atac
-    parser.add_argument("--skipfastp",            dest="skipfastp",   help = skipq_help,    action = 'store_true')
-    parser.add_argument("--broad",                dest="broad",       help = broad_help,    action = 'store_true')
-    parser.add_argument("--skipmacs3",            dest="skipmacs3",   help = peaks_help,    action = 'store_true')
-
-    ## Format inputs
-    inputs = parser.parse_args()
-    ## Call a dctionary 
-    vars_dict = vars(inputs)
-
-    from os.path import exists
-
-    ## Set experiment mode
-    expmod = inputs.e.lower()
-
-    ## Check the expmod
-    assert expmod in explist, "ERROR: The type of experiment ( %s ) was not recognized. Options include %s"%(expmod,', '.join(explist))
-
-    ## Reset reference spaces for Cullen 
-    reference_path = inputs.r
-    feature_space  = inputs.gxg
-
-    ## reassign expmod
-    vars_dict['e'] = './SLURPY/hic.py' if (expmod == 'hic') else './SLURPY/peaks.py'
-
-    ## Format dictionar of inputs
-    all_help = [e_help,r_help,
-                F_help,B_help,P_help,M_help,X_help,Q_help,R_help,q_help,a_help,
-                f_help,b_help,t_help,
-                n_help,E_help,L_help,Z_help,G_help,J_help,x_help,S_help,A_help,
-                g_help,c_help,
-                restart_help,debug_help,mark_help,clean_help,merge_help,short_help,
-                skipq_help,broad_help,peaks_help]
-
-    ##      ROTH SETTINGS
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
-    vars_dict['r']   = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
-    vars_dict['gxg'] = t2t_gffpath if (feature_space.lower()  == 't2t')  else feature_space
-
-    ## Check refernece
-    assert exists(vars_dict['r']), "ERROR: The given path to the reference file ( %s ) does not exist!"%vars_dict['r']
-    if vars_dict['gxg'] != 'none':
-        assert exists(vars_dict['gxg']), "ERROR: The given path to the features file ( %s ) does not exist!"%vars_dict['gxg']
-
-    ## Format a help dict
-    help_dict = dict(zip(vars_dict.keys(),[a.split('Default')[0] for a in all_help]))
-
-    ## Set parameters we don't need for hi-C analysis or atac-seq by name
-    hi_c_novar = ['skipmacs3','broad','skipfastp','c','g']
-    peak_novar = ['short','A','S','x','J','Z','D','L','E']
-
-    ## Set hic and atacseq variable list 
-    hi_c_vars = [i for i in vars_dict.keys() if i not in hi_c_novar]
-    peak_vars = [i for i in vars_dict.keys() if i not in peak_novar]
-
-    ## SEt the parameters df
-    idf = formatdf(hi_c_vars,vars_dict,help_dict) if (expmod == 'hic') else formatdf(peak_vars,vars_dict,help_dict)
-
-    ## Save out the df
-    idf.to_csv(params_file,sep='\t',index=False)
 ## End of file

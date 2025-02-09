@@ -43,15 +43,6 @@ from parameters import fakejobid, runlocal
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-## Set Juicer columns and data types 
-juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
-juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,     str,    str,    int,    str,    str,    str  ]
-
-## Format datatypes into dict
-juicer_type_dict = dictzip(juicer_cols,juicer_types)
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      SLURPY FUNCTIONS 
 ## Ftn for returning a sorted glob
@@ -231,7 +222,7 @@ def readann(inpath:str) -> list:
     return pd.DataFrame(list(zip(contigs,lengths)))
     
 ## Ftn for formating an sbatch text
-def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00') -> list:
+def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7) -> list:
     """Generates the sbatch settings for a script with a give input jobname, cpu count, working directory, and others."""
     ## Gather the extension
     jobext = nameojob.split('.')[-1] if nameojob else 'sh'
@@ -244,7 +235,8 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
                  '#SBATCH --nodes=%s\n'%str(nodes),                                           ##      Number of nodes
                  '#SBATCH --ntasks-per-node=%s\n'%str(tasks),                                 ##      Tasks per node
                  '#SBATCH --cpus-per-task=%s\n'%str(cpus),                                    ##      Number of cpus
-                 '#SBATCH --time=%s\n'%runtime]                                               ##      The allowed run time of the job 
+                 '#SBATCH --time=%s\n'%runtime,                                               ##      Set nice parameter
+                 '#SBATCH --nice=%s'%str(nice)]                                               ##      The allowed run time of the job 
     ## Add the current working dir                                                            ##  
     settings = settings + ['#SBATCH --chdir=%s\n'%cwd] if cwd else settings                   ##      Set the current workign dir
     ## Add the partition                                                                      ##      
@@ -518,6 +510,15 @@ def writeparams(script:str,runname:str,sstamp,inputs):
     ## Close output path
     fout.close()
     pass 
+
+## JUICER PARAMETERS
+## Set Juicer columns and data types 
+juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
+juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,     str,    str,    int,    str,    str,    str  ]
+
+## Format datatypes into dict
+juicer_type_dict = dictzip(juicer_cols,juicer_types)
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

@@ -24,12 +24,12 @@ croth@lanl.gov
 ## Load in shutil
 import shutil       
 ## Load in direcotries
-from defaults import diagdir, aligndir, bamtmpdir, debugdir, splitsdir, comsdir, hicdir, bedtmpdir
+from directories import *
 ## -------------------------------------------------------------------- ##
 
 ## -------------------------------------------------------------------- ##
 ##      RESETING 
 ## Remove each dir
-[shutil.rmtree(d,ignore_errors=True) for d in [diagdir, aligndir, bamtmpdir, debugdir, splitsdir, comsdir, hicdir]]
+[shutil.rmtree(d,ignore_errors=True) for d in [debugdir, aligndir, splitsdir, comsdir, macs3dir, hicdir, diagdir, bamtmpdir, bedtmpdir]]
 ## -------------------------------------------------------------------- ##
 ## End fo file 
