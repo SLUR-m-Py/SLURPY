@@ -42,6 +42,7 @@ from shutil import rmtree
 from parameters import fakejobid, runlocal
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+
 ## Set Juicer columns and data types 
 juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
 juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,     str,    str,    int,    str,    str,    str  ]
