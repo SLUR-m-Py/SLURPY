@@ -43,7 +43,7 @@ from tools.pysamtools import checksam, writetofile, txttobam, outnames, bambyrea
 ## Bring in bwa mem ftn for atac-seq
 from tools.pybwatools import bwamem_paired
 ## Load in panda cat
-from scripts.pandacat import pandacat
+from pipeline.pandacat import pandacat
 
 
 ## Set the ftn descritption

@@ -42,7 +42,7 @@ from tools.pysamtools import checksam, writetofile
 ## Bring in bwa mem ftn for hic
 from tools.pybwatools import bwamem_hic
 ## Load in panda cat ftn
-from scripts.pandacat import pandacat
+from pipeline.pandacat import pandacat
 ## Load in bwa master
 from diethic.bwasubs import bwamaster
 ## Load in filter master
