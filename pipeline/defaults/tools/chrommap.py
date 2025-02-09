@@ -10,7 +10,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 from ..defaults import aligndir, fileexists, readtable, readann
 
 ## Bring in chrom df from py-sam tools
-from pysamtools import chromdf
+from .pysamtools import chromdf
 
 ## Set defalut messaging
 chromgathering = 'INFO: Gathering chromosomes for processing...' 
