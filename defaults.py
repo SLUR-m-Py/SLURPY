@@ -236,7 +236,7 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
                  '#SBATCH --ntasks-per-node=%s\n'%str(tasks),                                 ##      Tasks per node
                  '#SBATCH --cpus-per-task=%s\n'%str(cpus),                                    ##      Number of cpus
                  '#SBATCH --time=%s\n'%runtime,                                               ##      Set nice parameter
-                 '#SBATCH --nice=%s'%str(nice)]                                               ##      The allowed run time of the job 
+                 '#SBATCH --nice=%s\n'%str(nice)]                                             ##      The allowed run time of the job 
     ## Add the current working dir                                                            ##  
     settings = settings + ['#SBATCH --chdir=%s\n'%cwd] if cwd else settings                   ##      Set the current workign dir
     ## Add the partition                                                                      ##      

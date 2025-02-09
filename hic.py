@@ -371,7 +371,7 @@ if __name__ == "__main__":
         ##  Gather the fastp command and report 
         fastp_coms, fastp_repo = hicpeel(r1,r2,fastp_threads,fastp_splits)
         ##  Write the command to file
-        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=nice) + fastp_coms, debug)
+        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1) + fastp_coms, debug)
         ##  Append command to file
         command_files.append((fastp_command_file,sample_name,experi_mode,hic_pipeline[pix],fastp_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -566,7 +566,7 @@ if __name__ == "__main__":
     ## Formath time stamp and echo commands 
     times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
-    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=nice) + times_commands, False)
+    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1) + times_commands, False)
     ## Append the timestamp command to file
     command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
