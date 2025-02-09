@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## ----------------------------------- FORMATING FUNCTIONS --------------------------------- ##
 ## Load in defaults 
-from defaults.defaults import scriptsdir
+from ..defaults import scriptsdir
 
 ## Ftn for echo bwa finish to a log
 def bwaecho(o,l=None) -> str:
