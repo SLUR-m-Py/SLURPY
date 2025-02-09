@@ -22,7 +22,7 @@ import dask.dataframe as dd
 ## Bring in params
 from .defaults.parameters import hicsep
 ## Bring in ftn from defaults
-from .defaults.defaults import bamtmpdir
+from .defaults.defaults import bedtmpdir
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     assert filebackend.split('.')[-1] == 'bedpe', "ERROR: The given extension ending -- %s -- is not a bedpe file!"%filebackend
 
     ## Set wild card ofr input paths to dask dataframes 
-    input_paths = f'{bamtmpdir}/*.{filebackend}' if not runlocal else f'*.{filebackend}'
+    input_paths = f'{bedtmpdir}/*.{filebackend}' if not runlocal else f'*.{filebackend}'
 
     ## Load in bedpe file, calc starting number of rows 
     bedpe = dd.read_csv(input_paths,sep=hicsep)

@@ -23,7 +23,7 @@ croth@lanl.gov
 ## Bring in file size
 from os.path import getsize, exists
 ## Load in reset ftn 
-from .defaults.defaults import reset, scriptsdir
+from .defaults.defaults import reset, pipelinedir
 ## Bring in hutil
 import shutil
 
@@ -34,7 +34,7 @@ def pandacat(infiles:list, outfile:str, report:str, rmheader=False, sortpaths=Fa
     skiphead = ' --skipheader ' if rmheader else ''
     sorting  = ' --sort ' if sortpaths else ''
     ## Return the formated commands
-    return [f'{scriptsdir}/pandacat.py -i {' '.join(infiles)} -o {outfile}{skiphead}{sorting}\n']#, f'{scriptsdir}/myecho.py Finished concatenating files into file: {outfile} {report}\n']
+    return [f'{pipelinedir}/pandacat.py -i {' '.join(infiles)} -o {outfile}{skiphead}{sorting}\n']#, f'{scriptsdir}/myecho.py Finished concatenating files into file: {outfile} {report}\n']
 
 ## Set the script sescription
 pandadesc = "Concatonates a series of input pandas dataframes as text files (ingnoring header on all but first)."

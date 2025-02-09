@@ -6,7 +6,7 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from .defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, hicscriptdir
+from .defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, pipelinedir
 ## Load in write to file from pysam tools 
 from .defaults.tools.pysamtools import writetofile
 ## load in sleep
@@ -35,7 +35,7 @@ def reportcheck(reportpaths) -> bool:
     
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:str,debug:bool,pix=pix,linecount=line_count):
-    command = f'{hicscriptdir}/bwasubs.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -l {linecount} ' +  ('--debug' if debug else '')
+    command = f'{pipelinedir}/bwasubs.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -l {linecount} ' +  ('--debug' if debug else '')
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         ## Set the out file
         outfile   = f'{bamtmpdir}/{i}.{sample_name}.bedpe'
         ## format the command 
-        bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {hicscriptdir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
+        bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {pipelinedir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
         bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
         bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
 

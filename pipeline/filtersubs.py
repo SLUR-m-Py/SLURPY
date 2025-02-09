@@ -6,7 +6,7 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from .defaults.defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bamtmpdir, hicscriptdir
+from .defaults.defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bedtmpdir, pipelinedir
 ## Load in params
 from .defaults.parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, daskthreads, part, P_help
 ## Load in write to file from pysam tools 
@@ -25,7 +25,7 @@ def formatinput(inlist):
 
 ## Ftn for formating commands to this script 
 def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,pix=2):
-    command = f'{hicscriptdir}/filtersubs.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else ' ') + (' --debug' if debug else ' ')
+    command = f'{pipelinedir}/filtersubs.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else ' ') + (' --debug' if debug else ' ')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     debug       = inputs.debug  ## Flag to debug 
 
     ## Bring in bedpe paths
-    bedpe_paths = sortglob(f'{bamtmpdir}/*.{sample_name}.bedpe')
+    bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
     ## Check work
     assert len(bedpe_paths), "ERROR: Unable to find bedpe files associated with sample: %s"%sample_name
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
         ## format the command 
-        filter_com   = f'{hicscriptdir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)}' + (' --dovetails' if dovetail else ' ')
+        filter_com   = f'{pipelinedir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)}' + (' --dovetails' if dovetail else ' ')
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
 

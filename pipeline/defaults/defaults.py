@@ -62,7 +62,7 @@ diagdir       = 'diagnostics'          ##       Plots for diagnostics are held h
 bamtmpdir     = 'bamtmp'               ##       A temporary dir for hodling bam files from split fastq aligments 
 bedtmpdir     = 'bedpe'                ##       Tempeory bedpe dir
 scriptsdir    = './SLURPY'             ##       The script directory holding this file
-pipelinedir   = './SLURPY/pipeline'     ##       New scripts direcotry 
+pipelinedir   = './SLURPY/pipeline'    ##       New scripts direcotry 
 
 ## Group the dirs 
 #grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bamtmpdir]
