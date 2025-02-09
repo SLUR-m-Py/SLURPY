@@ -20,9 +20,9 @@ desc = "Concats, sorts, and removes duplicates from input bedpe files representi
 ## Bring in pandas
 import dask.dataframe as dd
 ## Bring in params
-from ..defaults.parameters import hicsep
+from .defaults.parameters import hicsep
 ## Bring in ftn from defaults
-from ..defaults.defaults import bamtmpdir
+from .defaults.defaults import bamtmpdir
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 

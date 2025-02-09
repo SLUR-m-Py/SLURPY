@@ -6,9 +6,9 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from ..defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, hicscriptdir
+from defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, hicscriptdir
 ## Load in write to file from pysam tools 
-from ..tools.pysamtools import writetofile
+from defaults.tools.pysamtools import writetofile
 ## load in sleep
 from time import sleep
 

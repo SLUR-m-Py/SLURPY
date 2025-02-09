@@ -24,7 +24,7 @@ croth@lanl.gov
 import pandas as pd 
 
 ## Load in scripts dir 
-from ..defaults.defaults import scriptsdir, macs3dir 
+from defaults.defaults import scriptsdir, macs3dir 
 
 ## Ftn for formating length parameter
 def formatlen(minlen):
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     from defaults.defaults import sortglob, aligndir, macs3dir, diagdir
 
     ## Load bam ftn 
-    from tools.pysamtools import loadbam, isbam, hasix
+    from defaults.tools.pysamtools import loadbam, isbam, hasix
 
     ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser

@@ -8,7 +8,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Load in rm treat 
 from shutil import rmtree
 ## Laod in defaults 
-from defaults.defaults import splitsdir, hicdir, bamtmpdir
+from pipeline.defaults.defaults import splitsdir, hicdir, bamtmpdir
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable

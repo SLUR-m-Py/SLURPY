@@ -24,13 +24,11 @@ croth@lanl.gov
 ## Bring in pandas and np 
 import pandas as pd, numpy as np, re
 ## Load in params
-from ..defaults.parameters import hicsep, chunksize, Z_help, r_help, L_help
+from ..parameters import hicsep, chunksize, Z_help, r_help, L_help
 ## Bring in default ftns 
-from ..defaults.defaults import pathexists, reset, basenosam
+from ..defaults import pathexists, reset, basenosam
 ## Load in samnames 
-from ..tools.pysamtools import getmatchsum, listzip, dictzip, loadref, loadsam
-## Load in library restriction site 
-from ..diethic.filterbedpe import returnsite, endcheck
+from pysamtools import getmatchsum, listzip, dictzip, loadref, loadsam
 
 ## ------------------------ FUNCTION and VARIABLE FILTERING ------------------------------ ## 
 ## Make list of unique bits
@@ -282,6 +280,28 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     ## Save out the pairs and pass back to main
     appenddf(long,outdfpath) if long.shape[0] else None
     pass 
+
+## Ftn for defninging restriciton sites 
+def returnsite(enzyme) -> tuple: 
+    """Returns the restriction site sequences and dangaling sequences based on input Hi-C library enzyme."""
+    ## If we are working with the arima kit (which we are)
+    if (enzyme.lower() == 'arima'):
+        restsites, dangsites = ['GATC', 'GAATC', 'GAGTC', 'GATTC', 'GACTC'], ['GATC', 'AATC', 'AGTC','ATTC', 'ACTC']
+    ## The MobI , DpnII, or Sau3AI enzymes
+    elif enzyme.lower() in ['mboi', 'dpnii','sau3ai']:
+        restsites, dangsites = ['GATC'], ['GATC']
+    ## The HindIII enzyme
+    elif (enzyme.lower() == 'hindiii'):
+        restsites,dangsites = ['AAGCTT'],['AGCT']
+    else: ## otherwise return none
+        restsites, dangsites = False, False 
+    ## Return the sites
+    return restsites, dangsites
+
+## Check ends ftn 
+def endcheck(read:str,strand:int,dangends:list) -> int:
+    ## Checks the presesne of deanglign ends 
+    return sum([read.upper().endswith(d) for d in dangends] if strand else [read.upper().startswith(d) for d in dangends])
 
 ## Set help strings
 S_help = "Path to input .sam file from bwa. This can be a TSV file but must have a .sam extension."

@@ -23,7 +23,7 @@ croth@lanl.gov
 ## Bring in file size
 from os.path import getsize, exists
 ## Load in reset ftn 
-from ..defaults.defaults import reset, scriptsdir
+from defaults.defaults import reset, scriptsdir
 ## Bring in hutil
 import shutil
 
