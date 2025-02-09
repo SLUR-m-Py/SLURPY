@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 ## Import sys 
 import sys
+## append path
+sys.path.append('./SLURPY/')
 ## Bring in write to file 
 from .pipeline.defaults.tools.pysamtools import writetofile
 
