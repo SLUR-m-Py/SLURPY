@@ -8,13 +8,13 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, daskthreads, part, P_help
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, daskthreads, part, P_help, nice
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwasubs import reportcheck
+from bwamaster import reportcheck
 
 ## Set stage in piepline
 pix = 2
@@ -35,7 +35,6 @@ s_help     = 'Sample starting name to form wild card extraction of paths'
 I_help     = "List of chormosomes/contigs to only include in analysis"
 c_help     = 'The current working directory'
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
-
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
     parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=part,        default = part       ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
-
+    parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
 
     ## Add boolean 
     parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true')
@@ -78,6 +77,7 @@ if __name__ == "__main__":
     elibrary    = inputs.L
     partitions  = inputs.P
     threads     = inputs.T
+    nice        = inputs.N
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
 
         ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo) + [filter_com+'\n'], debug)
+        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice) + [filter_com+'\n'], debug)
 
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
