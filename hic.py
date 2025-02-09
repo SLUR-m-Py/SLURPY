@@ -178,6 +178,7 @@ if __name__ == "__main__":
     rerun           = inputs.R            ##     Setp to rerun pipeline from 
     fend            = inputs.q            ##     End of the input fastq files
     bwaix_jobid     = inputs.a            ##     The job id to have all submissions wait on   
+    nice            = inputs.N            ##     Sets the nice parameter 
 
     ## Set threads                           
     fastp_threads   = inputs.f            ##     Number of fastp threads
@@ -210,6 +211,7 @@ if __name__ == "__main__":
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
     reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
     feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      INITILIZATION 
@@ -247,7 +249,6 @@ if __name__ == "__main__":
     ## Check is a path the give feature space 
     if feature_space:
         assert fileexists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
-
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -287,7 +288,6 @@ if __name__ == "__main__":
     makedirectories(grouped_dirs)
     ## Gather and remove the old command files, error, and output logs if they are there 
     [remove(f) for f in sortglob(f'{comsdir}/*.sh') + sortglob(f'{debugdir}/*.err') + sortglob(f'{debugdir}/*.out')]
-
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -297,7 +297,6 @@ if __name__ == "__main__":
     from defaults import writeparams
     ## Write out params 
     writeparams(f'{experi_mode}.py',run_name,stamp,inputs)
-
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -372,10 +371,9 @@ if __name__ == "__main__":
         ##  Gather the fastp command and report 
         fastp_coms, fastp_repo = hicpeel(r1,r2,fastp_threads,fastp_splits)
         ##  Write the command to file
-        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo) + fastp_coms, debug)
+        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=nice) + fastp_coms, debug)
         ##  Append command to file
         command_files.append((fastp_command_file,sample_name,experi_mode,hic_pipeline[pix],fastp_repo,0,''))
-        ##  Format the split fastq files
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
@@ -388,13 +386,14 @@ if __name__ == "__main__":
         ## Gahter the bwa master command and report
         bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,enzymelib,bwa_threads,the_cwd,partition,debug)
         ## Write command to file
-        writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo) + bwa_master_commands, debug)
+        writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice) + bwa_master_commands, debug)
         ## Append to command fil
         command_files.append((bwa_master_file,sample_name,experi_mode,hic_pipeline[pix],bwa_master_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
         ##      MASTER FILTER BEDPE / Hi-C CONTACTS JOB SUBMISSION 
-        ## --------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------ ##
         ## 2. Set the setp in pipeline and the new bedbe file name
         pix = 2
         ## Call the master filter command
@@ -402,9 +401,10 @@ if __name__ == "__main__":
         ## Gather the filter master commadn and report
         filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug)
         ## Write command to file
-        writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo) + filter_master_commands, debug)
+        writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice) + filter_master_commands, debug)
         ## Append to command file
         command_files.append((filter_master_file,sample_name,experi_mode,hic_pipeline[pix],filter_master_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
   
     ##      FILE and TXT MERGING 
@@ -439,7 +439,7 @@ if __name__ == "__main__":
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.valid.{chrom}.sh'
             ## Write the concat command to file
-            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo) + hiccat_coms, debug)
+            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice) + hiccat_coms, debug)
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
 
@@ -456,9 +456,10 @@ if __name__ == "__main__":
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.{fname}.sh'
             ## Write the concat command to file
-            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo) + hiccat_coms, debug)
+            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice) + hiccat_coms, debug)
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
         ## Hi-C CONCATONATION
@@ -474,7 +475,7 @@ if __name__ == "__main__":
         ## make concat file name
         concat_file = f'{comsdir}/{pix}.concat.{sample_name}.duplicates.sh'
         ## Write the concat command to file
-        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo) + concat_coms, debug)
+        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo,nice=nice) + concat_coms, debug)
         ## Append the concat command
         command_files.append((concat_file,sample_name,experi_mode,hic_pipeline[pix],concat_repo,0,''))  
         
@@ -488,9 +489,10 @@ if __name__ == "__main__":
         ## make concat file name
         concat_file = f'{comsdir}/{pix}.concat.{sample_name}.valid.sh'
         ## Write the concat command to file
-        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo) + concat_coms, debug)
+        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo,nice=nice) + concat_coms, debug)
         ## Append the concat command
         command_files.append((concat_file,sample_name,experi_mode,hic_pipeline[pix],concat_repo,0,'')) 
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
         ## OPTIONAL ANALYSES
@@ -513,9 +515,10 @@ if __name__ == "__main__":
                 gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
                 gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
                 ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
-                writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo)+gxg_commands, debug)
+                writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice) + gxg_commands, debug)
                 ## Append to command list for calling/submission later 
                 command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
         ## BEDPE TO SHORT
@@ -529,9 +532,10 @@ if __name__ == "__main__":
             ## Set command file 
             short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
             ## Wriet the short command to file
-            writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo)+short_commands, debug)
+            writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice) + short_commands, debug)
             ## append the short command
             command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
         ##  HIC FILE CREATION / JUICER PRE 
@@ -545,9 +549,10 @@ if __name__ == "__main__":
             ## make concat file name
             jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
             ## Write the concat command to file
-            writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo) + jpre_coms, debug)
+            writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice) + jpre_coms, debug)
             ## Append the concat command
             command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      SUBMITTING TIME-STAMP   
@@ -561,7 +566,7 @@ if __name__ == "__main__":
     ## Formath time stamp and echo commands 
     times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
-    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo) + times_commands, False)
+    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=nice) + times_commands, False)
     ## Append the timestamp command to file
     command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -572,18 +577,16 @@ if __name__ == "__main__":
     ## 6B. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
-        remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'           ##   Set the bash file name 
+        remove_sh   = f'{comsdir}/{pix}B.cleanup.sh'             ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
+        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n']
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n'], debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice) + remove_comm, debug)
         ## Append the clean up command to file
         command_files.append((remove_sh,run_name,experi_mode,'clean',remove_repo,0,''))
     else: ## Otherwise do nothing
         pass
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
-
 
 
     ##      PIPELINE COMMAND SUBMISSION TO SLURM    

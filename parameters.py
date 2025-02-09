@@ -61,7 +61,7 @@ line_count   = 10**7         ##     Number of lines
 fends        = '.fastq.gz'   ##     End of fastq fiels 
 mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
 xmemory      = 49152         ##     Sets the memory used by juicer pre command 
-nice         = 10**7         ##     Set the nice parameter 
+nice         = 10**8         ##     Set the nice parameter 
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
                 2000000,
                 1000000,

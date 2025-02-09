@@ -511,6 +511,8 @@ def writeparams(script:str,runname:str,sstamp,inputs):
     fout.close()
     pass 
 
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## 
 ## JUICER PARAMETERS
 ## Set Juicer columns and data types 
 juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
@@ -518,7 +520,5 @@ juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,
 
 ## Format datatypes into dict
 juicer_type_dict = dictzip(juicer_cols,juicer_types)
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

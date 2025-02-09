@@ -43,7 +43,7 @@ def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:st
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help, debug_help, refmetavar, bwathreads,part, lib_default
+from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice
 
 c_help = 'The current working directory'
 l_help = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
@@ -65,6 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
     parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',                    default = line_count   )
+    parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                                    )
     
     ## Set the paresed values as inputs
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     partitions   = inputs.P
     library      = inputs.L
     line_count   = inputs.l
+    nice         = inputs.N
     debug        = inputs.debug 
 
     ## Gather the first reads 
@@ -101,7 +103,7 @@ if __name__ == "__main__":
         bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
 
         ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo) + [bwa_com], debug)
+        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice) + [bwa_com], debug)
 
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')
