@@ -14,7 +14,7 @@ from .defaults.tools.pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwasubs import reportcheck
+from .bwasubs import reportcheck
 
 ## Set stage in piepline
 pix = 2

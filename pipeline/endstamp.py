@@ -27,7 +27,7 @@ import time, sys
 from datetime import datetime
 
 ## load in write to file from our pysamtools 
-from defaults.tools.pysamtools import writetofile
+from .defaults.tools.pysamtools import writetofile
 
 ## ------------------------------------------ Input Variables ------------------------------------------ ##
 ## Gather the file name, the start time stamp from input and calculate the end time stamp 

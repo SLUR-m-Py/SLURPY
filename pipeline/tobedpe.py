@@ -7,9 +7,9 @@ import sys
 ## Import subprocess 
 import pandas as pd 
 ## Load in variables and ftn from my other libs
-from defaults.tools.pysamtools import samnames, samtypes
-from defaults.tools.samtobedpe import postfilter, makechromdict
-from filterbedpe import returnsite
+from .defaults.tools.pysamtools import samnames, samtypes
+from .defaults.tools.samtobedpe import postfilter, makechromdict
+from .filterbedpe import returnsite
 
 ## Set the new types 
 newtypes = samtypes + [int]

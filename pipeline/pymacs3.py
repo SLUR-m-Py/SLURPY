@@ -141,10 +141,10 @@ if __name__ == "__main__":
     import argparse 
 
     ## Ftn for parsing files 
-    from defaults.defaults import sortglob, aligndir, macs3dir, diagdir
+    from .defaults.defaults import sortglob, aligndir, macs3dir, diagdir
 
     ## Load bam ftn 
-    from defaults.tools.pysamtools import loadbam, isbam, hasix
+    from .defaults.tools.pysamtools import loadbam, isbam, hasix
 
     ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser

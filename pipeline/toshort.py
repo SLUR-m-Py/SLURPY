@@ -9,7 +9,7 @@
 ## bring in mods
 import dask.dataframe as dd 
 ## Brin in defaults
-from gxgcounts import file_end, hicsep
+from .gxgcounts import file_end, hicsep
 
 """
 Juicer short format:
