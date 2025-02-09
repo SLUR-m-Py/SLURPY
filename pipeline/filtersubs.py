@@ -6,11 +6,11 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults.defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bamtmpdir, hicscriptdir
+from .defaults.defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bamtmpdir, hicscriptdir
 ## Load in params
-from defaults.parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, daskthreads, part, P_help
+from .defaults.parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, daskthreads, part, P_help
 ## Load in write to file from pysam tools 
-from defaults.tools.pysamtools import writetofile
+from .defaults.tools.pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
