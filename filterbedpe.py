@@ -20,9 +20,9 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 ## Bring in pandas
 import dask.dataframe as dd
 ## Load in params
-from .defaults.parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help
+from parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help
 ## Bring in ftns from slurpy 
-from .defaults.defaults import fileexists
+from defaults import fileexists
 ## Bring in seqIO
 from Bio import SeqIO
 

@@ -30,23 +30,31 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """
 ./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb,fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 128 -a 868187
 """
-
+##      SET PIPELINES
+## 
+## HIC
+## Set pipeline of hic analysis ## NOTE defined after defaults import 
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','clean']
+##                  0        1        2       3      4      5a      5b      5c     6
+## Join pipeline names by commas
+h_pipe = ', '.join(hic_pipeline) 
+## 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in vars from parameter space
-from pipeline.defaults.parameters import pipe_help, h_pipe
-## Load in ftns and variables from defaults
-from pipeline.defaults.defaults import *
+from parameters import * 
+## Load in default directories from defaults 
+from directories import * 
 ## Load in ftns from other libraries
-from pipeline.defaults.tools.pysamtools import checksam, writetofile
+from pysamtools import checksam, writetofile
 ## Bring in bwa mem ftn for hic
-from pipeline.defaults.tools.pybwatools import bwamem_hic
+from pybwatools import bwamem_hic
 ## Load in panda cat ftn
-from pipeline.pandacat import pandacat
+from pandacat import pandacat
 ## Load in bwa master
-from pipeline.bwasubs import bwamaster
+from bwasubs import bwamaster
 ## Load in filter master
-from pipeline.filtersubs import filtermaster
+from filtersubs import filtermaster
 
 ## Set the ftn descritption
 hiclite_descr = "Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments."
@@ -59,6 +67,9 @@ R_help = pipe_help%h_pipe
 
 ##      FUNCTION DEFINING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## Load in ftns from defaluts
+from defaults import basename, getsamplename, reportname, fastcut, fastdry, ifprint
+
 ## Ftn for formating fastp command to filter and split reads
 def hicpeel(r1:str, r2:str, w:int, s:int, z=4,  options=fastp_opts, script = 'fastp') -> tuple:
     """Formats calls to fastp given input fastq files."""
@@ -94,21 +105,12 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     report = reportname(outhic+'.bam','hic.pre',i='6C')
     ## Set the java command for the passed juicer jar file 
     prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
-              f'{pipelinedir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
+              f'{slurpydir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
 
     ## Return the pre and report
     return prestr, report
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-##      PARAMETER LOADING    
-## Load in default help messages
-from pipeline.defaults.parameters import r_help,F_help,B_help,P_help,M_help,X_help,Q_help,q_help,a_help,N_help,f_help,b_help,t_help,n_help,E_help,L_help,Z_help,G_help,J_help,x_help,S_help,A_help
-## Load in defulat help mesages for boolean vars
-from pipeline.defaults.parameters import short_help,restart_help,debug_help,mark_help,clean_help,merge_help
-## Load in defalut paramters
-from pipeline.defaults.parameters import refmetavar,splitsize,parallelbwa,part,mito,map_q_thres,fastpthreads,bwathreads,daskthreads,xmemory,fends,nice,error_dist,lib_default,chunksize,binsizes
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -205,8 +207,6 @@ if __name__ == "__main__":
     
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Bring in ref paths from parameters
-    from pipeline.defaults.parameters import t2t_refpath,t2t_gffpath
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
     reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
     feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
@@ -214,8 +214,8 @@ if __name__ == "__main__":
 
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in error messages
-    from pipeline.defaults.parameters import fastqserror,noref_path, not_sam_err
+    ## Load in ftns from defalut
+    from defaults import pathexists, checkfastp, patchclean, fileexists
     ## Check that the fastq and reference path exists
     assert pathexists(fastqdir), fastqserror
     assert pathexists(reference_path), noref_path%reference_path 
@@ -253,6 +253,8 @@ if __name__ == "__main__":
 
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in defluats 
+    from defaults import confirmreset
     ## Format group dirs 
     grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir]
     ## If there is a hard reset passed 
@@ -273,8 +275,8 @@ if __name__ == "__main__":
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in messages from param space
-    from pipeline.defaults.parameters import directormaking
+    ## Load in ftns
+    from defaults import setrunname, makedirectories, sortglob, remove
     ## Let the user know we are making directories 
     print(directormaking)
     ## Get the current working dir
@@ -291,6 +293,9 @@ if __name__ == "__main__":
 
     ##      WRITING OUT PARAMS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in ftn from defaluts
+    from defaults import writeparams
+    ## Write out params 
     writeparams(f'{experi_mode}.py',run_name,stamp,inputs)
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -299,9 +304,8 @@ if __name__ == "__main__":
     ##      CHROMOSOME GATHERING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Load in more mods
-    ## Gather chromoosoes
-    from pipeline.defaults.tools.chrommap import gathering, chromgathering
-    ## Inform the user we are gathering chromosomes
+    from chrommap import gathering, chromgathering
+    ## Gather chromosomes and inform the user we are gathering chromosomes
     print(chromgathering)
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
@@ -318,7 +322,9 @@ if __name__ == "__main__":
     ##      CHECK FOR A BWA INDEXING  
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set index error
-    index_error = "ERROR: We could not detect an index associated with the input reference path: %s.\nINFO: Index the reference (bwa index) and try again."%reference_path
+    index_error = index_error%reference_path
+    ## Load in bwaix check
+    from defaults import isbwaix
     ## Assert our truth
     assert isbwaix(reference_path),index_error
     
@@ -333,8 +339,8 @@ if __name__ == "__main__":
 
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Bring in fastq messageing
-    from pipeline.defaults.parameters import formatingfastq, missingfqs, hic_pipeline
+    ## Bring in get fastqs fromd efaluts
+    from defaults import getfastqs
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
@@ -346,6 +352,8 @@ if __name__ == "__main__":
 
     ##      SAMPLE NAME MAKING AND HANDELING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in sbatch from defaults
+    from defaults import sbatch
     ## iterate thru the pairs 
     for fastqix, (r1,r2) in enumerate(in_fastqs):
         ## Gather the sample name, exp mode, and fastp command file 
@@ -426,7 +434,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{pipelinedir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
+            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
 
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.valid.{chrom}.sh'
@@ -443,7 +451,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{pipelinedir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
+            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
             
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.{fname}.sh'
@@ -502,7 +510,7 @@ if __name__ == "__main__":
             for i,coi in enumerate(chrlist):
                 ## Set the report, commands, and gxg script file name 
                 gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                gxg_commands = [f'{pipelinedir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
                 gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
                 ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
                 writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo)+gxg_commands, debug)
@@ -517,7 +525,7 @@ if __name__ == "__main__":
             ## make a report
             short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
             ## Format the command
-            short_commands = [f'{pipelinedir}/toshort.py -i {newcatfile}\n'] 
+            short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
             ## Set command file 
             short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
             ## Wriet the short command to file
@@ -551,7 +559,7 @@ if __name__ == "__main__":
     timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{pipelinedir}/endstamp.py {timestamp_file} {stamp}\n']
+    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo) + times_commands, False)
     ## Append the timestamp command to file
@@ -567,7 +575,7 @@ if __name__ == "__main__":
         remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'        ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{pipelinedir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{pipelinedir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{pipelinedir}/gzipy.py ./{aligndir}/*.short\n'], debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo) + [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n'], debug)
         ## Append the clean up command to file
         command_files.append((remove_sh,run_name,experi_mode,'clean',remove_repo,0,''))
     else: ## Otherwise do nothing
@@ -580,6 +588,8 @@ if __name__ == "__main__":
 
     ##      PIPELINE COMMAND SUBMISSION TO SLURM    
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Bring in commmand control, fastp submitter, and submit depends
+    from defaults import commandcontrol, submitfastp, submitdependency
     ##      A) RESTARTING                          
     ## Call the command dataframe, remove previous logs if hard reset was passed 
     command_files, was_hard_reset = commandcontrol(command_files,hardreset,hic_pipeline,rerun)

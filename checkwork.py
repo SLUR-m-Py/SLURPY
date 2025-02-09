@@ -22,7 +22,8 @@ croth@lanl.gov
 ## -------------------------------------------------------------------- ##
 ##      MODULE LOADING 
 ## Bring in sorted glob 
-from pipeline.defaults.defaults import sortglob, debugdir
+from defaults import sortglob
+from directories import debugdir
 ## Bring in get size from os 
 from os.path import getsize  
 ## bring in numpy 

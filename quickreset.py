@@ -24,7 +24,7 @@ croth@lanl.gov
 ## Load in shutil
 import shutil       
 ## Load in direcotries
-from pipeline.defaults.defaults import diagdir, aligndir, bamtmpdir, debugdir, splitsdir, comsdir, hicdir, bedtmpdir
+from defaults import diagdir, aligndir, bamtmpdir, debugdir, splitsdir, comsdir, hicdir, bedtmpdir
 ## -------------------------------------------------------------------- ##
 
 ## -------------------------------------------------------------------- ##

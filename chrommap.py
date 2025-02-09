@@ -7,10 +7,10 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Chrommapy.py: Library of fucntions for formating chromosomes, lit of chromosomes, and there lengths
 ## Load in functions and variables from defaults
-from ..defaults import aligndir, fileexists, readtable, readann
-
+from defaults import fileexists, readtable, readann
+from directories import aligndir
 ## Bring in chrom df from py-sam tools
-from .pysamtools import chromdf
+from pysamtools import chromdf
 
 ## Set defalut messaging
 chromgathering = 'INFO: Gathering chromosomes for processing...' 

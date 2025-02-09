@@ -21,13 +21,13 @@ croth@lanl.gov
 """
 ## ----------------------------------- FORMATING FUNCTIONS --------------------------------- ##
 ## Load in defaults 
-from ..defaults import pipelinedir
+from defaults import slurpydir
 
 ## Ftn for echo bwa finish to a log
 def bwaecho(o,l=None) -> str:
     """Formats an echo command to print finishing statment of bwa alignment to log."""
     ## Format the message given the output (o) file name and log (l)
-    return  f'{pipelinedir}/myecho.py Finished alignment of split: {o} {l}' if l else ''
+    return  f'{slurpydir}/myecho.py Finished alignment of split: {o} {l}' if l else ''
 
 ## Ftn for mapping reads in hic-mode as suggested by phase genomics and juicer
 def bwamem_hic(r1,r2,ref,outsam,log,vmode=1,threads=4,opts='-5SPM') -> list[str]:

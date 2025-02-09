@@ -4,14 +4,11 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
-## Load in sys
-import sys 
-## Append pipelien
-sys.path.append('/SLURPY/pipeline')
 ## Bring in ftns and variables from defaluts 
-from defaults.defaults import sortglob, sbatch, submitsbatch, fileexists, splitsdir, comsdir, debugdir, bamtmpdir, pipelinedir
+from defaults import sortglob, sbatch, submitsbatch, fileexists
+from directories import splitsdir, comsdir, debugdir, bamtmpdir, slurpydir
 ## Load in write to file from pysam tools 
-from defaults.tools.pysamtools import writetofile
+from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 
@@ -38,7 +35,7 @@ def reportcheck(reportpaths) -> bool:
     
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:str,debug:bool,pix=pix,linecount=line_count):
-    command = f'{pipelinedir}/bwasubs.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -l {linecount} ' +  ('--debug' if debug else '')
+    command = f'{slurpydir}/bwasubs.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -l {linecount} ' +  ('--debug' if debug else '')
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 
 
@@ -46,7 +43,7 @@ def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:st
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from .defaults.parameters import s_help,r_help,b_help,P_help,L_help, debug_help, refmetavar,bwathreads,part, lib_default
+from parameters import s_help,r_help,b_help,P_help,L_help, debug_help, refmetavar, bwathreads,part, lib_default
 
 c_help = 'The current working directory'
 l_help = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
@@ -99,7 +96,7 @@ if __name__ == "__main__":
         ## Set the out file
         outfile   = f'{bamtmpdir}/{i}.{sample_name}.bedpe'
         ## format the command 
-        bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {pipelinedir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
+        bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
         bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
         bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
 

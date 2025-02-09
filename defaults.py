@@ -20,6 +20,8 @@ croth@lanl.gov
 """
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      MODULE LOADING 
+## Load in directories
+from directories import *
 ## Load in glob
 from glob import glob 
 ## Bring in sub-process mod
@@ -29,7 +31,7 @@ from os.path import basename, exists as pathexists, getsize as getfilesize
 ## Bring in make dirs
 from os import makedirs, remove 
 ## Bring in our costum ftns from pysamtools 
-from .tools.pysamtools import ifprint, splitbam, splitsam, makelist, dictzip, getprimary
+from pysamtools import ifprint, splitbam, splitsam, makelist, dictzip, getprimary
 ## Load in pandas
 import pandas as pd 
 ## Load in date and time
@@ -37,7 +39,7 @@ from datetime import datetime
 ## Load in rm tree
 from shutil import rmtree
 ## Bring in vars from prep run
-from ..defaults.parameters import fakejobid, runlocal
+from parameters import fakejobid, runlocal
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## Set Juicer columns and data types 
@@ -48,25 +50,6 @@ juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,
 juicer_type_dict = dictzip(juicer_cols,juicer_types)
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-##      DIRECTORY NAMES 
-## Set directory names 
-debugdir      = 'debug'                ##       Hold logs for debug 
-fastqdir      = 'fastqs'               ##       The directory holding fastq files 
-aligndir      = 'final'                ##       Holds final aligments 
-splitsdir     = 'splits'               ##       Temporary dir for split fastq 
-comsdir       = 'commands'             ##       Folder for holding all command files 
-macs3dir      = 'macs3'                ##       Has results from macs3 
-hicdir        = 'hic'                  ##       Has hic resluts 
-diagdir       = 'diagnostics'          ##       Plots for diagnostics are held here 
-bamtmpdir     = 'bamtmp'               ##       A temporary dir for hodling bam files from split fastq aligments 
-bedtmpdir     = 'bedpe'                ##       Tempeory bedpe dir
-scriptsdir    = './SLURPY'             ##       The script directory holding this file
-pipelinedir   = './SLURPY/pipeline'    ##       New scripts direcotry 
-
-## Group the dirs 
-#grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bamtmpdir]
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      SLURPY FUNCTIONS 
@@ -277,7 +260,7 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:
     """Formats the start of a call to fastp given inputs (i,I), outputs (o,O), and the report name (r)."""
     ## Format the fall and return
-    return f'{scriptsdir}/fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
+    return f'{slurpydir}/fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
 
 ## Ftn for returning a boolean if in hic
 def inhic(inexp:str) -> bool:
@@ -291,7 +274,7 @@ def fastdry(r1:str, r2:str, report:str) -> str:
     ## reformat the report 
     #report = report if report.split('.')[-1] == 'txt' else report + '.txt'
     ## Format and return the echo command
-    return f'{pipelinedir}/myecho.py Finished filtering and splitting on: {r1} {r2} {report}\n'
+    return f'{slurpydir}/myecho.py Finished filtering and splitting on: {r1} {r2} {report}\n'
 
 ## Ftn for formating report
 def reportname(inbam:str, script:str, i=0) -> str:
@@ -315,11 +298,11 @@ def loadscript(inpath:str) -> list:
 def samblaster(inbam,outbam,report,threads) -> str:
     """Formats a call to samtools and samblaster given inputs."""
     ## Return the samtools and samblaster command 
-    return f'samtools view -@ {threads} -h {inbam} | {scriptsdir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
+    return f'samtools view -@ {threads} -h {inbam} | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
 
 """
 ## Remove sort command from above
-    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | {scriptsdir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
+    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
 
 """
 
@@ -329,7 +312,7 @@ def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
     ## Format the output bams and the report name 
     outbam, report = f'{aligndir}/{basenobam(inbam)}.marked.bam', reportname(inbam,script,i=pix) 
     ## Format the sam-blaster and echo command
-    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'{pipelinedir}/myecho.py Finished marking duplicates in {outbam} {report}\n'
+    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'{slurpydir}/myecho.py Finished marking duplicates in {outbam} {report}\n'
     ## Return the samblaster command and ecco chommand 
     return outbam, [blast_command, echo_command], report
 
@@ -337,7 +320,7 @@ def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
 def splitecho(inbam:str, report: str, script:str) -> str:
     """Formats an echo statment for the split command."""
     ## Return the formated command 
-    return f'{pipelinedir}/myecho.py Finished splitting {inbam} using {script} {report}\n'
+    return f'{slurpydir}/myecho.py Finished splitting {inbam} using {script} {report}\n'
 
 ## Write ftn for making a directory
 def dirmaker(dirpath:str):
@@ -361,7 +344,7 @@ def headpath(inpath:str) -> str:
 def bwaindex(refpath:str,script='index') -> tuple:
     """Formats command to index a reference via bwa."""
     ## return the index commands
-    return [f'bwa index {refpath}\n', f'{pipelinedir}/myecho.py Finished indexing reference on path {refpath} {reportname(refpath,script)}\n'], reportname(refpath,script)
+    return [f'bwa index {refpath}\n', f'{slurpydir}/myecho.py Finished indexing reference on path {refpath} {reportname(refpath,script)}\n'], reportname(refpath,script)
 
 ## Ftn for formating job ids
 def formatids(cdf:pd.DataFrame, op:list, joinon=',') -> str:
@@ -421,7 +404,7 @@ def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tup
     ## Format report name and the merge-bam command
     report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
     ## Format the echo command and count command 
-    echo_merge_command = f'{pipelinedir}/myecho.py Finished merging bam files into {outbam} {report}\n'
+    echo_merge_command = f'{slurpydir}/myecho.py Finished merging bam files into {outbam} {report}\n'
     ## Return the formated merge command
     return [merge_bam_command,echo_merge_command], report
 
@@ -436,7 +419,7 @@ def filterbam(inbam:str, M:str, threads:int, chrlist:list, pix:int) -> tuple:
     ## Format the report name and out bam name 
     report, outbam = reportname(inbam,'filter',i=pix), splitbam(inbam) + f'.primary.q{M}.bam'
     ## Format filter command and the echo command 
-    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'{pipelinedir}/myecho.py Finished filtering {inbam} at mapping quality of {M} {report}\n'
+    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'{slurpydir}/myecho.py Finished filtering {inbam} at mapping quality of {M} {report}\n'
     ## Format and return commands
     return outbam, [bam_filter_command, echo_command], report
 
@@ -535,13 +518,5 @@ def writeparams(script:str,runname:str,sstamp,inputs):
     fout.close()
     pass 
 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
-## Set file ends used in this script and other filtering stages 
-hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
-
-## Define options for fastpeel ftn
-fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

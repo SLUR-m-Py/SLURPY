@@ -24,7 +24,7 @@ croth@lanl.gov
 import pandas as pd 
 
 ## Load in scripts dir 
-from defaults.defaults import pipelinedir, macs3dir 
+from defaults import slurpydir, macs3dir 
 
 ## Ftn for formating length parameter
 def formatlen(minlen):
@@ -84,7 +84,7 @@ def peakattack(inbams,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptio
     ## Add the additional optsions 
     opts = opts + (' ' + extraoptions if extraoptions else '')
     ## Format the macs3 callpeak command
-    return [f'macs3 callpeak {formatinput(inbams)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f BAMPE --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{pipelinedir}/myecho.py Finished calling peaks in {sjoin(inbams)} with macs3 {report}\n']
+    return [f'macs3 callpeak {formatinput(inbams)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f BAMPE --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {sjoin(inbams)} with macs3 {report}\n']
 
 ## Set the narrow peak names
 peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     import argparse 
 
     ## Ftn for parsing files 
-    from .defaults.defaults import sortglob, aligndir, macs3dir, diagdir
+    from defaults import sortglob, aligndir, macs3dir, diagdir
 
     ## Load bam ftn 
-    from .defaults.tools.pysamtools import loadbam, isbam, hasix
+    from pysamtools import loadbam, isbam, hasix
 
     ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser

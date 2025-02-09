@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## ---------------------------------------------- LOAD IN MODULES ------------------------------------------------- ## 
 ## Load in ftns from pysam tools 
-from .defaults.tools.pysamtools import loadbam, checksam, writeset, ifprint, outnames
+from pysamtools import loadbam, checksam, writeset, ifprint, outnames
 
 ## Bring in pandas dataframe
 import pandas as pd 

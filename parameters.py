@@ -26,15 +26,7 @@ squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 
 """
-##      SET PIPELINES
-## 
-## HIC
-## Set pipeline of hic analysis ## NOTE defined after defaults import 
-hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','clean']
-                ## 0        1        2       3        4      5a      5b      5c     6
-## SEt the pipeline 
-peak_pipeline  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'count', 'macs3', 'clean']
-#                     0       1       2         3        4        5        6A       6B       7
+
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      VARIABLE SETTING
@@ -52,12 +44,12 @@ else:
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      Hi-C and ATAC-seq DEFAULT VARIABLE SETTING  
-splitsize    = 88            ##     The number of splits made by fastp 
+splitsize    = 10000000      ##     The number of splits made by fastp 
 bwathreads   = 4             ##     Number of threads used by calls to bwa 
 samthreads   = 4             ##     Number of threads used by calls to samtools 
 daskthreads  = 4             ##     Number of threads used by calls to dask df 
 parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
-fastpthreads = 8             ##     Number of threads in fastp 
+fastpthreads = 12            ##     Number of threads in fastp 
 part         = 'tb'          ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
 error_dist   = 10000         ##     The idstance to check for erros 
@@ -84,20 +76,22 @@ binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C anal
                   10000,
                   5000]
 
+
+## Define options for fastpeel ftn
+fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
+
 ## Set list of experiments 
 explist = ['wgs','atac','chip','hic']
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      METAVARS
 ## Set metavars
-c_metavar = './path/to/control.bam'
-g_metavar = 'bp'
+c_metavar  = './path/to/control.bam'
+g_metavar  = 'bp'
 refmetavar = './path/to/reference.fasta'  
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-## Join pipeline names by commas
-h_pipe = ', '.join(hic_pipeline) 
-a_pipe = ', '.join(peak_pipeline)
+
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      HELP MESSAGES 
@@ -118,7 +112,6 @@ G_help = "Path to list of chromosomes (by name) to include in final analysis. De
 g_help = "Size of the genome being analyzed, used as parameter for macs3. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
 C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Default is %s. Passing zero (0) will skip this check."%circle_dist 
 E_help = "Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is %s. These pairs are also marked for dangling ends and self-circles."%error_dist
-#D_help = "Threshold on Hi-C fragment size for delcaring a read pair to be from the same fragment. Default is %s."%same_fragm
 L_help = "The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is %s. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped."%lib_default
 Z_help = "Number of rows loaded into pandas at a time. Default is: %s. WARNING: while increasing could speed up pipeline it could also cause memeory issues."%chunksize
 q_help = "The expected file extension of input fastq files. Default is: %s"%fends
@@ -130,8 +123,9 @@ x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command. Default 
 A_help = "The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes."
 a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination."
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
-R_help = "Step within the pipeline to re-run from. Default behavior is to recheck logs to determin position of run. Options for Hi-C analysis include: %s. Options for ATAC-seq include: %s"%(h_pipe,a_pipe)
+#R_help = "Step within the pipeline to re-run from. Default behavior is to recheck logs to determin position of run. Options for Hi-C analysis include: %s. Options for ATAC-seq include: %s"%(h_pipe,a_pipe)
 pipe_help = "Step within the pipeline to re-run from. Options include: %s"
+R_help   = pipe_help
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -162,9 +156,14 @@ fastqserror = "ERROR: Unable to detect a fastqs directory holding fastq files!"
 missingfqs  = "ERROR: No fastq.gz files were detected!"
 not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
 noref_path  = "ERROR: We could not find the provided input path -- %s -- of the reference file!"
+index_error = "ERROR: We could not detect an index associated with the input reference path: %s.\nINFO: Index the reference (bwa index) and try again."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 slurpy_descr = 'Prepares a run of the SLUR(M)-py pipeline given user inputs (such as path to genome reference and experiment type) and generates an ingredients.tsv file for the slurpy.py function'
+
+## Set file ends used in this script and other filtering stages 
+hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
+
 
 ##      FUNCTIONS
 ##

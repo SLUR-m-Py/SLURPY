@@ -31,6 +31,11 @@ squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 ./SLURPY/peaks.py -r ../Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 -g 2744115311 -G ../../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed
 
 """
+## SEt the pipeline 
+peak_pipeline  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'count', 'macs3', 'clean']
+##                   0       1       2         3        4        5        6A       6B       7
+## Join the pipeline 
+a_pipe = ', '.join(peak_pipeline)
 
 ##      MODULE LOADING and VARIABLE SETTING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##

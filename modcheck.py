@@ -59,7 +59,7 @@ import pandas as pd, numpy as np, seaborn as sns
 import sys, json, time, argparse, subprocess
 
 ## Loadin checksam
-from .defaults.tools.pysamtools import checksam
+from pysamtools import checksam
 
 ## Bring in dask 
 import dask.dataframe as dd 

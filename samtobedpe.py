@@ -24,9 +24,9 @@ croth@lanl.gov
 ## Bring in pandas and np 
 import pandas as pd, numpy as np, re
 ## Load in params
-from ..parameters import hicsep, chunksize, Z_help, r_help, L_help
+from parameters import hicsep, chunksize, Z_help, r_help, L_help
 ## Bring in default ftns 
-from ..defaults import pathexists, reset, basenosam
+from defaults import pathexists, reset, basenosam
 ## Load in samnames 
 from pysamtools import getmatchsum, listzip, dictzip, loadref, loadsam
 
