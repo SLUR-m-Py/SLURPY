@@ -22,7 +22,7 @@ croth@lanl.gov
 ## -------------------------------------------------------------------- ##
 ##      MODULE LOADING 
 ## Bring in sorted glob 
-from defaults import sortglob, debugdir
+from defaults.defaults import sortglob, debugdir
 ## Bring in get size from os 
 from os.path import getsize  
 ## bring in numpy 
@@ -37,7 +37,8 @@ def checkforerror(inpath:str) -> bool:
     k = False
     with open(inpath,'r') as inhandle:
         for l in inhandle:
-            if ('ERROR' in l) or ('Error' in l) or ('error' in l):
+            ll = l.lower()
+            if (('error' in ll) or ('no such file' in ll) or ('permission denied' in ll)) and (not 'errors.bedpe' in ll):
                 k = True
                 break 
             else:
@@ -49,7 +50,7 @@ def checkforerror(inpath:str) -> bool:
 ## -------------------------------------------------------------------- ##
 ##      ANALYSIS of ERROR LOGS
 ## Bring in the error logs 
-all_error_logs = sortglob(f'./{debugdir}/*.err')
+all_error_logs = sortglob(f'./{debugdir}/*.log')
 ## Filter the error logs for those with text only within them
 error_logs = np.array([k for k in all_error_logs if getsize(k)])
 ## Gather the sizes 
@@ -73,6 +74,7 @@ if np.sum(error_counts):
     print(f'WARNING: Check the following {lvls}:\n')
     ## Print the logs with erros
     [print("\t%s"%f) for f in has_errors]
+    print(f'WARNING: Check the above logs for errors.')
 
 else: ## Otherwise
     print("INFO: Good news everyone! No errors were detected in this run.\n\t:-)\n\t<3")

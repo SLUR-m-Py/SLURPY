@@ -28,32 +28,37 @@ squeue -u croth | grep 'mpi' | grep 'croth' | awk '{print $1}' | xargs -n 1 scan
 """
 ## List slurpy command for VERO analysis
 """
-./SLURPY/atacseq.py -r ../Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 -g 2744115311 -G ../../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed
+./SLURPY/peaks.py -r ../Cryo_ATAC/GreenMVA_Ref/Chlorocebus_sabeus_mva.fasta -M NC_008066.1 -g 2744115311 -G ../../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed
 
 """
 
 ##      MODULE LOADING and VARIABLE SETTING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## Load in vars from prep run
+from defaults.parameters import *
 ## Load in ftns and variables from defaults
-from defaults import *
+from defaults.defaults import *
 ## Load in ftns from other libraries
-from pysamtools import checksam, writetofile, txttobam, outnames, bambyreadname, chromdf
+from tools.pysamtools import checksam, writetofile, txttobam, outnames, bambyreadname
 ## Bring in bwa mem ftn for atac-seq
-from pybwatools import bwamem_paired
+from tools.pybwatools import bwamem_paired
+## Load in panda cat
+from scripts.pandacat import pandacat
+
 
 ## Set the ftn descritption
 peakatac_descr = "Processing and analysis pipeline for paired-end sequencing data from ATAC-seq (and ChIP-seq) experiments."
 ## Set the hardset hic mode 
-experi_mode = 'atac'
+experi_mode = 'peaks'
 ## Define help messages
-R_help = "Step within the pipeline to re-run from. Options for ATAC-seq analysis include: %s"%(', '.join(pipeline_steps))
+R_help = pipe_help%a_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
 ##      FUNCTION DEFINING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Ftn for formating fastp command to filter and split reads
-def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, z=4, options=fastp_opts, script='fastp', toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz') -> tuple:
+def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, pix:int, z=4, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz') -> tuple:
     """Formats calls to fastp given input fastq files."""
     ## Set variable names 
     r1_bn    = basename(r1).split('.fastq')[0]               ##      Generate basename of first read 
@@ -64,7 +69,7 @@ def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, z=4, options=fastp_opts,
     single2  = f'{splitsdir}/{r2_bn}{singleend}'             ##      Make singleton file from second split 
     split1   = f'{splitsdir}/{basename(r1)}'                 ##      Set the first split name
     split2   = f'{splitsdir}/{basename(r2)}'                 ##      Create the second split name 
-    report   = reportname(getsamplename(r1),script)          ##      Format the report name
+    report   = reportname(getsamplename(r1),'fastp',i=pix)   ##      Format the report name
     failed   = f'{splitsdir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
     ## Format commands if filtering, then splitting is being performed
     ## Call the first run of fastp, json, and json are also returend
@@ -90,20 +95,20 @@ def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, z=4, options=fastp_opts,
     return [just_split,dry,mvh,mvj] if inhic(exptype) else [initial_filtering,split_filtered,throwout,dry,mvh,mvj], report
 
 ## Define ftn for formaiting fastq files for bwa mem in paried end mode 
-def prepbwamem(r1:str, r2:str, refix:str, t:int) -> tuple:
+def prepbwamem(r1:str, r2:str, refix:str, t:int, pix:int) -> tuple:
     """Formats a bwa mem command given the paired reads, reference index, thread count, and mode."""
     ## Format the bam file name and report name
-    bam, report = f'{bamtmpdir}/{getsamplename(r1)}.bam', f'{debugdir}/{getsamplename(r1)}.bwa.log.txt'
+    bam, report = f'{bamtmpdir}/{getsamplename(r1)}.bam', reportname(getsamplename(r1),'bwa',i=pix) # f'{debugdir}/{getsamplename(r1)}.bwa.log.txt'
     ## Format the bwa mem command, we are in paired end mode 
     makebams = bwamem_paired(r1,r2,refix,bam,report,threads=t)
     ## Return the list of bams to make and the count of those made
     return bam, makebams, report  
 
 ## Ftn for formating call to our split command
-def splitcommand(bam:str, mito:str, threads:int, script='split') -> tuple:
+def splitcommand(bam:str, mito:str, threads:int, pix:int) -> tuple:
     """Formats and returns a command to our protocol for splitting an input bam file."""
     ## Call the report and echo command
-    report = reportname(bam,script)
+    report = reportname(bam,'split',i=pix)
     ## Set the output names fromt he bam file 
     mapped_txt, placed_txt, mito_txt, unmap_txt, bedpe_txt = outnames(bam,mito)
     ## Format the command for splitting the input bam file, index the output bam file, and samtools commands to form bam files from read names
@@ -128,17 +133,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = peakatac_descr)
 
     ## Add the required argument
-    parser.add_argument("-r", "--refix",         dest="r", type=str,  required=True, help = r_help,  metavar = './path/to/reference.bwaix'                )
+    parser.add_argument("-r", "--refix",         dest="r", type=str,  required=True, help = r_help,  metavar = refmetavar                                 )
     
     ## Add the default arguments
     parser.add_argument("-F", "--fastp-splits",  dest="F", type=int,  required=False, help = F_help, metavar = splitsize,            default = splitsize  )
     parser.add_argument("-B", "--parallel-bwa",  dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,          default = parallelbwa)
     parser.add_argument("-P", "--partition",     dest="P", type=str,  required=False, help = P_help, metavar = part,                 default = part       ) 
     parser.add_argument("-M", "--mtDNA",         dest="M", type=str,  required=False, help = M_help, metavar = mito,                 default = mito       )
-    parser.add_argument("-X", "--exclude",        dest="X", nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',    default = []         )
+    parser.add_argument("-X", "--exclude",       dest="X", nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',     default = []         )
     parser.add_argument("-Q", "--map-threshold", dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,          default = map_q_thres)
     parser.add_argument("-R", "--rerun-from",    dest="R", type=str,  required=False, help = R_help, metavar = 'step',               default = None       )
     parser.add_argument("-q", "--fastq",         dest="q", type=str,  required=False, help = q_help, metavar = '.fastq.gz',          default = fends      )
+    parser.add_argument("-a", "--afterok",       dest="a", type=int,  required=False, help = a_help, metavar = fakejobid,            default = 0          )
 
     ## Set number of threads 
     parser.add_argument("-f", "--fastp-threads", dest="f", type=int,  required=False, help = f_help, metavar = splitsize,            default = splitsize  )
@@ -154,12 +160,14 @@ if __name__ == "__main__":
     ## Set boolean flags 
     parser.add_argument("--restart",             dest="start",  help = restart_help,  action = 'store_true')
     parser.add_argument("--debug",               dest="debug",  help = debug_help,    action = 'store_true')
-    parser.add_argument("--skip-dedup",          dest="mark",   help = mark_help,     action = 'store_true')
-    parser.add_argument("--skip-fastp",          dest="sfast",  help = skipq_help,    action = 'store_true')
-    parser.add_argument("--broad",               dest="broad",  help = broad_help,    action = 'store_true')
+    parser.add_argument("--skipdedup",           dest="mark",   help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",               dest="clean",  help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",               dest="merge",  help = merge_help,    action = 'store_true')
-    parser.add_argument("--skip-peak",           dest="peaks",  help = peaks_help,    action = 'store_true')
+
+    ## Set ATAC-seq specifict
+    parser.add_argument("--skipfastp",           dest="sfast",  help = skipq_help,    action = 'store_true')
+    parser.add_argument("--broad",               dest="broad",  help = broad_help,    action = 'store_true')
+    parser.add_argument("--skipmacs3",           dest="peaks",  help = peaks_help,    action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -180,6 +188,7 @@ if __name__ == "__main__":
     excludes        = inputs.X       ##     List of chromosomes to exclude from analysis 
     rerun           = inputs.R       ##     Setp to rerun pipeline from 
     fend            = inputs.q       ##     End of the input fastq files 
+    bwaix_jobid     = inputs.a       ##     The job id to have all submissions wait on   
                                      ##
     ## Set threads                   ##
     fastp_threads   = inputs.f       ##     Number of fastp threads
@@ -203,12 +212,6 @@ if __name__ == "__main__":
     skippeaks       = inputs.peaks   ##     Skips peak calling with macs3 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
-    
-
-    
-    
-    
     
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -231,8 +234,10 @@ if __name__ == "__main__":
     ## Initilizse list for sbatch
     sub_sbatchs = []
 
-    ## apppend the macs3 dir to the group
-    grouped_dirs.append(macs3dir)
+    ## Load in macs3 ftns
+    from scripts.pymacs3 import peakattack
+    ## Set the broad pkeack
+    broadpeak = '--broad' if ifbroad else ''
 
     ## Check our control files if they were passed 
     if chip_control:
@@ -246,6 +251,8 @@ if __name__ == "__main__":
 
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## apppend the macs3 dir to the group
+    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bamtmpdir,macs3dir]
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -259,11 +266,6 @@ if __name__ == "__main__":
     import time 
     ## Set the unique time stamp
     stamp = time.time()
-
-    ## Load in macs3 ftns
-    from pymacs3 import peakattack
-    ## Set the broad pkeack
-    broadpeak = '--broad' if ifbroad else ''
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -279,18 +281,12 @@ if __name__ == "__main__":
     makedirectories(grouped_dirs)
     ## Gather and remove the old command files, error, and output logs
     [remove(f) for f in sortglob(f'{comsdir}/*.sh') + sortglob(f'{debugdir}/*.err') + sortglob(f'{debugdir}/*.out')]
-    ## Generate the bwa indx command
-    bwa_ix_jobname = f'{comsdir}/bwaindex.sh'
-    ## Call the bwa command and its report 
-    bwaix_coms, bwaix_report = bwaindex(reference_path)
-    ## Write the bwa index command and sbatch to file 
-    writetofile(bwa_ix_jobname, sbatch(bwa_ix_jobname,1,headpath(reference_path)) + bwaix_coms, debug)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      WRITING OUT PARAMS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    writeparams('hic.py',run_name,stamp,inputs)
+    writeparams(f'{experi_mode}.py',run_name,stamp,inputs)
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
@@ -299,38 +295,33 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Load in more mods
     ## Gather chromoosoes
-    from chrommap import gathering, chromgathering
+    from tools.chrommap import gathering, chromgathering
     ## Inform the user we are gathering chromosomes
     print(chromgathering)
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
     ## Gather a list of chromosomes 
     chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes)
+    ## Calculate chrlist
+    nchrom = len(chrlist)
+    ## Print if there are fewer than ten
+    print('INFO: Running on -> %s'%' '.join(chrlist)) if (nchrom < 10) else None
+    print('INFO: Processing %s chromosomes from list.'%nchrom)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-    ##      BWA INDEXING  
+    ##      CHECK FOR A BWA INDEXING  
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Submit the bwa index job
-    if isbwaix(reference_path) or fileexists(bwaix_report):
-        ## Print that we ahve detedted the indexed ref
-        print('INFO: Detected bwa index, skipping indexing.')
-        ## Set the job id 
-        bwaix_jobid = ''
-
-    else: ## Print to lien we are indexing 
-        print('INFO: Submitting command to index reference with bwa.\nWARNING: Indexing may take a few hours to finish.')
-        ## Format the in text
-        intext = f'sbatch --dependency=singleton --partition={partition} {bwa_ix_jobname}'
-        ## Append to sub list
-        sub_sbatchs.append(intext)
-        ## Print if we are in debug mode
-        ifprint(intext,debug)
-        ## Submit the bwa index 
-        bwaix_jobid = fakejobid if (debug and runlocal) else submitsbatch(intext)
-
+    ## Set index error
+    index_error = "ERROR: We could not detect an index associated with the input reference path: %s.\nINFO: Index the reference (bwa index) and try again."%reference_path
+    ## Assert our truth
+    assert isbwaix(reference_path),index_error
+    
     ## Format the command file and initilize sample names
-    command_files, samplenames, filteredbams = [(bwa_ix_jobname,'singleton',None,None,'bwaix',None,bwaix_report)], [], []
+    command_files, samplenames, filteredbams = [], [], []
+
+    ## Append to command
+    command_files.append(('jobfile','sample',experi_mode,'bwaix','report',0,bwaix_jobid)) if bwaix_jobid else None 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -358,14 +349,16 @@ if __name__ == "__main__":
 
         ##      FASTP SPLITTING 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## Iniate pix at 0, set fastp command interface
+        pix = 0
         ## Set the the fastp command file name 
         fastp_command_file =  f'{comsdir}/fastp.{sample_name}.sh'  
         ## Gather the fastp command and report 
-        fastp_coms, fastp_report = fastpeel(r1,r2,'hic' if sfastp else experi_mode,fastp_threads,fastp_splits)
+        fastp_coms, fastp_report = fastpeel(r1,r2,'hic' if sfastp else experi_mode,fastp_threads,fastp_splits,pix)
         ## Write the command to file
-        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd) + fastp_coms, debug)
+        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_report) + fastp_coms, debug)
         ## Append command to file
-        command_files.append((fastp_command_file,'singleton',sample_name,experi_mode,'fastp','',fastp_report))
+        command_files.append((fastp_command_file,sample_name,experi_mode,peak_pipeline[pix],fastp_report,0,0))
         ## Format the split fastq files
         fastq_splits = [(f'{splitsdir}/{formatn(i+1)}.{basename(r1)}', f'{splitsdir}/{formatn(i+1)}.{basename(r2)}') for i in range(fastp_splits) ]
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -375,27 +368,32 @@ if __name__ == "__main__":
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## Format the bwa commands
         for (s1,s2) in fastq_splits:
+            ## Set the step in pipeline 
+            pix = 1
             ## Call the bwa meme prep ftn, return the split bam file, the commands, and their report
-            sbam, bwa_coms, bwa_report = prepbwamem(s1,s2,reference_path,bwa_threads)
+            sbam, bwa_coms, bwa_report = prepbwamem(s1,s2,reference_path,bwa_threads,pix)
             ## Format the bwa commands
             bwa_command_file =  f'{comsdir}/bwa.{basenobam(sbam)}.sh' 
             ## Write the bwa command to file 
-            writetofile(bwa_command_file, sbatch(None,bwa_threads,the_cwd) + bwa_coms, debug)
+            writetofile(bwa_command_file, sbatch(None,bwa_threads,the_cwd,bwa_report) + bwa_coms, debug)
             ## Append bwa command to list of commands 
-            command_files.append((bwa_command_file,'afterok:',sample_name,experi_mode,'bwa',bwaix_jobid,bwa_report))
+            command_files.append((bwa_command_file,sample_name,experi_mode,peak_pipeline[pix],bwa_report,0,0))
             ## --------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
             ##      BAM SPLITTING (post bwa) 
             ## --------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+            ## 2. Set the setp in pipelien 
+            pix = 2
             ## Format report name, commands, and file name 
             split_filename = f'{comsdir}/split.{basenobam(sbam)}.sh'
             ## Call the split ftn
-            split_coms, split_report = splitcommand(sbam,mito,sam_threads)
+            split_coms, split_report = splitcommand(sbam,mito,sam_threads,pix)
             ## Write the split command
-            writetofile(split_filename, sbatch(split_filename,sam_threads,the_cwd) + split_coms, debug)
+            writetofile(split_filename, sbatch(split_filename,sam_threads,the_cwd,split_report) + split_coms, debug)
             ## Apppend the seperating command
-            command_files.append((split_filename,'afterok:',sample_name,experi_mode,'split','',split_report))
+            command_files.append((split_filename,sample_name,experi_mode,peak_pipeline[pix],split_report,0,0))
+
             ## Gather output bam name and txt names
             name_mapd_txt, name_plac_txt, name_mito_txt, name_unmp_txt, bedpe_txt = outnames(sbam,mito)    
             ## Remap the names to a bam file name 
@@ -417,18 +415,21 @@ if __name__ == "__main__":
 
         ##      BAM MERGING 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## 3. Set the setp in pipeline and the new bedbe file name
+        pix = 3
         ## Format commands to merge on mapped, placed, and mitochondrial 
         for bamend in ['mapped','placed',mito]:
             ## format the merged bam name and wild card
             tmp_inwild_bam = f'*.{bamend}.bam' if postmerging else f'*.{sample_name}.{bamend}.bam'
             ## Format the merge command 
-            merge_coms, merge_report = mergebam(f'{sample_name}.{bamend}.bam', tmp_inwild_bam, sam_threads)
+            merge_coms, merge_report = mergebam(f'{sample_name}.{bamend}.bam', tmp_inwild_bam, sam_threads,pix)
             ## Format the name of the merge command 
             merge_file = f'{comsdir}/concat.{sample_name}.{bamend}.sh'
             ## Write the merge command to file 
-            writetofile(merge_file, sbatch(merge_file,sam_threads,the_cwd) + merge_coms, debug)
+            writetofile(merge_file, sbatch(merge_file,sam_threads,the_cwd,merge_report) + merge_coms, debug)
             ## Append the merge command
-            command_files.append((merge_file,'afterok:',sample_name,experi_mode,'concat','',merge_report))
+            command_files.append((merge_file,sample_name,experi_mode,peak_pipeline[pix],merge_report,0,0))
+
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -440,14 +441,16 @@ if __name__ == "__main__":
         newcatfile =  f'{aligndir}/{sample_name}.{bamend}.txt'
         ## Format the outfile 
         wildcard_filename = f'{bamtmpdir}/*.{bamend}.txt' if postmerging else f'{bamtmpdir}/*.{sample_name}*.{bamend}.txt'
+        ## Set report for panda cat with new coding
+        concat_report = reportname(newcatfile,peak_pipeline[pix],i=pix)
         ## Format command to merge the unmapped txt file
-        concat_coms, concat_report = pandacat(wildcard_filename,newcatfile)
+        concat_coms = pandacat([wildcard_filename],newcatfile,concat_report)
         ## make concat file name
         concat_file = f'{comsdir}/concat.{sample_name}.{bamend}.sh'
         ## Write the concat command to file
-        writetofile(concat_file, sbatch(concat_file,1,the_cwd) + concat_coms, debug)
+        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_report) + concat_coms, debug)
         ## Append the concat command
-        command_files.append((concat_file,'afterok:',sample_name,experi_mode,'concat','',concat_report))
+        command_files.append((concat_file,sample_name,experi_mode,peak_pipeline[pix],concat_report,0,0))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -461,6 +464,7 @@ if __name__ == "__main__":
         ##      DUPLICATE MARKING
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## Format the merged bam file
+        pix = 4
         ## If we are skipping duplicates 
         if skipduplicates: 
             ## Skip duplicate marking 
@@ -471,24 +475,27 @@ if __name__ == "__main__":
         else: ## Otherwise call samblaster, make the file name 
             markdup_filename = f'{comsdir}/mark.{sample_name}.sh' 
             ## Call the mark duplicates ftn, returning the output name of the makred bam, the commands for makring, and the assoicated report 
-            to_filt_bam, mark_coms, mark_report = markduplicates(merged_map,sam_threads)
+            to_filt_bam, mark_coms, mark_report = markduplicates(merged_map,sam_threads,pix)
             ## Write to file the mark dups commands
-            writetofile(markdup_filename, sbatch(markdup_filename,sam_threads,the_cwd) + mark_coms, debug)
+            writetofile(markdup_filename, sbatch(markdup_filename,sam_threads,the_cwd,mark_report) + mark_coms, debug)
             ## Append the marking duplicates command 
-            command_files.append((markdup_filename,'afterok:',sample_name,experi_mode,'mark','',mark_report))
+            command_files.append((markdup_filename,sample_name,experi_mode,peak_pipeline[pix],mark_report,0,0))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
         ##      FILTER BAM FILE 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## Filtering step
+        pix = 5
         ## Set the filter command file name 
         filter_filename = f'{comsdir}/filter.{sample_name}.sh'
         ## Call the filter command 
-        filt_bam, filt_coms, filt_report = filterbam(to_filt_bam,mapq,sam_threads,chrlist)
+        filt_bam, filt_coms, filt_report = filterbam(to_filt_bam,mapq,sam_threads,chrlist,pix)
         ## Write to file the filt commands and sbatch
-        writetofile(filter_filename, sbatch(filter_filename,sam_threads,the_cwd) + filt_coms, debug)
+        writetofile(filter_filename, sbatch(filter_filename,sam_threads,the_cwd,filt_report) + filt_coms, debug)
         ## Append the filtering command
-        command_files.append((filter_filename,'afterok:',sample_name,experi_mode,'filter','',filt_report))
+        command_files.append((filter_filename,sample_name,experi_mode,peak_pipeline[pix],filt_report,0,0))
+
         ## Append the output filtered bam
         filteredbams.append(filt_bam)
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -497,8 +504,10 @@ if __name__ == "__main__":
 
     ##      COUNTING BAM and TXT FILES   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 6A. Start counting
+    pix = 6
     ## Format counting command, the count report, and the command
-    counting_filename, count_report = f'{comsdir}/countbams.{run_name}.sh', reportname(f'{aligndir}/bam.counts.bam','count')
+    counting_filename, count_report = f'{comsdir}/{pix}A.countbams.{run_name}.sh', reportname('fragments','count',i=f'{pix}A')  #reportname(f'{aligndir}/bam.counts.bam','count')
     ## Format the save file name
     save_dist_name = f'-S ./{diagdir}/{run_name}.bam.fragment.dist.png\n'
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -520,18 +529,19 @@ if __name__ == "__main__":
 
     ##      COUNTING COMMANDS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 6A cont. Start analysis 
     ## List the count commands 
     count_commands = [f'{scriptsdir}/countbams.py {run_name}\n', frag_calc_commands, f'{scriptsdir}/myecho.py Finished counting bam files in {aligndir} dir. {count_report}\n']
     ## Wriet the coutn command to file
-    writetofile(counting_filename,sbatch(counting_filename,1,the_cwd) + count_commands, debug)
+    writetofile(counting_filename,sbatch(counting_filename,1,the_cwd,count_report) + count_commands, debug)
     ## Append the counting command
-    command_files.append((counting_filename,'afterok:',run_name,experi_mode,'count','',count_report))
+    command_files.append((counting_filename,run_name,experi_mode,peak_pipeline[pix],count_report,0,0))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      PEAK CALLING WITH MAC2
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## If we are running analysis on atac-seq experiments and the peak calling is taking place 
+    ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
     if skippeaks: ## Print we are skipping peak calling 
         print("INFO: Skipping peak calling.")
     else: 
@@ -539,42 +549,47 @@ if __name__ == "__main__":
         #gsize = genomesize(g_size,reference_path,mito)
         gsize = g_size if g_size else genome_size
         ## Format the macs3 call report name
-        macs3_report, macs3_filename = reportname(run_name,'macs3'), f'{comsdir}/macs3.{run_name}.sh'
+        macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}B'), f'{comsdir}/{pix}B.macs3.{run_name}.sh'
         ## Format the command to macs3
         macs3_commands = peakattack(filteredbams,run_name,macs3_report,gsize=gsize,broad=broadpeak,incontrols=chip_control) + [f'{scriptsdir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{scriptsdir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
         ## Write the macs3 commands to file
-        writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd) + macs3_commands, debug)
+        writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
         ## Append the macs3 command 
-        command_files.append((macs3_filename,'afterok:',run_name,experi_mode,'macs3','',macs3_report))
+        command_files.append((macs3_filename,run_name,experi_mode,'macs3',macs3_report,0,0))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      SUBMITTING TIME-STAMP   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    pix = 7
+    ## 7A. Final timestamp
     ## Set the timesampe assocaited file names 
-    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'    ##     Name of the output file 
-    timestampsh      = f'{comsdir}/time.stamp.sh'                       ##     Name of the .sh bash file 
-    timestamp_report = reportname(run_name,f'timestamp.{stamp}')        ##     Name of the log to report to 
+    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
+    timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                                ##     Name of the .sh bash file 
+    timestamp_report = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')     ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
     times_commands = [f'{scriptsdir}/endstamp.py {timestamp_file} {stamp}\n', f'{scriptsdir}/myecho.py Finished SLURPY run of sample: {run_name}. {timestamp_report}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
-    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd) + times_commands, False)
+    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_report) + times_commands, False)
     ## Append the timestamp command to file
-    command_files.append((timestampsh,'afterok:',run_name,experi_mode,'timestamp','',timestamp_report))
+    command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_report,0,0))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
     ##      CLEANING UP FILES   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 7B. Cleaning
     ## If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
-        remove_sh     = f'{comsdir}/cleanup.sh'        ##   Set the bash file name 
-        remove_report = reportname(run_name,'clean')   ##   Set the report 
+        remove_sh     = f'{comsdir}/{pix}B.cleanup.sh'                      ##   Set the bash file name 
+        remove_report = reportname(run_name,'clean',i = f'{pix}B')   ##   Set the report 
+        ## set remove coms list 
+        remove_coms = [f'{scriptsdir}/remove.py {bamtmpdir} {splitsdir}\n', f'{scriptsdir}/gzipy.py ./{aligndir}/*.txt\n'] + [f'rm {aligndir}/*.mapped.bam\n' if not skipduplicates else '']
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd) + [f'{scriptsdir}/remove.py {bamtmpdir} {splitsdir}\n', f'{scriptsdir}/gzipy.py ./{aligndir}/*.txt\n'], debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_report) + remove_coms, debug)
         ## Append the clean up command to file
-        command_files.append((remove_sh,'afterok:',run_name,experi_mode,'clean','',remove_report))
+        command_files.append((remove_sh,run_name,experi_mode,'clean',remove_report,0,0))
     else: ## Otherwise do nothing
         pass
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -584,7 +599,7 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ##      1) RESTARTING                          
     ## Call the command dataframe, remove previous logs if hard reset was passed 
-    command_files, was_hard_reset = commandcontrol(command_files,hardreset,pipeline_steps,rerun,bwaix_jobid)
+    command_files, was_hard_reset = commandcontrol(command_files,hardreset,peak_pipeline,rerun)
     ## 
     ##      2) SUBMITTING FASTP SPLITTING          
     ## Call the submission ftn for fastp commands 
