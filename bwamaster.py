@@ -34,8 +34,8 @@ def reportcheck(reportpaths) -> bool:
     return kicker
     
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:str,debug:bool,pix=pix,linecount=line_count):
-    command = f'{slurpydir}/bwasubs.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -l {linecount} ' +  ('--debug' if debug else '')
+def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,pix=pix,linecount=line_count):
+    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -N {nice} -l {linecount} ' +  ('--debug' if debug else '')
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 
 

@@ -52,9 +52,9 @@ from pybwatools import bwamem_hic
 ## Load in panda cat ftn
 from pandacat import pandacat
 ## Load in bwa master
-from bwasubs import bwamaster
+from bwamaster import bwamaster
 ## Load in filter master
-from filtersubs import filtermaster
+from filtermaster import filtermaster
 
 ## Set the ftn descritption
 hiclite_descr = "Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments."
@@ -384,7 +384,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,enzymelib,bwa_threads,the_cwd,partition,debug)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,enzymelib,bwa_threads,the_cwd,partition,debug,nice)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice) + bwa_master_commands, debug)
         ## Append to command fil
@@ -399,7 +399,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice) + filter_master_commands, debug)
         ## Append to command file
