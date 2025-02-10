@@ -28,7 +28,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb,fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 128 -a 868187
+./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 
 """
 ##      SET PIPELINES
 ## 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
-    parser.add_argument("-F", "--fastp-splits",   dest="F",     type=int,  required=False, help = F_help, metavar = splitsize,              default = splitsize    )
+    parser.add_argument("-F", "--fastp-splits",   dest="F",     nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
     parser.add_argument("-B", "--parallel-bwa",   dest="B",     type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
     parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
     parser.add_argument("-M", "--mtDNA",          dest="M",     type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     reference_path  = inputs.r            ##     Set path to the reference genome
 
     ## Set default vairables              ##
-    fastp_splits    = inputs.F            ##     Number of splits in fastp 
+    splitsize       = inputs.F            ##     Number of splits in fastp 
     bwa_runs        = inputs.B            ##     Set the number of parallel runs of bwa 
     partition       = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
     assert checksam(), not_sam_err 
     ## If needed reset that the fastp threads and splits such that they are a multiple of each
-    fastp_splits,fastp_threads = checkfastp(fastp_splits,fastp_threads)
+    #fastp_splits,fastp_threads = checkfastp(fastp_splits,fastp_threads)
     ## Reformat clean boolean if clean was passed from restart
     ifclean = patchclean(rerun,ifclean)
     ## Set the hic file ends
@@ -339,13 +339,15 @@ if __name__ == "__main__":
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Bring in get fastqs fromd efaluts
-    from defaults import getfastqs
+    from defaults import getfastqs, sortfastq
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
     in_fastqs = getfastqs(fastqdir+'/*.gz')
     ## Assert we have fastq files
     assert len(in_fastqs), missingfqs
+    ## Sort by fastq size
+    in_fastqs = sortfastq(in_fastqs,splitsize)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -354,7 +356,8 @@ if __name__ == "__main__":
     ## Load in sbatch from defaults
     from defaults import sbatch
     ## iterate thru the pairs 
-    for fastqix, (r1,r2) in enumerate(in_fastqs):
+    for fastqix, fastrow in in_fastqs.iterrows():
+        r1,r2,sizeosplit = fastrow.Read1,fastrow.Read2,fastrow.Splitsize
         ## Gather the sample name, exp mode, and fastp command file 
         sample_name = getsamplename(r1) 
         ## Append the sample names
@@ -369,7 +372,7 @@ if __name__ == "__main__":
         ##  Set the the fastp command file name 
         fastp_command_file =  f'{comsdir}/{pix}.fastp.{sample_name}.sh'  
         ##  Gather the fastp command and report 
-        fastp_coms, fastp_repo = hicpeel(r1,r2,fastp_threads,fastp_splits)
+        fastp_coms, fastp_repo = hicpeel(r1,r2,fastp_threads,sizeosplit)
         ##  Write the command to file
         writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1) + fastp_coms, debug)
         ##  Append command to file

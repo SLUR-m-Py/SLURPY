@@ -45,6 +45,21 @@ from parameters import fakejobid, runlocal
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      SLURPY FUNCTIONS 
+## Ftn for sorting fastq files by size
+def sortfastq(infastq:list,splitsizes:list):
+    ## Format input fastq zipped list into df
+    tmp = pd.DataFrame(infastq,columns=['Read1','Read2'])
+    ## Gather sizes of fast
+    tmp['Size1'] = [getfilesize(f1) for (f1,f2) in infastq]
+    ## Sort values by size and reset index 
+    tmp = tmp.sort_values('Size1').reset_index(drop=True)
+    ## Modify split sizzes 
+    splitsizes = [splitsizes[0] for s in range(tmp.shape[0])] if (len(splitsizes) < tmp.shape[0]) else splitsizes
+    ## Add a sorted list to splitsize to match size of fastqs 
+    tmp['Splitsize'] = sorted(splitsizes)
+    ## Return tmp
+    return tmp 
+
 ## Ftn for returning a sorted glob
 def sortglob(wildcard:str) -> list:
     """Retuns the sorted glob of input wild card."""
