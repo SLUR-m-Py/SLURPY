@@ -348,7 +348,8 @@ if __name__ == "__main__":
     assert len(in_fastqs), missingfqs
     ## Sort by fastq size
     in_fastqs = sortfastq(in_fastqs,splitsize)
-    in_fastqs.to_csv('test.fastq.save.csv',header=True,index=False)
+    ## Saveout the sizes to debug dir 
+    in_fastqs.to_csv(f'{debugdir}/fastq.sizes.csv',header=True,index=False)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
