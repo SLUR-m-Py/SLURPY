@@ -84,8 +84,10 @@ if __name__ == "__main__":
     debug        = inputs.debug 
 
     ## Gather the first reads 
-    read_ones  = sortglob(f'{splitsdir}/*{sample_name}*_R1_*.fastq.gz')
+    read_ones  = sortglob(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
     read_twos  = ['_R2_'.join(r.split('_R1_')) for r in read_ones]
+    ## Print to file 
+    print('INFO: Spawning %s calls to bwa.'%len(read_twos))
 
     ## List the pairs 
     read_pairs = list(zip(read_ones,read_twos))
