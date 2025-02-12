@@ -5,10 +5,10 @@
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists
+from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize
 from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, bamtmpdir
 ## Load in write to file from pysam tools 
-from pysamtools import writetofile
+from pysamtools import writetofile, listzip
 ## load in sleep
 from time import sleep
 
@@ -53,6 +53,21 @@ def bwamem_paired(r1,r2,ref,outbam,log,vmode=1,threads=4,opts='-M') -> list[str]
     ## Set the bwa mem option based on experiment type and format the bwa mem call, submit to shell via submit command
     return [f'bwa mem {opts} -v {vmode} -t {threads} {ref} {r1} {r2} 2>> {log} | samtools view -hb -@ {threads} -o {outbam} -O BAM\n', bwaecho(outbam,log)]
 
+## Write ftn to check filesize fo fastq
+def sizecheck(read1,read2) -> list: 
+    ## Iniate list 
+    read_pairs = []
+    ## Iterat thru the read pairs 
+    for r1,r2 in listzip(read1,read2):
+        ## If either is zero 
+        if (getfilesize(r1) == 0) | (getfilesize(r2) == 0):
+            ## Print a warning 
+            print("WARNING: the given number of read pairs from %s or %s was zero."%(r1,r2))
+        else:
+            read_pairs.append((r1,r2))
+    ## Return the read pairs 
+    return read_pairs
+
 ## Set description
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
@@ -78,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                           ) 
     parser.add_argument("-c", "--cwd",            dest="c",     type=str,  required=True,  help = c_help, metavar = './the/cwd'                          )
     parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,   default = bwathreads   )
-    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = parts,         default = parts       ) 
+    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = 'tb',         default = 'tb'         ) 
     parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
@@ -110,8 +125,8 @@ if __name__ == "__main__":
     ## Print to file 
     print('INFO: Spawning %s calls to bwa.'%len(read_twos))
 
-    ## List the pairs 
-    read_pairs = list(zip(read_ones,read_twos))
+    ## Check the size of the read pairs 
+    read_pairs = sizecheck(read_ones,read_twos)
 
     ## Iniate list 
     bwa_reports = []

@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-e", dest="E", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
     parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
-    parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=parts,        default = parts     ) 
+    parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar='tb',        default = 'tb'       ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
