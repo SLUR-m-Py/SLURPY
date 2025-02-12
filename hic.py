@@ -391,7 +391,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=True,forced=force)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=True,forced=force,nodelist=nodes)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
         ## Append to command fil
@@ -406,7 +406,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice,forced=force,chunksize=chunksize)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice,forced=force,chunksize=chunksize,nodelist=nodes)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file
@@ -417,18 +417,19 @@ if __name__ == "__main__":
     ##      FILE and TXT MERGING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## 3. merging,  deduplicating and sorintg
-    pix = 3
     ## Iterate over the sample names
     for si,sname in enumerate(samplenames):
         ## Set the smaple name 
         sample_name = run_name if postmerging else sname 
         ## If the sample is the first and we are merging all smaples 
         if (si > 0) and postmerging:
-            break 
+            continue
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## Initiate list of out put hic files for each chromosome
         hiccats_outs = []
         hicdups_outs = []
+        ## Set pix 
+        pix = 3
         ## Set the new concat file name by chromosome index 
         for chrom in chrlist:
             ## Set start name for wildcard use to bring in inputs  to ftn 
