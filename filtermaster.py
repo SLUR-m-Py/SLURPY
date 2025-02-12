@@ -8,7 +8,7 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, daskthreads, part, P_help, nice, force_help
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, part, P_help, nice, force_help, chunksize
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -24,8 +24,8 @@ def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
@@ -58,6 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=part,        default = part       ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
+    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
 
     ## Add boolean 
     parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true')
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     partitions  = inputs.P
     threads     = inputs.T
     nice        = inputs.N
+    chunksize   = inputs.Z 
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
     forced      = inputs.force  ## Flag to force 
@@ -93,7 +95,7 @@ if __name__ == "__main__":
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
         ## format the command 
-        filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)}' + (' --dovetails' if dovetail else ' ')
+        filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --dovetails' if dovetail else ' ')
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
 
