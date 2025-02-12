@@ -262,7 +262,7 @@ if __name__ == "__main__":
             
             if len(excludes):
                 ## Gather reads mapping to exclude list of chromosomes
-                toexclude = bedpe[(bedpe.Qname1.isin(excludes) | bedpe.Qname2.isin(excludes))].copy()
+                toexclude = bedpe[(bedpe.Rname1.isin(excludes) | bedpe.Rname2.isin(excludes))].copy()
                 toexclude['Error'] = 'excluded'
                 ## Appedn to the not used lsit
                 not_used.append(toexclude) if toexclude.shape[0] else None 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
             if len(includos):
                 ## Gather read pairs that we are not include
-                toexclude = bedpe[~(bedpe.Qname1.isin(includos) & bedpe.Qname2.isin(includos))].copy()
+                toexclude = bedpe[~(bedpe.Rname1.isin(includos) & bedpe.Rname2.isin(includos))].copy()
                 toexclude['Error'] = 'excluded'
                 ## Appedn to the not used lsit
                 not_used.append(toexclude) if toexclude.shape[0] else None 
