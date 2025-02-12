@@ -121,9 +121,8 @@ x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command. Default 
 A_help = "The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes."
 a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination."
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
-#R_help = "Step within the pipeline to re-run from. Default behavior is to recheck logs to determin position of run. Options for Hi-C analysis include: %s. Options for ATAC-seq include: %s"%(h_pipe,a_pipe)
-pipe_help = "Step within the pipeline to re-run from. Options include: %s"
-R_help   = pipe_help
+R_help = "Step within the pipeline to re-run from. Options include: %s"
+node_help = "Space seperated list of nodes to run jobs on."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 

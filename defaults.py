@@ -237,7 +237,7 @@ def readann(inpath:str) -> list:
     return pd.DataFrame(list(zip(contigs,lengths)))
     
 ## Ftn for formating an sbatch text
-def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7) -> list:
+def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7, nodelist=None) -> list:
     """Generates the sbatch settings for a script with a give input jobname, cpu count, working directory, and others."""
     ## Gather the extension
     jobext = nameojob.split('.')[-1] if nameojob else 'sh'
@@ -256,6 +256,8 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
     settings = settings + ['#SBATCH --chdir=%s\n'%cwd] if cwd else settings                   ##      Set the current workign dir
     ## Add the partition                                                                      ##      
     settings = settings + ['#SBATCH --partition=%s\n'%partition] if partition else settings   ##      The partitions
+    ## Add nodes if they were passed
+    settings = settings + ['#SBATCH --nodelist=%s\n'%','.join(nodelist)] if nodelist else settings ## List of nodes to run on
     ## return settings 
     return settings
 
