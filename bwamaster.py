@@ -34,17 +34,9 @@ def reportcheck(reportpaths) -> bool:
     return kicker
 
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False):
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
     ## Format command 
-    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' 
-    ## Add a hic library if it was passed 
-    command = command + (f' -L {library}' if library else '')
-    ## append debug command if passed 
-    command = command +  (' --debug' if debug else '')
-    ## append in hic mode
-    command = command + (' --hic' if inhic else '')
-    ## Add force boolean 
-    command = command + (' --force' if inhic else '')
+    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist=%s'%', '.join(nodelist) if nodelist else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 
@@ -65,7 +57,7 @@ def bwamem_paired(r1,r2,ref,outbam,log,vmode=1,threads=4,opts='-M') -> list[str]
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice, force_help
+from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice, force_help, node_help
 
 ## Set help messages 
 c_help     = 'The current working directory'
@@ -90,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
+    parser.add_argument("--nodelist",             dest="nodes", nargs='+', required=False, help = node_help,                      default = None         )
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                          )
     parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = 'store_true'                                          )
     parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true'                                          )
@@ -106,6 +99,7 @@ if __name__ == "__main__":
     library      = inputs.L
     line_count   = inputs.l
     nice         = inputs.N
+    nodes        = inputs.nodes
     debug        = inputs.debug 
     ishic        = inputs.hic 
     forced       = inputs.force 
@@ -148,7 +142,7 @@ if __name__ == "__main__":
             continue
 
         ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice) + bwa_coms, debug)
+        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
 
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')

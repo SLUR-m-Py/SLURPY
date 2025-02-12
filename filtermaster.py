@@ -8,7 +8,7 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, part, P_help, nice, force_help, chunksize
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, part, P_help, nice, force_help, chunksize, node_help
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -24,8 +24,8 @@ def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize,nodelist=None):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist=%s'%', '.join(nodelist) if nodelist else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
@@ -59,11 +59,12 @@ if __name__ == "__main__":
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
+    parser.add_argument("--nodelist",  dest="nodes", nargs='+', required=False, help = node_help,     default = None       )
 
     ## Add boolean 
-    parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true')
-    parser.add_argument("--debug",      dest="debug",  help = dove_help,    action = 'store_true')
-    parser.add_argument("--force",      dest="force",  help = force_help,   action = 'store_true'                                          )
+    parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true' )
+    parser.add_argument("--debug",      dest="debug",  help = dove_help,    action = 'store_true' )
+    parser.add_argument("--force",      dest="force",  help = force_help,   action = 'store_true' )
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     threads     = inputs.T
     nice        = inputs.N
     chunksize   = inputs.Z 
+    nodes       = inputs.nodes
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
     forced      = inputs.force  ## Flag to force 
@@ -106,7 +108,7 @@ if __name__ == "__main__":
             continue
 
         ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice) + [filter_com+'\n'], debug)
+        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + [filter_com+'\n'], debug)
 
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
