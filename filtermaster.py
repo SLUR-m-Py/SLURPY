@@ -118,7 +118,7 @@ if __name__ == "__main__":
     kicker = True 
 
     ## While thekicker is true 
-    while kicker:
+    while kicker and len(filter_reports):
         kicker = not reportcheck(filter_reports)
         ## Wait a minitue 
         sleep(10)

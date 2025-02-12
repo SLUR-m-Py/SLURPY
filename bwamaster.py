@@ -162,7 +162,7 @@ if __name__ == "__main__":
     kicker = True 
 
     ## While thekicker is true 
-    while kicker:
+    while kicker and len(bwa_reports):
         kicker = not reportcheck(bwa_reports)
         ## Wait a minitue 
         sleep(10)

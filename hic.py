@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 200000 10000000 -a 872708 --restart
+./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb,fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 200000 10000000 --restart -a 873337
 """
 ##      SET PIPELINES
 ## 

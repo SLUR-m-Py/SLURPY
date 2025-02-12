@@ -18,9 +18,11 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
-import dask.dataframe as dd
+import pandas as pd, dask.dataframe as dd
+## Bring in concat
+from numpy import concatenate
 ## Load in params
-from parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help
+from parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help, Z_help, chunksize
 ## Bring in ftns from slurpy 
 from defaults import fileexists
 ## Bring in seqIO
@@ -163,6 +165,8 @@ check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
 ## set the value tuples 
 value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
 
+## Set the use column names
+use_columns = ['Qname1','Rname1','Rnamd1','Cigar1','Cigar2','End1','End2','Dangend1','Dangend2','Minmapq','Distance','Inter']
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -182,7 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-x", dest="X", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
     parser.add_argument("-i", dest="I", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
-    
+    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
     ## Add boolean 
     parser.add_argument("--dovetails",  dest="D",  help = dove_help,    action = 'store_true')
 
@@ -195,113 +199,186 @@ if __name__ == "__main__":
     excludes   = inputs.X  ## List of chromosomes/contigs to exclude 
     includos   = inputs.I  ## List of chormosomes to only includ
     minmapq    = inputs.Q  ## minimum mapping quality 
-    errordist  = inputs.E  ## Set max distance to check for erros 
+    error_dist = inputs.E  ## Set max distance to check for erros 
     library    = inputs.L  ## Set the library used 
+    chunksize  = inputs.Z  ## set the chuck size 
     dovetail   = inputs.D  ## Flag to remove dovetail reads
-
+    
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
-
-    ## Add the unmapped wild card to exclude list
-    excludes.append('*')
-
-    ## Load in the bedpe file via dask dataframes
-    bedpe = dd.read_csv(bedpe_path,sep=hicsep)
-
-    ## Gather the unmapped
-    unmapped_qnames = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Pos1==0) | (bedpe.Pos2==0) | (bedpe.Inter<0)].Qname1.compute().tolist()
-
-    ## Set dangling ends qnames, those that we know have dangling ends
-    dang_end_qnames = bedpe[(bedpe.Dangend1>0) | (bedpe.Dangend2>0)].Qname1.compute().tolist()
-    
-    ## Calcualte the the reads that are dove tailed, NOTE if we do the above, this is pointless 
-    dove_qnames = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].Qname1.compute().tolist() if dovetail else []
 
     ## Gather the restriciton sites and dangling ends 
     restriciton_sites, dangling_ends = returnsite(library)
 
-    ## If a library was passed, we need to check fragments for erros 
-    if restriciton_sites: 
-        ## Gather those intra chromosome pairs to check 
-        to_check = bedpe[(bedpe.Distance<errordist) & (bedpe.Inter==0) & (~bedpe.Qname1.isin(unmapped_qnames+dang_end_qnames+dove_qnames))][check_names].compute().reset_index(drop=True)
-        ## Initiate the fragment sites
-        to_check['Left1'], to_check['Right1'], to_check['Left2'], to_check['Right2'] = -1, -1, -1, -1
+    ## Iniate paths
+    not_usede_paths = []
+    too_check_paths = []
+    hic_valid_paths = []
 
+    ## Load in the bedpe file using chunks 
+    with pd.read_csv(bedpe_path,sep=hicsep,chunksize=chunksize,usecols=use_columns) as chunks:
+        ## Iteraet over the chunks 
+        for i,bedpe in enumerate(chunks):
+            ## Initate the lists of dataframes
+            not_used = []
+            ## Preset error 
+            bedpe['Error'] = '' 
+
+            ## Set output paths
+            not_usede_path = makeoutpath(bedpe_path,f'erros.{i}')
+            hic_valid_path = makeoutpath(bedpe_path,f'tohic.{i}')
+
+            ## Append to path
+            not_usede_paths.append(not_usede_path)
+            hic_valid_paths.append(hic_valid_path)
+
+            ## Gather the unmapped reads if any 
+            unmapped = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Inter<0)].copy()
+            unmapped['Error'] = 'unmapped'
+            ## Append to not_used
+            not_used.append(unmapped) if unmapped.shape[0] else None 
+            ## Drop the unmapped 
+            bedpe.drop(unmapped.index,axis=0,inplace=True)
+
+            ## Set dangling ends, those that we know have dangling ends, and set error 
+            dang_ends = bedpe[(bedpe.Dangend1>0) | (bedpe.Dangend2>0)].copy()
+            dang_ends['Error'] = 'dangend'
+            ## Append to not used
+            not_used.append(dang_ends) if dang_ends.shape[0] else None 
+            ## Drop the dang ends
+            bedpe.drop(dang_ends.index,axis=0,inplace=True)
+
+            ## Remove dovetailed reads, if doing so 
+            if dovetail:
+                ## Gather dovetailed reads, set error message 
+                dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
+                dovetailed['Error'] = 'dovetailed'
+                ## append to the not used
+                not_used.append(dovetailed) if dovetailed.shape[0] else None 
+                ## Drop from bedpe chunk
+                bedpe.drop(dovetailed.index,axis=0,inplace=True)
+            else:
+                pass 
+            
+            if len(excludes):
+                ## Gather reads mapping to exclude list of chromosomes
+                toexclude = bedpe[(bedpe.Qname1.isin(excludes) | bedpe.Qname2.isin(excludes))].copy()
+                toexclude['Error'] = 'excluded'
+                ## Appedn to the not used lsit
+                not_used.append(toexclude) if toexclude.shape[0] else None 
+                ## Drop out the unused apirs
+                bedpe.drop(toexclude.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            if len(includos):
+                ## Gather read pairs that we are not include
+                toexclude = bedpe[~(bedpe.Qname1.isin(includos) & bedpe.Qname2.isin(includos))].copy()
+                toexclude['Error'] = 'excluded'
+                ## Appedn to the not used lsit
+                not_used.append(toexclude) if toexclude.shape[0] else None 
+                ## Drop out the unused apirs
+                bedpe.drop(toexclude.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            ## Remove low quality mapping, set error to low qual
+            lowqual = bedpe[(bedpe.Minmapq<minmapq)].copy()
+            lowqual['Error'] = 'lowqual'
+            ## Append to the not used list
+            not_used.append(lowqual) if lowqual.shape[0] else None 
+            ## Drop from bedpe chunk
+            bedpe.drop(lowqual.index,axis=0,inplace=True)
+
+            ## If restriction sites were passed 
+            if restriciton_sites: 
+                ## SEt the output path and append to list 
+                too_check_path = makeoutpath(bedpe_path,f'tocheck.{i}')
+                too_check_paths.append(too_check_paths)
+                ## Gather the read pairs we plan to check for intra fragments
+                tocheck = bedpe[(bedpe.Distance<error_dist) & (bedpe.Inter==0)].copy()
+                ## SAve out the reads to check for intra fragments
+                tocheck.to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
+                ## Drop these from bedpe
+                bedpe.drop(tocheck.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            ## Concat the not used list so far and save out
+            pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) if len(not_used) else None 
+            ## Save out the not used reads and the to check names 
+            bedpe.to_csv(hic_valid_path,sep=hicsep,header=True,index=False) if bedpe.shape[0] else None 
+
+    ## Delet the last chunks, we don't need these
+    del bedpe, not_used
+    ## Set the next chunk
+    last_chunk = i + 1
+    ## Set the intra qnames
+    intra_all_qnames = []
+
+    ## If we are checking rest sites and we have dataframes to check 
+    if restriciton_sites and len(too_check_paths):
+        ## Bring in the reads to check 
+        allcheck = dd.read_csv(too_check_paths,sep=hicsep)
         ## Gather the chromosome list
-        chrlist = [c for c in to_check.Rname1.unique().tolist() if ((c in includos) and (not c in excludes))]
+        chrlist = allcheck.Rname1.unique().compute()
 
         ## Load in the reference 
         refs_parse = SeqIO.parse(refpath,format='fasta')
-
-        ## Iterate thru the reference paths 
+        ## Iterate thru ref parser 
         for ref in refs_parse:
-            ## Define the chromosome names and id, calc boolean
-            chrom_id,chrom_name,chrom_cont = inref(ref,chrlist,excludes)
-            ## If come across a chrom we don't recoginze 
-            if chrom_cont:
+            if (ref.id not in chrlist) & (ref.name not in chrlist):
                 continue
-           
+            ## set the dataframe to check 
+            tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
+            ## Initiate the fragment sites
+            tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
+
             ## Set the chrom sequence
             chrseq = ref.seq
-            ## Gather the contacts mapping for this chrom
-            cdf = to_check[(to_check.Rname1 == chrom_id) | (to_check.Rname1==chrom_name)]
-
+ 
             ## Iterate thru the tupels 
             for (a,b,c) in value_tuple:
-                to_check.loc[cdf.index,a] = cdf[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
+                tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
         
-        ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
-        intra_qnames = to_check[(to_check.Left1==to_check.Left2) | (to_check.Right1 == to_check.Right2) | (to_check.Right1>=to_check.Left2)].Qname1.tolist()
-    else: ## Otherwisedo nothing 
-        intra_qnames = []
+            ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
+            intra_qnames = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)].Qname1.tolist()
+            intra_all_qnames.append(intra_qnames)
 
-    ## Calcualte the the reads that are dove tailed, NOTE if we do the above, this is pointless 
-    dove_qnames = to_check[(to_check.End1>=to_check.Pos2)].Qname1.tolist() if dovetail else []
+        ## Concat the intra frag qnames
+        intra_all_qnames = concatenate(intra_all_qnames)
 
-    ## Clac low quality qs
-    lowqual_qnames = bedpe[(bedpe.Minmapq<minmapq)].Qname1.compute().tolist()
+        ## Set the qnames 
+        errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
+        errors['Error'] = 'intrafrag'
+        ## Set path to save out the errors 
+        out_error_path = makeoutpath(bedpe_path,f'errors.{last_chunk}')
+        ## append to path
+        not_usede_paths.append(out_error_path)
+        ## SAve out the errors
+        errors.to_csv(out_error_path,sep=hicsep,single_file=True,index=False)
 
-    ## combine all the errors
-    error_qnames = dang_end_qnames + dove_qnames + intra_qnames + unmapped_qnames + lowqual_qnames
+        ## Gather the valid
+        valid = allcheck[(~allcheck.Qname1.isin(intra_all_qnames))]
+        ## SEt the output path to save the valid contacts
+        out_valid_path = makeoutpath(bedpe_path,f'tohic.{last_chunk}')
+        ## Append to list of paths of valid
+        hic_valid_paths.append(out_valid_path)
+        ## Save out the valid contacts
+        valid.to_csv(out_valid_path,sep=hicsep,single_file=True,index=False)
+    else:
+        pass 
 
-    ## Gather all other Qnames and Rnames
-    keep_qnames = bedpe[(~bedpe.Qname1.isin(error_qnames)) & (bedpe.Rname1.isin(includos)) & (~bedpe.Rname1.isin(excludes))].Qname1.compute().tolist()
+    ## Set output file path, gather the not used dataframes and save out as sicnle file
+    not_usede_path = makeoutpath(bedpe_path,'notused')
+    dd.read_csv(not_usede_paths,sep=hicsep).to_csv(not_usede_path,sep=hicsep,single_file=True,index=False)
 
-    ## Gather the not include list 
-    noinclude_qnames = bedpe[(~bedpe.Qname1.isin(error_qnames)) & (~bedpe.Qname1.isin(keep_qnames))].Qname1.compute().tolist()
-
-    ## Format boolean indexes 
-    validix = bedpe.Qname1.isin(keep_qnames)
-    notused = bedpe.Qname1.isin(noinclude_qnames)
-
+    ## Gather the valid dataframes
+    bedpe = dd.read_csv(hic_valid_paths,sep=hicsep)
     ## Compute a sorted list of valid chromosomes by reference indexed number
-    chromosomes = sorted(bedpe[validix].Rname1.unique().compute())
-    #chrom_n  = sorted(bedpe[validix].Chrn1.unique().compute())
-    #print(chrom_n)
-    ## Iterate thur and seperat on chromosomes, and saveout the contacts
-    ## NOTE: We have to do this (rather than groupby) b/c dask dataframes can't precompute groups
-    [bedpe[(validix) & (bedpe.Rname1==chrom)].to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
-
-    ## Save out the unused reads 
-    bedpe[notused].to_csv(makeoutpath(bedpe_path,'notused'),sep=hicsep,single_file=True,index=False) 
-
-    ## Set error lables
-    error_labels = ['Unmapped',       'Danglingend',  'Dovetailed', 'Intrafragment',   'Lowquality' ]
-    error_groups = [unmapped_qnames, dang_end_qnames,  dove_qnames,   intra_qnames,   lowqual_qnames]
-    ## Set empty list
-    stored = []
-    ## Save out the errors by group
-    for i, (elabel,egroup) in enumerate(zip(error_labels,error_groups)):
-        ## If the group has no length 
-        if not len(egroup):
-            continue
-        ## Gather the rrors 
-        tmp = bedpe[(bedpe.Qname1.isin(egroup)) & (~bedpe.Qname1.isin(stored))].compute()
-        ## Add a label and save 
-        tmp['Error'] = elabel
-        tmp.to_csv(makeoutpath(bedpe_path,'errors'),mode='a' if i else 'w',sep=hicsep,index=False,header=not i)
-        ## Update stored list 
-        stored = stored + egroup
+    chromosomes = sorted(bedpe.Rname1.unique().compute())
+    ## Iterate thur and seperat on chromosomes, and saveout the contact. NOTE: We have to do this (rather than groupby) b/c dask dataframes can't precompute groups
+    [bedpe[(bedpe.Rname1==chrom)].to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     
     ## print to log
     print("Finished filtering and splitting bedpe file: %s"%bedpe_path)
