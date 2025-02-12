@@ -346,21 +346,25 @@ if __name__ == "__main__":
                 tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
         
             ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
-            intra_qnames = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)].Qname1.tolist()
-            intra_all_qnames.append(intra_qnames)
+            intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
+            ## Gather qnames if intrafrags has hsape
+            if intra_frags.shape[0]:
+                ## Gather qnames 
+                intra_qnames = intra_frags.Qname1.tolist()
+                ## Append output list
+                intra_all_qnames = intra_all_qnames + intra_qnames
 
-        ## Concat the intra frag qnames
-        intra_all_qnames = concatenate(intra_all_qnames)
-
-        ## Set the qnames 
-        errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
-        errors['Error'] = 'intrafrag'
-        ## Set path to save out the errors 
-        out_error_path = makeoutpath(bedpe_path,f'errors.{last_chunk}')
-        ## append to path
-        not_usede_paths.append(out_error_path)
-        ## SAve out the errors
-        errors.to_csv(out_error_path,sep=hicsep,single_file=True,index=False)
+        ## IF we have qnames that are errors
+        if len(intra_all_qnames):
+            ## Set the qnames 
+            errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
+            errors['Error'] = 'intrafrag'
+            ## Set path to save out the errors 
+            out_error_path = makeoutpath(bedpe_path,f'errors.{last_chunk}')
+            ## append to path
+            not_usede_paths.append(out_error_path)
+            ## SAve out the errors
+            errors.to_csv(out_error_path,sep=hicsep,single_file=True,index=False)
 
         ## Gather the valid
         valid = allcheck[(~allcheck.Qname1.isin(intra_all_qnames))]
