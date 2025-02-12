@@ -216,13 +216,14 @@ if __name__ == "__main__":
     with pd.read_csv(bedpe_path,sep=hicsep,chunksize=chunksize) as chunks:
         ## Iteraet over the chunks 
         for i,bedpe in enumerate(chunks):
+            i = i + 1
             ## Initate the lists of dataframes
             not_used = []
             ## Preset error 
             bedpe['Error'] = '' 
 
             ## Set output paths of thoese not used, valid hic contacts, and those to check 
-            not_usede_path = makeoutpath(bedpe_path,f'erros.{i}')
+            not_usede_path = makeoutpath(bedpe_path,f'errors.{i}')
             hic_valid_path = makeoutpath(bedpe_path,f'tohic.{i}')
             too_check_path = makeoutpath(bedpe_path,f'tocheck.{i}')
 
@@ -291,7 +292,7 @@ if __name__ == "__main__":
                 ## Gather the read pairs we plan to check for intra fragments
                 tocheck = bedpe[(bedpe.Distance<error_dist) & (bedpe.Inter==0)].copy()
                 ## SAve out the reads to check for intra fragments
-                tocheck.to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
+                tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
                 ## Drop these from bedpe
                 bedpe.drop(tocheck.index,axis=0,inplace=True)
             else:
@@ -308,12 +309,10 @@ if __name__ == "__main__":
                 ## append to path 
                 hic_valid_paths.append(hic_valid_path)
                 ## Save out the not used reads and the to check names 
-                bedpe.to_csv(hic_valid_path,sep=hicsep,header=True,index=False) 
+                bedpe.drop('Error',axis=1).to_csv(hic_valid_path,sep=hicsep,header=True,index=False) 
 
     ## Delet the last chunks, we don't need these
     del bedpe, not_used
-    ## Set the next chunk
-    last_chunk = i + 1
     ## Set the intra qnames
     intra_all_qnames = []
 
@@ -357,7 +356,7 @@ if __name__ == "__main__":
             errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
             errors['Error'] = 'intrafrag'
             ## Set path to save out the errors 
-            out_error_path = makeoutpath(bedpe_path,f'errors.{last_chunk}')
+            out_error_path = makeoutpath(bedpe_path,f'errors.{0}')
             ## append to path
             not_usede_paths.append(out_error_path)
             ## SAve out the errors
@@ -366,7 +365,7 @@ if __name__ == "__main__":
         ## Gather the valid
         valid = allcheck[(~allcheck.Qname1.isin(intra_all_qnames))]
         ## SEt the output path to save the valid contacts
-        out_valid_path = makeoutpath(bedpe_path,f'tohic.{last_chunk}')
+        out_valid_path = makeoutpath(bedpe_path,f'tohic.{0}')
         ## Append to list of paths of valid
         hic_valid_paths.append(out_valid_path)
         ## Save out the valid contacts
