@@ -24,11 +24,10 @@ croth@lanl.gov
 squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
-
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 
+./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 200000 10000000 -a 872708 --restart
 """
 ##      SET PIPELINES
 ## 
@@ -153,6 +152,7 @@ if __name__ == "__main__":
     ## Set boolean flags 
     parser.add_argument("--toshort",              dest="toshort",   help = short_help,    action = 'store_true')
     parser.add_argument("--restart",              dest="restart",   help = restart_help,  action = 'store_true')
+    parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true')
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true')
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
@@ -199,6 +199,7 @@ if __name__ == "__main__":
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
     hardreset       = inputs.restart      ##     Resetart the slurpy run, removing previous
+    force           = inputs.force        ##     Force overwrite of output alignment files 
     debug           = inputs.debug        ##     Run in debug mode 
     skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates 
     ifclean         = inputs.clean        ##     Flag to run clean up script 
@@ -217,14 +218,12 @@ if __name__ == "__main__":
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Load in ftns from defalut
-    from defaults import pathexists, checkfastp, patchclean, fileexists
+    from defaults import pathexists, patchclean, fileexists
     ## Check that the fastq and reference path exists
     assert pathexists(fastqdir), fastqserror
     assert pathexists(reference_path), noref_path%reference_path 
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
     assert checksam(), not_sam_err 
-    ## If needed reset that the fastp threads and splits such that they are a multiple of each
-    #fastp_splits,fastp_threads = checkfastp(fastp_splits,fastp_threads)
     ## Reformat clean boolean if clean was passed from restart
     ifclean = patchclean(rerun,ifclean)
     ## Set the hic file ends
@@ -276,7 +275,7 @@ if __name__ == "__main__":
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in ftns
+    ## Load in ftns for directory and run name 
     from defaults import setrunname, makedirectories, sortglob, remove
     ## Let the user know we are making directories 
     print(directormaking)
@@ -359,6 +358,7 @@ if __name__ == "__main__":
     from defaults import sbatch
     ## iterate thru the pairs 
     for fastqix, fastrow in in_fastqs.iterrows():
+        ## Split off the row values from our sorted dataframe 
         r1,r2,sizeosplit = fastrow.Read1,fastrow.Read2,fastrow.Splitsize
         ## Gather the sample name, exp mode, and fastp command file 
         sample_name = getsamplename(r1) 
@@ -389,7 +389,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,enzymelib,bwa_threads,the_cwd,partition,debug,nice)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=True,forced=force)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice) + bwa_master_commands, debug)
         ## Append to command fil
@@ -404,7 +404,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice,forced=force)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice) + filter_master_commands, debug)
         ## Append to command file

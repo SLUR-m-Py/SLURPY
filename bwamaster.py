@@ -6,14 +6,14 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists
-from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
+from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, bamtmpdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 
 ## Set opts
-bwa_options = '-5SMP'   
+hic_options = '-5SMP'   
 line_count  = 5000
 pix         = 1     
 
@@ -32,21 +32,45 @@ def reportcheck(reportpaths) -> bool:
     else: ## other wise keep kicken 
         kicker = False
     return kicker
-    
+
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,library:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,pix=pix,linecount=line_count):
-    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -L {library} -N {nice} -l {linecount} ' +  ('--debug' if debug else '')
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False):
+    ## Format command 
+    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' 
+    ## Add a hic library if it was passed 
+    command = command + (f' -L {library}' if library else '')
+    ## append debug command if passed 
+    command = command +  (' --debug' if debug else '')
+    ## append in hic mode
+    command = command + (' --hic' if inhic else '')
+    ## Add force boolean 
+    command = command + (' --force' if inhic else '')
+    ## Format report 
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 
+
+## Ftn for echo bwa finish to a log
+def bwaecho(o,l=None) -> str:
+    """Formats an echo command to print finishing statment of bwa alignment to log."""
+    ## Format the message given the output (o) file name and log (l)
+    return  f'{slurpydir}/myecho.py Finished alignment of split: {o} {l}' if l else ''
+    
+## Write ftn for formating bwa mem command with paired reads
+def bwamem_paired(r1,r2,ref,outbam,log,vmode=1,threads=4,opts='-M') -> list[str]:
+    """Formats a bwa command and requires as input paired-reads, a reference name, an output bam file, a log file, experiment type."""
+    ## Set the bwa mem option based on experiment type and format the bwa mem call, submit to shell via submit command
+    return [f'bwa mem {opts} -v {vmode} -t {threads} {ref} {r1} {r2} 2>> {log} | samtools view -hb -@ {threads} -o {outbam} -O BAM\n', bwaecho(outbam,log)]
 
 ## Set description
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice
+from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice, force_help
 
-c_help = 'The current working directory'
-l_help = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
+## Set help messages 
+c_help     = 'The current working directory'
+l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
+hic_flag   = 'Flag to run in Hi-C mode.'
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -58,16 +82,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = bwadescr)
 
     ## Add the required argument
-    parser.add_argument("-s", "--sample",         dest="s",     type=str,  required=True,  help = s_help, metavar = 'sample name'                                  )
-    parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
-    parser.add_argument("-c", "--cwd",            dest="c",     type=str,  required=True,  help = c_help, metavar = './the/cwd'                                    )
-    parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
-    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
-    parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
-    parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',                    default = line_count   )
-    parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
-    parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                                    )
-    
+    parser.add_argument("-s", "--sample",         dest="s",     type=str,  required=True,  help = s_help, metavar = 'sample name'                        )
+    parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                           ) 
+    parser.add_argument("-c", "--cwd",            dest="c",     type=str,  required=True,  help = c_help, metavar = './the/cwd'                          )
+    parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,   default = bwathreads   )
+    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,         default = part         ) 
+    parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
+    parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
+    parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
+    parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                          )
+    parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = 'store_true'                                          )
+    parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true'                                          )
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -82,6 +107,8 @@ if __name__ == "__main__":
     line_count   = inputs.l
     nice         = inputs.N
     debug        = inputs.debug 
+    ishic        = inputs.hic 
+    forced       = inputs.force 
 
     ## Gather the first reads 
     read_ones  = sortglob(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
@@ -97,15 +124,31 @@ if __name__ == "__main__":
 
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
-        ## Set the out file
-        outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
-        ## format the command 
-        bwa_com   = f'bwa mem -v 1 -t {thread_count-1} {bwa_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF'
-        bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
-        bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
+        ## SEt report and file name 
+        bwa_repo = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
+        bwa_file = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
+
+        ## if we are formating hic run
+        if ishic:
+            ## Set the out file
+            outfile = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
+            ## format the command 
+            bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {hic_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
+
+        else: ## Otherwise is atac, wgs, or chip cut and tag etc 
+            ## Set file name 
+            outfile = f'{bamtmpdir}/{i}.{sample_name}.bam'
+            ## Format bwa command
+            bwa_coms = bwamem_paired(r1,r2,ref_path,outfile,bwa_repo,threads=thread_count-1)
+
+        ## If the report exists and has alredy been run, just skip
+        prekick = reportcheck([bwa_repo])
+        if (prekick and fileexists(bwa_file) and fileexists(outfile)) and (not forced):
+            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
+            continue
 
         ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice) + [bwa_com], debug)
+        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice) + bwa_coms, debug)
 
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')

@@ -96,13 +96,13 @@ refmetavar = './path/to/reference.fasta'
 ## Set help messages for input and default variables 
 e_help = "The type of epigenomic expeirment (for exmale ATAC or Hi-C) used to generate sequenced pair-end reads (options include wgs, atac, chip, or hic)."
 r_help = "Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment." 
-F_help = "The number of splits to make for each pair of input fastq files. Default is: %s. Controls the total number of splits across the run."%splitsize
+F_help = "The approximate number of reads per split made by fastp on input fastq files. Default is: %s."%splitsize
 f_help = "The number of threads used in fastp to split input fastq files. Default is: %s. Note: must be an even multiple of the number of splits."%fastpthreads
 b_help = "The number of threads used per bwa alignment on split input fastq files. Default is: %s."%bwathreads
 n_help = "Run name used to name output files. Default behavior is to take the common name from the input read pairs."
 M_help = "Name of the mitochondrial contig. Default is: %s."%mito
 X_help = "List of chromosomes/contigs to exclude from analysis. Default behavior is to process all within the passed .fasta or .fa file."
-B_help = "Number of parallel bwa alignments to run. Defaults to %s. Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
+B_help = "(Depreciated) Number of parallel bwa alignments to run. Defaults to %s. Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
 P_help = "The type of partition jobs formatted by slurpy run on. Default is %s."%part
 Q_help = "Mapping quality threshold to filter alignments. Default is: %s."%map_q_thres
 c_help = "Path to control or input bam files used in ChIP-seq experiments."
@@ -132,6 +132,7 @@ R_help   = pipe_help
 ## Set help messages for bollean vars
 restart_help  = "Flag to force the pipeline to reset and run from start."
 runlocal_help = "Disables sbatch submission and submits the script via bash to a local os."
+force_help    = "Flag to force the overwrite of output files generated from bwa."
 debug_help    = "A flag to run in verbose mode, printing sbatch commands. Default behavior is false."
 mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
 broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details."

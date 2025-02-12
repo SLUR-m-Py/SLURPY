@@ -6,9 +6,9 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, comsdir, debugdir, bedtmpdir, slurpydir
+from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, daskthreads, part, P_help, nice
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, daskthreads, part, P_help, nice, force_help
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -24,8 +24,8 @@ def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else ' ') + (' --debug' if debug else ' ')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
@@ -62,6 +62,7 @@ if __name__ == "__main__":
     ## Add boolean 
     parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true')
     parser.add_argument("--debug",      dest="debug",  help = dove_help,    action = 'store_true')
+    parser.add_argument("--force",      dest="force",  help = force_help,   action = 'store_true'                                          )
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -80,6 +81,7 @@ if __name__ == "__main__":
     nice        = inputs.N
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
+    forced      = inputs.force  ## Flag to force 
 
     ## Bring in bedpe paths
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
@@ -94,6 +96,12 @@ if __name__ == "__main__":
         filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)}' + (' --dovetails' if dovetail else ' ')
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
+
+        ## If the report exists and has alredy been run, just skip
+        prekick = reportcheck([filter_repo])
+        if (prekick and fileexists(filter_file)) and (not forced):
+            print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
+            continue
 
         ## Write the bwa command to file 
         writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice) + [filter_com+'\n'], debug)
