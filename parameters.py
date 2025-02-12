@@ -42,7 +42,7 @@ else:
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## SET thread cound 
-threads = 12
+threads = 8
 ##      Hi-C and ATAC-seq DEFAULT VARIABLE SETTING  
 splitsize    = 10**7         ##     The number of splits made by fastp 
 bwathreads   = threads       ##     Number of threads used by calls to bwa 
@@ -50,7 +50,7 @@ samthreads   = threads       ##     Number of threads used by calls to samtools
 daskthreads  = threads       ##     Number of threads used by calls to dask df 
 parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
 fastpthreads = threads       ##     Number of threads in fastp 
-part         = 'tb,mpi'      ##     Defalut partition 
+parts        = ['tb']        ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
 error_dist   = 10000         ##     The idstance to check for erros 
 circle_dist  = 10000         ##     The distance to check for self circles 
@@ -103,7 +103,7 @@ n_help = "Run name used to name output files. Default behavior is to take the co
 M_help = "Name of the mitochondrial contig. Default is: %s."%mito
 X_help = "List of chromosomes/contigs to exclude from analysis. Default behavior is to process all within the passed .fasta or .fa file."
 B_help = "(Depreciated) Number of parallel bwa alignments to run. Defaults to %s. Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
-P_help = "The type of partition jobs formatted by slurpy run on. Default is %s."%part
+P_help = "The type of partition jobs formatted by slurpy run on. Default is %s."%parts[0]
 Q_help = "Mapping quality threshold to filter alignments. Default is: %s."%map_q_thres
 c_help = "Path to control or input bam files used in ChIP-seq experiments."
 G_help = "Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."

@@ -124,7 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
     parser.add_argument("-F", "--fastp-splits",   dest="F",     nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
     parser.add_argument("-B", "--parallel-bwa",   dest="B",     type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
-    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,                   default = part         ) 
+    parser.add_argument("-P", "--partition",      dest="P",     nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
     parser.add_argument("-M", "--mtDNA",          dest="M",     type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
     parser.add_argument("-X", "--exclude",        dest="X",     nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
     parser.add_argument("-Q", "--map-threshold",  dest="Q",     type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     ## Set default vairables              ##
     splitsize       = inputs.F            ##     Number of splits in fastp 
     bwa_runs        = inputs.B            ##     Set the number of parallel runs of bwa 
-    partition       = inputs.P            ##     Set the partition 
+    partitions      = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
     excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
     mapq            = inputs.Q            ##     Set the mapping quality threshold 
@@ -232,6 +232,9 @@ if __name__ == "__main__":
     hicfileends = [mito] + hicfileends_tmp
     ## Initilizse list for sbatch
     sub_sbatchs = []
+
+    ## Reset paortions into a comma joined list
+    partition = ','.join(partitions)
 
     ## Set the lib error
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
