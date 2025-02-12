@@ -166,7 +166,7 @@ check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
 value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
 
 ## Set the use column names
-use_columns = ['Qname1','Rname1','Rname2','Cigar1','Cigar2','End1','End2','Dangend1','Dangend2','Minmapq','Distance','Inter']
+use_columns = ['Qname1','Rname1','Rname2','Cigar1','Cigar2','Pos1','Pos2','End1','End2','Dangend1','Dangend2','Minmapq','Distance','Inter']
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
