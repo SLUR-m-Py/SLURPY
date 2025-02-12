@@ -224,13 +224,10 @@ if __name__ == "__main__":
             ## Preset error 
             bedpe['Error'] = '' 
 
-            ## Set output paths
+            ## Set output paths of thoese not used, valid hic contacts, and those to check 
             not_usede_path = makeoutpath(bedpe_path,f'erros.{i}')
             hic_valid_path = makeoutpath(bedpe_path,f'tohic.{i}')
-
-            ## Append to path
-            not_usede_paths.append(not_usede_path)
-            hic_valid_paths.append(hic_valid_path)
+            too_check_path = makeoutpath(bedpe_path,f'tocheck.{i}')
 
             ## Gather the unmapped reads if any 
             unmapped = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Inter<0)].copy()
@@ -292,9 +289,8 @@ if __name__ == "__main__":
 
             ## If restriction sites were passed 
             if restriciton_sites: 
-                ## SEt the output path and append to list 
-                too_check_path = makeoutpath(bedpe_path,f'tocheck.{i}')
-                too_check_paths.append(too_check_paths)
+                ## Append to list 
+                too_check_paths.append(too_check_path)
                 ## Gather the read pairs we plan to check for intra fragments
                 tocheck = bedpe[(bedpe.Distance<error_dist) & (bedpe.Inter==0)].copy()
                 ## SAve out the reads to check for intra fragments
@@ -305,9 +301,17 @@ if __name__ == "__main__":
                 pass 
 
             ## Concat the not used list so far and save out
-            pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) if len(not_used) else None 
-            ## Save out the not used reads and the to check names 
-            bedpe.to_csv(hic_valid_path,sep=hicsep,header=True,index=False) if bedpe.shape[0] else None 
+            if len(not_used):
+                ## Append to path
+                not_usede_paths.append(not_usede_path)
+                ## save the output 
+                pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) 
+            
+            if bedpe.shape[0]:
+                ## append to path 
+                hic_valid_paths.append(hic_valid_path)
+                ## Save out the not used reads and the to check names 
+                bedpe.to_csv(hic_valid_path,sep=hicsep,header=True,index=False) 
 
     ## Delet the last chunks, we don't need these
     del bedpe, not_used
