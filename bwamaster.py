@@ -57,7 +57,7 @@ def bwamem_paired(r1,r2,ref,outbam,log,vmode=1,threads=4,opts='-M') -> list[str]
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads,part, lib_default, nice, force_help, node_help
+from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads, parts, lib_default, nice, force_help, node_help
 
 ## Set help messages 
 c_help     = 'The current working directory'
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                           ) 
     parser.add_argument("-c", "--cwd",            dest="c",     type=str,  required=True,  help = c_help, metavar = './the/cwd'                          )
     parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,   default = bwathreads   )
-    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = part,         default = part         ) 
+    parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = parts,         default = parts       ) 
     parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )

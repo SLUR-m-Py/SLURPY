@@ -8,7 +8,7 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, part, P_help, nice, force_help, chunksize, node_help
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, parts, P_help, nice, force_help, chunksize, node_help
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-e", dest="E", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
     parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
-    parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=part,        default = part       ) 
+    parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=parts,        default = parts     ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
