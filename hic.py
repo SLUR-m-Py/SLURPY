@@ -448,22 +448,20 @@ if __name__ == "__main__":
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
 
-        ## Iterate the nut use and error files
-        for fname in ['notused','errors']:
-            ## Set start name for wildcard use to bring in inputs  to ftn 
-            sample_start = f'{fname}.bedpe' if postmerging else f'{sample_name}.{fname}.bedpe'
-            hiccat_out = f'{aligndir}/{sample_name}.{fname}.bedpe'
-            ## SEt the report name
-            hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
-            ## Set the command
-            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
-            
-            ## make concat file name
-            hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.{fname}.sh'
-            ## Write the concat command to file
-            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice) + hiccat_coms, debug)
-            ## Append the concat command
-            command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))
+        ## Set start name for wildcard use to bring in inputs  to ftn 
+        sample_start = 'notused.bedpe' if postmerging else f'{sample_name}.notused.bedpe'
+        hiccat_out = f'{aligndir}/{sample_name}.notused.bedpe'
+        ## SEt the report name
+        hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
+        ## Set the command
+        hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
+        
+        ## make concat file name
+        hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.notused.sh'
+        ## Write the concat command to file
+        writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice) + hiccat_coms, debug)
+        ## Append the concat command
+        command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
