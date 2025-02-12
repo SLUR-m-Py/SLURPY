@@ -36,7 +36,7 @@ def reportcheck(reportpaths) -> bool:
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
     ## Format command 
-    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist=%s'%', '.join(nodelist) if nodelist else '')
+    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
     return [command], report 

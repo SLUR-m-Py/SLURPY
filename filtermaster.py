@@ -25,7 +25,7 @@ def formatinput(inlist):
 
 ## Ftn for formating commands to this script 
 def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,todovetail:bool,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize,nodelist=None):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist=%s'%', '.join(nodelist) if nodelist else '')
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --dovetails' if todovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar=part,        default = part       ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
-    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
+    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
     parser.add_argument("--nodelist",  dest="nodes", nargs='+', required=False, help = node_help,     default = None       )
 
     ## Add boolean 
