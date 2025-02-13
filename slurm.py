@@ -629,15 +629,15 @@ if __name__ == "__main__":
         ##      PEAK CALLING WITH MAC2
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
-        if atac_seq and not skippeaks:
+        if atac_seq and (not skippeaks):
             ## Format the macs3 call report name
-            macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{run_name}.sh'
+            macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
-            macs3_commands = peakattack(newcatfile,run_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{sample_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 
-            command_files.append((macs3_filename,run_name,experi_mode,'macs3',macs3_report,0,''))
+            command_files.append((macs3_filename,sample_name,experi_mode,'macs3',macs3_report,0,''))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
     
@@ -691,41 +691,47 @@ if __name__ == "__main__":
     ##      1) SUBMITTING BWA ALIGNMENTS           
     ## Call the submit bwa ftn
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[1],hic_pipeline[0],stamp,partition,debug=debug)
-
+    ##
     ##      2) SUBMITTING BEDPE FILTERING and SPLITTING
     ## Submit the bedpe filtering scirpt 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[2],hic_pipeline[1],stamp,partition,debug=debug)
-
+    ##
     ##      3) SUBMITTING DEDUPLICATING AND SORTING 
     ## Submit the dedup and sort script 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[3],hic_pipeline[2],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
-
+    ##
     ##      4) SUBMITTING CONCATONATION 
     ## Submit the concatonation sciprt 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[4],hic_pipeline[3],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
-    
+    ##
     ##      5A) SUBMITTING Gene X Gene interaction script 
     ## Submit the g x g script
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'gxg',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if feature_space else []) 
-    ## Set the next step in pipeline 
-    last_step = 'gxg' if jarpath else hic_pipeline[4]
-
+    ##
     ##      5B) SUBMITTING CONVERSION FROM BEDPE to JUICER SHORT 
     ## Submit the toshort.py command 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if toshort else []) 
-    ## Set the next step in pipeline 
-    last_step = 'toshort' if jarpath else hic_pipeline[4]
-
+    ##
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic','toshort',stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
     ## Set the next step in pipeline 
     last_step = 'hic' if jarpath else hic_pipeline[4]
-
+    ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
-
+    ##
+    ## Set the last step
+    if feature_space:
+        last_step = 'gxg'
+    elif jarpath or toshort:
+        last_step = 'toshort'
+    elif atac_seq and (not skippeaks):
+        last_step = 'macs3'
+    else:
+        last_step = hic_pipeline[4]   
+    ##
     ##      6) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',last_step,stamp,partition,group='Experiment',debug=debug) 
