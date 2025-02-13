@@ -6,7 +6,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-##      hic.py; A Hi-C Processing Pipeline 
+##      SLUR(M).py ; A Hi-C, Multiomic, Python Powered Processing Pipeline 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 """
 Written by:
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     ## Bring in argparse and set parser
     import argparse
     ## Make the parse
-    parser = argparse.ArgumentParser(description = hiclite_descr)
+    parser = argparse.ArgumentParser(description = slurpy_descr)
 
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 

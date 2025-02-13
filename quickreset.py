@@ -30,6 +30,6 @@ from directories import *
 ## -------------------------------------------------------------------- ##
 ##      RESETING 
 ## Remove each dir
-[shutil.rmtree(d,ignore_errors=True) for d in [debugdir, aligndir, splitsdir, comsdir, macs3dir, hicdir, diagdir, bamtmpdir, bedtmpdir]]
+[shutil.rmtree(d,ignore_errors=True) for d in [debugdir, aligndir, splitsdir, comsdir, macs3dir, hicdir, diagdir, bedtmpdir]]
 ## -------------------------------------------------------------------- ##
 ## End fo file 

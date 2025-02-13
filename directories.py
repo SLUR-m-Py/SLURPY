@@ -9,7 +9,6 @@ comsdir     = 'commands'             ##       Folder for holding all command fil
 macs3dir    = 'peaks'                ##       Has results from macs3 
 hicdir      = 'merged'               ##       Has hic resluts 
 diagdir     = 'diagnostics'          ##       Plots for diagnostics are held here 
-bamtmpdir   = 'bamtmp'               ##       A temporary dir for hodling bam files from split fastq aligments 
 bedtmpdir   = 'bedpe'                ##       Tempeory bedpe dir
 slurpydir   = './SLURPY'             ##       The script directory holding this file
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##

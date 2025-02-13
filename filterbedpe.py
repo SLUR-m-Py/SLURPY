@@ -19,8 +19,6 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
 import pandas as pd, dask.dataframe as dd
-## Bring in concat
-from numpy import concatenate
 ## Load in params
 from parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help, Z_help, chunksize
 ## Bring in ftns from slurpy 
