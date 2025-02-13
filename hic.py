@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | grep 'mpi' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -37,6 +37,7 @@ hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic'
 ##                  0        1        2       3      4      5a      5b      5c     6
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
+inhic = True 
 ## 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
