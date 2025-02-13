@@ -68,7 +68,7 @@ from defaults import basename, getsamplename, reportname, fastcut, fastdry, ifpr
 ##      FUNCTION DEFINING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Ftn for formating fastp command to filter and split reads
-def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, pix:int, z=4, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz') -> tuple:
+def fastpeel(r1:str, r2:str, exptype:str, w:int, s:int, pix:int, z=4, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',inhic=True) -> tuple:
     """Formats calls to fastp given input fastq files."""
     ## Set variable names 
     r1_bn    = basename(r1).split('.fastq')[0]               ##      Generate basename of first read 

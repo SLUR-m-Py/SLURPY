@@ -52,6 +52,7 @@ parallelbwa  = splitsize     ##     Number of parallel runs of bwa
 fastpthreads = threads       ##     Number of threads in fastp 
 parts        = ['tb']        ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
+waittime     = 5             ##     Seconds of buffer time 
 error_dist   = 10000         ##     The idstance to check for erros 
 circle_dist  = 10000         ##     The distance to check for self circles 
 lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
@@ -98,7 +99,7 @@ refmetavar = './path/to/reference.fasta'
 e_help = "The type of epigenomic expeirment (for exmale ATAC or Hi-C) used to generate sequenced pair-end reads (options include wgs, atac, chip, or hic)."
 r_help = "Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment." 
 F_help = "The approximate number of reads per split made by fastp on input fastq files. Default is: %s."%splitsize
-T_help = "The number of threads used across all aplications of the run (fastp, bwa, dask.dataframes). Default is: %s."%threads 
+T_help = "The number of threads used across all applications of the run (fastp, bwa, dask.dataframes). Default is: %s."%threads 
 f_help = "The number of threads used in fastp to split input fastq files. Default is: %s. Note: must be an even multiple of the number of splits."%fastpthreads
 b_help = "The number of threads used per bwa alignment on split input fastq files. Default is: %s."%bwathreads
 n_help = "Run name used to name output files. Default behavior is to take the common name from the input read pairs."
@@ -107,7 +108,7 @@ X_help = "List of chromosomes/contigs to exclude from analysis. Default behavior
 B_help = "(Depreciated) Number of parallel bwa alignments to run. Defaults to %s. Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
 P_help = "The type of partition jobs formatted by slurpy run on. Default is %s."%parts[0]
 Q_help = "Mapping quality threshold to filter alignments. Default is: %s."%map_q_thres
-c_help = "Path to control or input bam files used in ChIP-seq experiments."
+c_help = "Path to control or input bam/bedpe files used in ChIP-seq experiments."
 G_help = "Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
 g_help = "Size of the genome being analyzed, used as parameter for macs3. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
 C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Default is %s. Passing zero (0) will skip this check."%circle_dist 
@@ -117,7 +118,7 @@ Z_help = "Number of rows loaded into pandas at a time. Default is: %s. WARNING: 
 q_help = "The expected file extension of input fastq files. Default is: %s"%fends
 t_help = "The number of threads used in calls to functions and calculations with pandas and dask dataframes. Default is: %s."%daskthreads
 s_help = "The number of threads used in calls to samtools. Default is: %s"%samthreads
-J_help = "Path to juicer jar file for juicer pre command. Required for .hic file creation."
+J_help = "Path to a juicer jar file with the juicer pre command. Required for .hic file creation."
 S_help = "Space seperated list of chromosome resolutions (i.e. bin sizes) for .hic files. Default: %s"%' '.join(map(str,binsizes))
 x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command. Default is: %s."%xmemory
 A_help = "The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes."
@@ -164,10 +165,6 @@ index_error = "ERROR: We could not detect an index associated with the input ref
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 slurpy_descr = 'Prepares a run of the SLUR(M)-py pipeline given user inputs (such as path to genome reference and experiment type) and generates an ingredients.tsv file for the slurpy.py function'
-
-## Set file ends used in this script and other filtering stages 
-hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
-
 
 ##      FUNCTIONS
 ##

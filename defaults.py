@@ -407,16 +407,16 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestam
     return subsbatchs
 
 ## Ftn for formating merging of bam files
-def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tuple:
-    """Formats a samtools merge command."""
-    ## Format path of out put bam file
-    outbam = f'{aligndir}/{bam}'
-    ## Format report name and the merge-bam command
-    report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
-    ## Format the echo command and count command 
-    echo_merge_command = f'{slurpydir}/myecho.py Finished merging bam files into {outbam} {report}\n'
-    ## Return the formated merge command
-    return [merge_bam_command,echo_merge_command], report
+#def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tuple:
+#    """Formats a samtools merge command."""
+#    ## Format path of out put bam file
+#    outbam = f'{aligndir}/{bam}'
+#    ## Format report name and the merge-bam command
+#    report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
+#    ## Format the echo command and count command 
+#    echo_merge_command = f'{slurpydir}/myecho.py Finished merging bam files into {outbam} {report}\n'
+#    ## Return the formated merge command
+#    return [merge_bam_command,echo_merge_command], report
 
 """
     report, merge_bam_command = reportname(outbam,script), f'samtools merge -f -@ {threads} -o {outbam} --write-index {bamtmpdir}/{wildcard}\n'

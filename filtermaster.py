@@ -8,7 +8,7 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, parts, P_help, nice, force_help, chunksize, node_help, dove_help
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -28,6 +28,9 @@ def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:i
     command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
+
+## Load in help messages
+from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, P_help, force_help, node_help, dove_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -117,7 +120,7 @@ if __name__ == "__main__":
         ## append the report
         filter_reports.append(filter_repo)
         ## Sleep a second
-        sleep(1)
+        sleep(waittime)
 
     ## Check the reports
     kicker = True 
@@ -126,7 +129,7 @@ if __name__ == "__main__":
     while kicker and len(filter_reports):
         kicker = not reportcheck(filter_reports)
         ## Wait a minitue 
-        sleep(10)
+        sleep(waittime*2)
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(len(filter_reports),sample_name))

@@ -6,15 +6,33 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize
-from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, bamtmpdir
+from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile, listzip
 ## load in sleep
 from time import sleep
+## Load input vars from params
+from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime
 
-## Set opts
+## Set opttions 
 line_count  = 5000
 pix         = 1     
+
+## Ftn for checkign if single 
+def issingle(r:str)-> bool:
+    return '.singletons.' in r.lower()
+
+## Ftn for checking if failed in 
+def isfailed(r:str) -> bool:
+    return '.failed.' in r.lower() 
+
+## Dftn for getting read1
+def getread1(wc:str) -> list:
+    return [r for r in sortglob(wc) if not (issingle(r) or isfailed(r))]
+
+## Ftn for defining read two
+def formatread2(firstreads:list) -> list:
+    return ['_R2_'.join(r.split('_R1_')) for r in firstreads]
 
 ## Def for checkign report 
 def reportcheck(reportpaths) -> bool:
@@ -70,8 +88,8 @@ def sizecheck(read1,read2) -> list:
 ## Set description
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
-## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads, lib_default, nice, force_help, node_help, hic_options
+## Load in help messages from parameters 
+from parameters import s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help
 
 ## Set help messages 
 c_help     = 'The current working directory'
@@ -119,17 +137,19 @@ if __name__ == "__main__":
     forced       = inputs.force 
 
     ## Gather the first reads 
-    read_ones  = sortglob(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
-    read_twos  = ['_R2_'.join(r.split('_R1_')) for r in read_ones]
+    read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
+    read_twos  = formatread2(read_ones)
+    
     ## Print to file 
     print('INFO: Spawning %s calls to bwa.'%len(read_twos))
-
     ## Check the size of the read pairs 
     read_pairs = sizecheck(read_ones,read_twos)
 
     ## Iniate list 
     bwa_reports = []
-
+    ## if we are formating hic run
+    options = hic_options if ishic else '-M'
+        
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
         ## SEt report and file name 
@@ -137,18 +157,8 @@ if __name__ == "__main__":
         bwa_file = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
         outfile  = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
 
-        ## if we are formating hic run
-        if ishic:
-            ## Set the out file
-            #outfile  = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
-            ## format the command 
-            bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {hic_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
-
-        else: ## Otherwise is atac, wgs, or chip cut and tag etc 
-            ## Set file name 
-            #outfile = f'{bamtmpdir}/{i}.{sample_name}.bam'
-            ## Format bwa command
-            bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} -M {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
+        ## format the command 
+        bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip
         prekick = reportcheck([bwa_repo])
@@ -165,7 +175,7 @@ if __name__ == "__main__":
         ## append the report
         bwa_reports.append(bwa_repo)
         ## Sleep
-        sleep(1)
+        sleep(waittime)
 
     ## Check the reports
     kicker = True 
@@ -174,7 +184,7 @@ if __name__ == "__main__":
     while kicker and len(bwa_reports):
         kicker = not reportcheck(bwa_reports)
         ## Wait a minitue 
-        sleep(10)
+        sleep(2*waittime)
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(len(bwa_reports),sample_name))

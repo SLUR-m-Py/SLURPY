@@ -33,8 +33,8 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ## 
 ## HIC
 ## Set pipeline of hic analysis ## NOTE defined after defaults import 
-hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','clean']
-##                  0        1        2       3      4      5a      5b      5c     6
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','macs3','clean']
+##                  0        1      2        3       4      5a      5b      5c     5d       6
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
@@ -56,8 +56,6 @@ from filtermaster import filtermaster
 
 ## Set the ftn descritption
 hiclite_descr = "Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments."
-## Set the hardset hic mode 
-experi_mode = 'hic'
 ## Define help messages
 R_help = R_help%h_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -263,8 +261,6 @@ if __name__ == "__main__":
     assert checksam(), not_sam_err 
     ## Reformat clean boolean if clean was passed from restart
     ifclean = patchclean(rerun,ifclean)
-    ## Set the hic file ends
-    hicfileends = [mito] + hicfileends_tmp
     ## Initilizse list for sbatch
     sub_sbatchs = []
 
@@ -291,12 +287,18 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-    ##      PRESET ChIP-seq mode
+    ##      PRESET ATAC and ChIP-seq mode
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in macs3 ftns
-    from pymacs3 import peakattack
-    ## Set the broad pkeack
-    broadpeak = '--broad' if ifbroad else ''
+        ## Check if we are in atac seq mode    
+    if atac_seq or chip_control:
+        keep_dovetail = True
+        inhic         = False
+        enzymelib     = 'none'
+    
+        ## Load in macs3 ftns
+        from pymacs3 import peakattack
+        ## Set the broad pkeack
+        broadpeak = '--broad' if ifbroad else ''
 
     ## Check our control files if they were passed 
     if chip_control:
@@ -306,14 +308,13 @@ if __name__ == "__main__":
             ## Check they exist 
             assert fileexists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
     
-
-    ##      PRESET ATAC-seq mode
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Check if we are in atac seq mode    
-    if atac_seq or chip_control:
-        keep_dovetail = True
-        inhic         = False
-        enzymelib     = 'none'
+    ## Reset experiment mode 
+    if atac_seq:
+        experi_mode = 'atac'
+    elif chip_control:
+        experi_mode = 'chip'
+    else: ## Set the hardset hic mode 
+        experi_mode = 'hic'
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -322,7 +323,7 @@ if __name__ == "__main__":
     ## Load in defluats 
     from defaults import confirmreset
     ## Format group dirs 
-    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir]
+    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir] + ([macs3dir] if ((atac_seq or chip_control) and not skippeaks) else [])
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -440,7 +441,7 @@ if __name__ == "__main__":
         ##  Set the the fastp command file name 
         fastp_command_file =  f'{comsdir}/{pix}.fastp.{sample_name}.sh'  
         ##  Gather the fastp command and report 
-        fastp_coms, fastp_repo = fastpeel(r1,r2,fastp_threads,sizeosplit,ishic=inhic)
+        fastp_coms, fastp_repo = fastpeel(r1,r2,fastp_threads,sizeosplit,ishic=inhic or sfastp)
         ##  Write the command to file
         writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1,nodelist=nodes) + fastp_coms, debug)
         ##  Append command to file
@@ -630,7 +631,7 @@ if __name__ == "__main__":
         ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         if atac_seq and not skippeaks:
             ## Format the macs3 call report name
-            macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}B'), f'{comsdir}/{pix}B.macs3.{run_name}.sh'
+            macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{run_name}.sh'
             ## Format the command to macs3
             macs3_commands = peakattack(filteredbams,run_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
@@ -639,8 +640,7 @@ if __name__ == "__main__":
             command_files.append((macs3_filename,run_name,experi_mode,'macs3',macs3_report,0,''))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-        
-
+    
     ##      SUBMITTING TIME-STAMP   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## 6A. Final timestamp, out clean up
@@ -721,6 +721,10 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic','toshort',stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
     ## Set the next step in pipeline 
     last_step = 'hic' if jarpath else hic_pipeline[4]
+
+    ##      5D) PEAK CALLING w/ MACS3
+    ## Call the peak calling command 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
 
     ##      6) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
