@@ -715,12 +715,10 @@ if __name__ == "__main__":
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic','toshort',stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
-    ## Set the next step in pipeline 
-    last_step = 'hic' if jarpath else hic_pipeline[4]
     ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (atac_seq and (not skippeaks)) else [])
     ##
     ## Set the last step
     if feature_space:
