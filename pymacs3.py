@@ -71,28 +71,14 @@ atacopts = '--keep-dup all --call-summits -B --SPMR --nolambda'
 narrow_chip = '--keep-dup all --call-summits -B --SPMR'
 broad_chip  = '--keep-dup all --broad -B --SPMR'
 
-import dask.dataframe as dd 
-from parameters import hicsep
-
-def threebedpe(inbedpe) -> list: 
-    ## Inaite list
-    rfbedpe = []
-    ## Iterate thru fiels 
-    for b in inbedpe:
-        ## Set output path 
-        outpath = f'{macs3dir}/{b.split('/')[-1]}' 
-        ## Read in csv 
-        dd.read_csv(b,sep=hicsep,usecols=['Rname1','Pos1','End2']).to_csv(outpath,sep=hicsep,single_file=True,index=False,header=False)
-        ## Append 
-        rfbedpe.append(outpath)
-    ## Return the new file locations 
-    return rfbedpe
+## reformat the input bed names 
+def threebedpe(inbedpe:list) -> list: 
+    ## Inaite list, return the new file locations 
+    return [f'{macs3dir}/{b.split('/')[-1]}' for b in inbedpe]
 
 ## Write ftn for calling macs3 with atac seq data
 def peakattack(bedpes,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptions=None,incontrols=None,outdir=f'./{macs3dir}',mode='BEDPE'):
     """Envokes macs3 callpeak function on for a run of the slurpy pipeline (n) on input bam file in bampe mode using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
-    ## Reformat the the input bed pe
-    bedpes = threebedpe(bedpes)
     ## Format the input options, if the options are set explicitly, and if the input control is set for chip experiment 
     if incontrols and broad:
         opts = broad_chip
@@ -102,8 +88,12 @@ def peakattack(bedpes,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptio
         opts = atacopts
     ## Add the additional optsions 
     opts = opts + (' ' + extraoptions if extraoptions else '')
+    
+    ## Forma tthe conversion commands
+    con_coms = [f'{slurpydir}/toshort.py --macs3 -i {b}\n' for b in bedpes]
     ## Format the macs3 callpeak command
-    return [f'macs3 callpeak {formatinput(bedpes)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {sjoin(bedpes)} with macs3 {report}\n']
+    macs_coms = [f'macs3 callpeak {formatinput(threebedpe(bedpes))} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {sjoin(bedpes)} with macs3 {report}\n']
+    return con_coms + macs_coms
 
 ## Set the narrow peak names
 peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
