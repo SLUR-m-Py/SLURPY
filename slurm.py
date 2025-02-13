@@ -394,7 +394,7 @@ if __name__ == "__main__":
     assert isbwaix(reference_path),index_error
     
     ## Format the command file and initilize sample names
-    command_files, samplenames, filteredbams = [], [], []
+    command_files, samplenames = [],[]
 
     ## Append to command
     command_files.append(('jobfile','sample',experi_mode,'bwaix','report',0,bwaix_jobid)) if bwaix_jobid else None 
@@ -633,7 +633,7 @@ if __name__ == "__main__":
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{run_name}.sh'
             ## Format the command to macs3
-            macs3_commands = peakattack(filteredbams,run_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,run_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 

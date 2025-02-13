@@ -164,4 +164,5 @@ noref_path  = "ERROR: We could not find the provided input path -- %s -- of the 
 index_error = "ERROR: We could not detect an index associated with the input reference path: %s.\nINFO: Index the reference (bwa index) and try again."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-slurpy_descr = 'A Pythonic Pipeline Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from Epigenomic Profiles.'
+slurpy_descr = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
+## EOF 
