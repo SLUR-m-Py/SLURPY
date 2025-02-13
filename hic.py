@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb,fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 200000 10000000 --restart -a 873337
+./SLURPY/hic.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb,fast,gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 --merge -F 100000 25000000 --restart --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """
 ##      SET PIPELINES
 ## 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
     parser.add_argument("-F", "--fastp-splits",   dest="F",     nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
-    parser.add_argument("-B", "--parallel-bwa",   dest="B",     type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
+    #parser.add_argument("-B", "--parallel-bwa",   dest="B",     type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
     parser.add_argument("-P", "--partition",      dest="P",     nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
     parser.add_argument("-M", "--mtDNA",          dest="M",     type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
     parser.add_argument("-X", "--exclude",        dest="X",     nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
@@ -158,6 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
+    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -171,7 +172,7 @@ if __name__ == "__main__":
 
     ## Set default vairables              ##
     splitsize       = inputs.F            ##     Number of splits in fastp 
-    bwa_runs        = inputs.B            ##     Set the number of parallel runs of bwa 
+    #bwa_runs        = inputs.B            ##     Set the number of parallel runs of bwa 
     partitions      = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
     excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
@@ -197,6 +198,7 @@ if __name__ == "__main__":
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
+    dovetail        = inputs.dovetail     ##     Boolean for dove tailing 
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
@@ -409,7 +411,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,True,debug,nice,forced=force,chunksize=chunksize,nodelist=nodes)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,dovetail,debug,nice,forced=force,chunksize=chunksize,nodelist=nodes)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file

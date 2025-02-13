@@ -8,13 +8,13 @@
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in params
-from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, parts, P_help, nice, force_help, chunksize, node_help
+from parameters import Q_help, map_q_thres, error_dist, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, daskthreads, parts, P_help, nice, force_help, chunksize, node_help, dove_help
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwamaster import reportcheck
+from bwamaster import reportcheck, hic_flag
 
 ## Set stage in piepline
 pix = 2
@@ -34,7 +34,6 @@ filtdescr  = 'The submission script of filterbedpe across sample paritions'
 s_help     = 'Sample starting name to form wild card extraction of paths'
 I_help     = "List of chormosomes/contigs to only include in analysis"
 c_help     = 'The current working directory'
-dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -65,6 +64,8 @@ if __name__ == "__main__":
     parser.add_argument("--dovetails",  dest="tails",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--debug",      dest="debug",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--force",      dest="force",  help = force_help,   action = 'store_true' )
+    parser.add_argument("--hic",        dest="hic",    help = hic_flag,     action = 'store_true' )
+
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()

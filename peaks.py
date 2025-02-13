@@ -60,7 +60,7 @@ peakatac_descr = "Processing and analysis pipeline for paired-end sequencing dat
 ## Set the hardset hic mode 
 experi_mode = 'peaks'
 ## Define help messages
-R_help = pipe_help%a_pipe
+R_help = R_help%a_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in ftns from defaluts
 from defaults import basename, getsamplename, reportname, fastcut, fastdry, ifprint, inhic, splitecho
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     ## Add the default arguments
     parser.add_argument("-F", "--fastp-splits",  dest="F", type=int,  required=False, help = F_help, metavar = splitsize,            default = splitsize  )
     parser.add_argument("-B", "--parallel-bwa",  dest="B", type=int,  required=False, help = B_help, metavar = parallelbwa,          default = parallelbwa)
-    parser.add_argument("-P", "--partition",     dest="P", type=str,  required=False, help = P_help, metavar = part,                 default = part       ) 
+    parser.add_argument("-P", "--partition",     dest="P", nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',        default = parts      ) 
     parser.add_argument("-M", "--mtDNA",         dest="M", type=str,  required=False, help = M_help, metavar = mito,                 default = mito       )
     parser.add_argument("-X", "--exclude",       dest="X", nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',     default = []         )
     parser.add_argument("-Q", "--map-threshold", dest="Q", type=int,  required=False, help = Q_help, metavar = map_q_thres,          default = map_q_thres)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     ## Set default vairables         ##
     fastp_splits    = inputs.F       ##     Number of splits in fastp 
     bwa_runs        = inputs.B       ##     Set the number of parallel runs of bwa 
-    partition       = inputs.P       ##     Set the partition 
+    partitions      = inputs.P       ##     Set the partition 
     mito            = inputs.M       ##     Set the mito contig name 
     mapq            = inputs.Q       ##     Set the mapping quality threshold 
     excludes        = inputs.X       ##     List of chromosomes to exclude from analysis 
@@ -240,6 +240,9 @@ if __name__ == "__main__":
     ifclean = patchclean(rerun,ifclean)
     ## Initilizse list for sbatch
     sub_sbatchs = []
+
+    ## Reset paortions into a comma joined list
+    partition = ','.join(partitions)
 
     ## Load in macs3 ftns
     from pymacs3 import peakattack
