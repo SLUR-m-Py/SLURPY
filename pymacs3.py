@@ -91,6 +91,8 @@ def threebedpe(inbedpe) -> list:
 ## Write ftn for calling macs3 with atac seq data
 def peakattack(bedpes,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptions=None,incontrols=None,outdir=f'./{macs3dir}',mode='BEDPE'):
     """Envokes macs3 callpeak function on for a run of the slurpy pipeline (n) on input bam file in bampe mode using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
+    ## Reformat the the input bed pe
+    bedpes = threebedpe(bedpes)
     ## Format the input options, if the options are set explicitly, and if the input control is set for chip experiment 
     if incontrols and broad:
         opts = broad_chip
@@ -101,7 +103,7 @@ def peakattack(bedpes,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptio
     ## Add the additional optsions 
     opts = opts + (' ' + extraoptions if extraoptions else '')
     ## Format the macs3 callpeak command
-    return [f'macs3 callpeak {formatinput(threebedpe(bedpes))} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {sjoin(bedpes)} with macs3 {report}\n']
+    return [f'macs3 callpeak {formatinput(bedpes)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {sjoin(bedpes)} with macs3 {report}\n']
 
 ## Set the narrow peak names
 peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
