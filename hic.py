@@ -160,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
     parser.add_argument("--keep-dovetails",       dest="dovetail",  help = dove_help,     action = 'store_true')
-    parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_treu')
+    parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
