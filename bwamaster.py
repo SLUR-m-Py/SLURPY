@@ -13,7 +13,6 @@ from pysamtools import writetofile, listzip
 from time import sleep
 
 ## Set opts
-hic_options = '-5SMP'   
 line_count  = 5000
 pix         = 1     
 
@@ -72,7 +71,7 @@ def sizecheck(read1,read2) -> list:
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load inputs
-from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads, parts, lib_default, nice, force_help, node_help
+from parameters import s_help,r_help,b_help,P_help,L_help,N_help, debug_help, refmetavar, bwathreads, lib_default, nice, force_help, node_help, hic_options
 
 ## Set help messages 
 c_help     = 'The current working directory'

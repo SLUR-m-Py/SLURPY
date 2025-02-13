@@ -121,34 +121,35 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = hiclite_descr)
 
     ## Add the required argument
-    parser.add_argument("-r", "--refix",          dest="r",     type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
-    parser.add_argument("-F", "--fastp-splits",   dest="F",     nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
-    #parser.add_argument("-B", "--parallel-bwa",   dest="B",     type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
-    parser.add_argument("-P", "--partition",      dest="P",     nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
-    parser.add_argument("-M", "--mtDNA",          dest="M",     type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
-    parser.add_argument("-X", "--exclude",        dest="X",     nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
-    parser.add_argument("-Q", "--map-threshold",  dest="Q",     type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
-    parser.add_argument("-R", "--rerun-from",     dest="R",     type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
-    parser.add_argument("-q", "--fastq",          dest="q",     type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
-    parser.add_argument("-a", "--afterok",        dest="a",     type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
-    parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
+    parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
+    parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
+    #parser.add_argument("-B", "--parallel-bwa",   dest="B",      type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
+    parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
+    parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
+    parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
+    parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
+    parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
+    parser.add_argument("-q", "--fastq",          dest="q",       type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
+    parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
+    parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
 
     ## Set number of threads 
-    parser.add_argument("-f", "--fastp-threads",  dest="f",     type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
-    parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
-    parser.add_argument("-t", "--dask-threads",   dest="t",     type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
+    parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
+    parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
+    parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
 
     ## Set values for Hi-C analysis 
-    parser.add_argument("-n", "--run-name",       dest="n",     type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
-    parser.add_argument("-E", "--error-distance", dest="E",     type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
-    parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
-    parser.add_argument("-Z", "--chunksize",      dest="Z",     type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
-    parser.add_argument("-G", "--genomelist",     dest="G",     type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
-    parser.add_argument("-J", "--jar-path",       dest="J",     type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
-    parser.add_argument("-x", "--Xmemory",        dest="x",     type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
-    parser.add_argument("-S", "--bin-sizes",      dest="S",     nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
-    parser.add_argument("-gxg","--features",      dest="gxg",   type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
-    parser.add_argument("--nodelist",             dest="nodes", nargs='+', required=False, help = node_help,                                default = None         )
+    parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
+    parser.add_argument("-E", "--error-distance", dest="E",       type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
+    parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
+    parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
+    parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
+    parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
+    parser.add_argument("-x", "--Xmemory",        dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
+    parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
+    parser.add_argument("-gxg","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
+    parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
+    #parser.add_argument("--bwa-options",          dest="bwaopts", type=str,  required=False, help = bwa_help, metavar= '-5SMP',               default = hic_options  )
 
     ## Set boolean flags 
     parser.add_argument("--toshort",              dest="toshort",   help = short_help,    action = 'store_true')
@@ -158,7 +159,8 @@ if __name__ == "__main__":
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
-    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
+    parser.add_argument("--keep-dovetails",       dest="dovetail",  help = dove_help,     action = 'store_true')
+    parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_treu')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -198,7 +200,7 @@ if __name__ == "__main__":
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
-    dovetail        = inputs.dovetail     ##     Boolean for dove tailing 
+    keep_dovetail   = inputs.dovetail     ##     Boolean for dove tailing 
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
@@ -208,8 +210,17 @@ if __name__ == "__main__":
     skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates 
     ifclean         = inputs.clean        ##     Flag to run clean up script 
     postmerging     = inputs.merge        ##     Forces premerge of outputs 
+    atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
+
+    ##      PRESET ATAC-seq mode
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Check if we are in atac seq mode    
+    if atac_seq:
+        keep_dovetail = True
+        inhic         = False
+        enzymelib     = 'none'
     
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -396,7 +407,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=True,forced=force,nodelist=nodes)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=inhic,forced=force,nodelist=nodes)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
         ## Append to command fil
@@ -411,7 +422,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,dovetail,debug,nice,forced=force,chunksize=chunksize,nodelist=nodes)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,forced=force,chunksize=chunksize,nodelist=nodes,keepdovetail=keep_dovetail)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file

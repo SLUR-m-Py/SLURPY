@@ -185,7 +185,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", dest="I", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
     ## Add boolean 
-    parser.add_argument("--dovetails",  dest="D",  help = dove_help,    action = 'store_true')
+    parser.add_argument("--keep-dovetail",  dest="D",  help = dove_help,    action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -244,7 +244,7 @@ if __name__ == "__main__":
             bedpe.drop(dang_ends.index,axis=0,inplace=True)
 
             ## Remove dovetailed reads, if doing so 
-            if dovetail:
+            if not dovetail:
                 ## Gather dovetailed reads, set error message 
                 dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
                 dovetailed['Error'] = 'dovetailed'

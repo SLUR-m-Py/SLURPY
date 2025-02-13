@@ -55,6 +55,7 @@ map_q_thres  = 30            ##     Minimum mapping quality threhosld
 error_dist   = 10000         ##     The idstance to check for erros 
 circle_dist  = 10000         ##     The distance to check for self circles 
 lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
+hic_options  = '-5SMP'       ##     Hi-C options passed to bwa 
 chunksize    = 1000000       ##     Chunks size for parsing with pandas
 hicsep       = ' '           ##     Text deliminator 
 line_count   = 10**7         ##     Number of lines 
@@ -124,7 +125,7 @@ N_help = "The SLURM nice parameter, an integer value lowering the job priority o
 R_help = "Step within the pipeline to re-run from. Options include: %s"
 node_help = "Space seperated list of nodes to run jobs on."
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
-
+atac_help  = "Preset mode to run in ATAC-seq analysis mode."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
