@@ -315,6 +315,9 @@ if __name__ == "__main__":
         experi_mode = 'chip'
     else: ## Set the hardset hic mode 
         experi_mode = 'hic'
+
+    ## Set peakcalling boolean 
+    peakcalling = atac_seq and (not skippeaks)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -629,7 +632,7 @@ if __name__ == "__main__":
         ##      PEAK CALLING WITH MAC2
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
-        if atac_seq and (not skippeaks):
+        if peakcalling:
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
@@ -718,14 +721,14 @@ if __name__ == "__main__":
     ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (atac_seq and (not skippeaks)) else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if peakcalling else [])
     ##
     ## Set the last step
     if feature_space:
         last_step = 'gxg'
     elif jarpath or toshort:
         last_step = 'toshort'
-    elif atac_seq and (not skippeaks):
+    elif peakcalling:
         last_step = 'macs3'
     else:
         last_step = hic_pipeline[4]   
