@@ -98,6 +98,7 @@ refmetavar = './path/to/reference.fasta'
 e_help = "The type of epigenomic expeirment (for exmale ATAC or Hi-C) used to generate sequenced pair-end reads (options include wgs, atac, chip, or hic)."
 r_help = "Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment." 
 F_help = "The approximate number of reads per split made by fastp on input fastq files. Default is: %s."%splitsize
+T_help = "The number of threads used across all aplications of the run (fastp, bwa, dask.dataframes). Default is: %s."%threads 
 f_help = "The number of threads used in fastp to split input fastq files. Default is: %s. Note: must be an even multiple of the number of splits."%fastpthreads
 b_help = "The number of threads used per bwa alignment on split input fastq files. Default is: %s."%bwathreads
 n_help = "Run name used to name output files. Default behavior is to take the common name from the input read pairs."

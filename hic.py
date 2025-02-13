@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | grep 'tb,fast,g' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -47,8 +47,6 @@ from parameters import *
 from directories import * 
 ## Load in ftns from other libraries
 from pysamtools import checksam, writetofile
-## Bring in bwa mem ftn for hic
-from pybwatools import bwamem_hic
 ## Load in panda cat ftn
 from pandacat import pandacat
 ## Load in bwa master
@@ -71,30 +69,41 @@ R_help = R_help%h_pipe
 from defaults import basename, getsamplename, reportname, fastcut, fastdry, ifprint
 
 ## Ftn for formating fastp command to filter and split reads
-def hicpeel(r1:str, r2:str, w:int, s:int, z=4,  options=fastp_opts, script = 'fastp') -> tuple:
+def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',z=4) -> tuple:
     """Formats calls to fastp given input fastq files."""
-    ## Format the splits
-    split1, split2   = f'{splitsdir}/{basename(r1)}', f'{splitsdir}/{basename(r2)}'  
-    ## Set the report name
-    report = reportname(getsamplename(r1),script,i=0)
-    ## Gather the fastp header, json file, and html 
-    fastp_header,fastp_json,fastp_html = fastcut(r1,r2,split1,split2,report,1)
-    ## Call fastp again to split the files
-    slice = fastp_header + f' -S {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
-    ## Call the fast dry command and format the remove command 
-    dry = fastdry(r1,r2,report)
-    ## Format and return the command based on the experiment type (ie if it is hi-c or not)
-    return [slice,dry,f'mv {fastp_html} {diagdir}/\n',f'mv {fastp_json} {diagdir}/\n'], report 
+    ## Set variable names 
+    r1_bn    = basename(r1).split('.fastq')[0]               ##      Generate basename of first read 
+    r2_bn    = basename(r2).split('.fastq')[0]               ##      Generate basename of second read 
+    temp1    = f'{splitsdir}/{r1_bn}{toremoveend}'           ##      Format the first temp file for splits to be remove
+    temp2    = f'{splitsdir}/{r2_bn}{toremoveend}'           ##      Format the second temp file for splits to be remove 
+    single1  = f'{splitsdir}/{r1_bn}{singleend}'             ##      Make singleton file from first split 
+    single2  = f'{splitsdir}/{r2_bn}{singleend}'             ##      Make singleton file from second split 
+    split1   = f'{splitsdir}/{basename(r1)}'                 ##      Set the first split name
+    split2   = f'{splitsdir}/{basename(r2)}'                 ##      Create the second split name 
+    report   = reportname(getsamplename(r1),'fastp',i=pix)   ##      Format the report name
+    failed   = f'{splitsdir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
+    ## Format commands if filtering, then splitting is being performed
+    ## Call the first run of fastp, json, and json are also returend
+    fastp_header0, fastp_json0, fastp_html0 = fastcut(r1,r2,temp1,temp2,report,0)
+    ## Set initial filerting
+    initial_filtering = fastp_header0 + f' --unpaired1 {single1} --unpaired2 {single2} --failed_out {failed} --thread {w} ' + ' '.join(options[:2]) + '\n'
+    ## Call the second run of fastp to split reads into splits, return aslo json, and html 
+    fastp_header1, fastp_json1, fastp_html1 = fastcut(temp1,temp2,split1,split2,report,1)
+    ## Call fastp the second time to split reads
+    split_filtered = fastp_header1 + f' -S {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
 
-## Ftn for formating fastq files for bwa mem in hic mode
-def prepbwamem(r1:str, r2:str, refix:str, t:int,) -> tuple:
-    """Formats a bwa mem command given the paired reads, reference index, thread count, and mode."""
-    ## Format the sam file name and report name
-    sam, report = f'{bedtmpdir}/{getsamplename(r1)}.sam', f'{debugdir}/1.bwa.{getsamplename(r1)}.log'
-    ## Format the bwa mem command 
-    makebams = bwamem_hic(r1,r2,refix,sam,report,threads=t)
-    ## Return the sam, make bam command and reprot 
-    return sam, makebams, report  
+    ## Format command if just splitting is begin performed
+    fastp_header, fastp_json, fastp_html = fastcut(r1,r2,split1,split2,report,0)
+    ## Call fastp the second time to split reads
+    just_split = fastp_header + f' -S {s} -z {z} --thread {w} ' + ' '.join(options) + '\n'
+
+    ## Call the fast dry command and format the remove command 
+    dry, throwout = fastdry(r1,r2,report), f'rm {temp1} {temp2}\n'
+    ## Format the mv commands for the html and json
+    mvh, mvj = f'mv {fastp_json0} {diagdir}/\n', f'mv {fastp_html0} {diagdir}/\n'
+
+    ## Return the comands depenent aupon if we are spliting or filtering, and the reprot 
+    return [just_split,dry,mvh,mvj] if ishic else [initial_filtering,split_filtered,throwout,dry,mvh,mvj], report
 
 ## Ftn for calling juicer's pre command
 def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str) -> tuple:
@@ -124,7 +133,7 @@ if __name__ == "__main__":
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
     parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
-    #parser.add_argument("-B", "--parallel-bwa",   dest="B",      type=int,  required=False, help = B_help, metavar = parallelbwa,            default = parallelbwa  )
+    parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
     parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
     parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
     parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
@@ -145,6 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
     parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
     parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
+    parser.add_argument("-c", "--controls",       dest="c",       nargs='+', required=False, help = c_help, metavar = c_metavar,              default = None         )
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
     parser.add_argument("-x", "--Xmemory",        dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
@@ -160,8 +170,13 @@ if __name__ == "__main__":
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
-    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
+    
+    ## Set ATAC-seq specifict
     parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
+    parser.add_argument("--skipfastp",            dest="sfast",     help = skipq_help,    action = 'store_true')
+    parser.add_argument("--broad",                dest="broad",     help = broad_help,    action = 'store_true')
+    parser.add_argument("--skipmacs3",            dest="peaks",     help = peaks_help,    action = 'store_true')
+    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -175,7 +190,7 @@ if __name__ == "__main__":
 
     ## Set default vairables              ##
     splitsize       = inputs.F            ##     Number of splits in fastp 
-    #bwa_runs        = inputs.B            ##     Set the number of parallel runs of bwa 
+    threadn         = inputs.T            ##     Set the number of parallel runs of bwa 
     partitions      = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
     excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
@@ -196,6 +211,7 @@ if __name__ == "__main__":
     enzymelib       = inputs.L            ##     Restriction-enzymelib used in Hi-C prep 
     chunksize       = inputs.Z            ##     Chunk size (row number) to load in with pandas 
     pathtochrom     = inputs.G            ##     Path to list of chromosomes to use 
+    chip_control    = inputs.c            ##     Set the input control for chip experimetn
     jarpath         = inputs.J            ##     Path to juicer jar file 
     xmemory         = inputs.x            ##     Amount of memory passed to juicer pre command 
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
@@ -212,17 +228,22 @@ if __name__ == "__main__":
     ifclean         = inputs.clean        ##     Flag to run clean up script 
     postmerging     = inputs.merge        ##     Forces premerge of outputs 
     atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
+    sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
+    ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
+    skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
+
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
 
-    ##      PRESET ATAC-seq mode
+    ##      PRESET Thread counts
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Check if we are in atac seq mode    
-    if atac_seq:
-        keep_dovetail = True
-        inhic         = False
-        enzymelib     = 'none'
-    
+    if threadn:
+        ## reset threads                           
+        fastp_threads   = threads           ##     Number of fastp threads
+        bwa_threads     = threads           ##     Number of threads in bwa alignments
+        daskthreads     = threads           ##     Number of threads in dask 
+
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
@@ -254,7 +275,7 @@ if __name__ == "__main__":
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
     ## Check library if it was pased
     assert enzymelib.lower() in ['mboi', 'dpnii','sau3ai','hindiii','arima','none'], lib_error
-    print("INFO: Running analysis with the %s Hi-C library."%enzymelib)
+    print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
 
     ## Check if we have a jarpath
     if jarpath:
@@ -267,6 +288,32 @@ if __name__ == "__main__":
     ## Check is a path the give feature space 
     if feature_space:
         assert fileexists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+
+    ##      PRESET ChIP-seq mode
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Load in macs3 ftns
+    from pymacs3 import peakattack
+    ## Set the broad pkeack
+    broadpeak = '--broad' if ifbroad else ''
+
+    ## Check our control files if they were passed 
+    if chip_control:
+        assert (type(chip_control) == list) and (type(chip_control[0]) == str), f'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
+        ## Iterate over the controls inputs 
+        for chip_con in chip_control:
+            ## Check they exist 
+            assert fileexists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
+    
+
+    ##      PRESET ATAC-seq mode
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Check if we are in atac seq mode    
+    if atac_seq or chip_control:
+        keep_dovetail = True
+        inhic         = False
+        enzymelib     = 'none'
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -393,7 +440,7 @@ if __name__ == "__main__":
         ##  Set the the fastp command file name 
         fastp_command_file =  f'{comsdir}/{pix}.fastp.{sample_name}.sh'  
         ##  Gather the fastp command and report 
-        fastp_coms, fastp_repo = hicpeel(r1,r2,fastp_threads,sizeosplit)
+        fastp_coms, fastp_repo = fastpeel(r1,r2,fastp_threads,sizeosplit,ishic=inhic)
         ##  Write the command to file
         writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1,nodelist=nodes) + fastp_coms, debug)
         ##  Append command to file
@@ -530,7 +577,7 @@ if __name__ == "__main__":
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         pix = 5
         ## 5A. Create a feature space 
-        if feature_space:
+        if feature_space and inhic:
             ## Iterate over chromosome list 
             for i,coi in enumerate(chrlist):
                 ## Set the report, commands, and gxg script file name 
@@ -547,7 +594,7 @@ if __name__ == "__main__":
         ## BEDPE TO SHORT
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5B. Make the bedpe file into a short file for juicer pre command 
-        if toshort:
+        if toshort and inhic:
             ## make a report
             short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
             ## Format the command
@@ -564,7 +611,7 @@ if __name__ == "__main__":
         ##  HIC FILE CREATION / JUICER PRE 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5C. IF we have a valid jar path
-        if jarpath:
+        if jarpath and inhic:
             ## Set the output hic path
             shortfile, outhicpath = newcatfile.split('.bedpe')[0] + '.short', newcatfile.split('.bedpe')[0] +'.hic'
             ## Sort and saveout the the concatonated hic file 
@@ -577,6 +624,22 @@ if __name__ == "__main__":
             command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+
+        ##      PEAK CALLING WITH MAC2
+        ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
+        if atac_seq and not skippeaks:
+            ## Format the macs3 call report name
+            macs3_report, macs3_filename = reportname(run_name,'macs3',i=f'{pix}B'), f'{comsdir}/{pix}B.macs3.{run_name}.sh'
+            ## Format the command to macs3
+            macs3_commands = peakattack(filteredbams,run_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{run_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            ## Write the macs3 commands to file
+            writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
+            ## Append the macs3 command 
+            command_files.append((macs3_filename,run_name,experi_mode,'macs3',macs3_report,0,''))
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+        
 
     ##      SUBMITTING TIME-STAMP   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
