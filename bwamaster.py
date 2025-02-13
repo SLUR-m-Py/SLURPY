@@ -135,19 +135,20 @@ if __name__ == "__main__":
         ## SEt report and file name 
         bwa_repo = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
         bwa_file = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
+        outfile  = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
 
         ## if we are formating hic run
         if ishic:
             ## Set the out file
-            outfile = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
+            #outfile  = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
             ## format the command 
             bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {hic_options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
 
         else: ## Otherwise is atac, wgs, or chip cut and tag etc 
             ## Set file name 
-            outfile = f'{bamtmpdir}/{i}.{sample_name}.bam'
+            #outfile = f'{bamtmpdir}/{i}.{sample_name}.bam'
             ## Format bwa command
-            bwa_coms = bwamem_paired(r1,r2,ref_path,outfile,bwa_repo,threads=thread_count-1)
+            bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} -M {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip
         prekick = reportcheck([bwa_repo])

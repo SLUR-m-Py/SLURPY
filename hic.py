@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | grep 'mpi' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | grep 'tb,fast,g' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
-    parser.add_argument("--keep-dovetails",       dest="dovetail",  help = dove_help,     action = 'store_true')
+    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
     parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
 
     ## Set the paresed values as inputs
