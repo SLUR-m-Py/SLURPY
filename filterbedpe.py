@@ -153,9 +153,10 @@ def inref(refobj,inlist,outlist):
     return chrom_id,chrom_name,(chrom_id not in inlist) or (chrom_id in outlist) or (chrom_name not in inlist) or (chrom_name in outlist)
 
 ## ------------------------------------- Define Variables ------------------------------------------------- ##
-B_help = "Path to an input bed paired-end file (bedpe)."
-I_help = "List of chormosomes/contigs to only include in analysis"
-dove_help = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
+B_help     = "Path to an input bed paired-end file (bedpe)."
+I_help     = "List of chormosomes/contigs to only include in analysis"
+dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
+intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
@@ -172,32 +173,34 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = filter_desc)
 
     ## Add the required arguments
-    parser.add_argument("-b", dest="B", type=str,  required=True,   help=B_help, metavar='./path/to/input.bedpe'           )   
-    parser.add_argument("-r", dest="R", type=str,  required=True,   help=r_help, metavar='./path/to/ref.fasta'             )
+    parser.add_argument("-b", dest="b", type=str,  required=True,   help=B_help, metavar='./path/to/input.bedpe'           )   
+    parser.add_argument("-r", dest="r", type=str,  required=True,   help=r_help, metavar='./path/to/ref.fasta'             )
     
     ## Add optional args
-    parser.add_argument("-e", dest="E", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
-    parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
-    parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
-    parser.add_argument("-x", dest="X", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
-    parser.add_argument("-i", dest="I", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
+    parser.add_argument("-e", dest="e", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
+    parser.add_argument("-l", dest="l", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
+    parser.add_argument("-q", dest="q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
+    parser.add_argument("-x", dest="x", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
+    parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
     ## Add boolean 
     parser.add_argument("--keep-dovetail",  dest="D",  help = dove_help,    action = 'store_true')
+    parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
     ## Set inputs 
-    bedpe_path = inputs.B  ## Path to bedpe file 
-    refpath    = inputs.R  ## Set path to reference, needed to check restriction 
-    excludes   = inputs.X  ## List of chromosomes/contigs to exclude 
-    includos   = inputs.I  ## List of chormosomes to only includ
-    minmapq    = inputs.Q  ## minimum mapping quality 
-    error_dist = inputs.E  ## Set max distance to check for erros 
-    library    = inputs.L  ## Set the library used 
+    bedpe_path = inputs.b  ## Path to bedpe file 
+    refpath    = inputs.r  ## Set path to reference, needed to check restriction 
+    error_dist = inputs.e  ## Set max distance to check for erros 
+    library    = inputs.l  ## Set the library used 
+    minmapq    = inputs.q  ## minimum mapping quality 
+    excludes   = inputs.x  ## List of chromosomes/contigs to exclude 
+    includos   = inputs.i  ## List of chormosomes to only includ
     chunksize  = inputs.Z  ## set the chuck size 
     dovetail   = inputs.D  ## Flag to remove dovetail reads
+    intraonly  = inputs.I  ## FLag to keep only intra
     
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
@@ -253,6 +256,7 @@ if __name__ == "__main__":
             else:
                 pass 
             
+            ## Remove reads mapping to excluded chromosomes/contigs 
             if len(excludes):
                 ## Gather reads mapping to exclude list of chromosomes
                 toexclude = bedpe[(bedpe.Rname1.isin(excludes) | bedpe.Rname2.isin(excludes))].copy()
@@ -264,6 +268,7 @@ if __name__ == "__main__":
             else:
                 pass 
 
+            ## Remove reads not mapping to chromosomes/contigs of interest 
             if len(includos):
                 ## Gather read pairs that we are not include
                 toexclude = bedpe[~(bedpe.Rname1.isin(includos) & bedpe.Rname2.isin(includos))].copy()
@@ -282,6 +287,17 @@ if __name__ == "__main__":
             not_used.append(lowqual) if lowqual.shape[0] else None 
             ## Drop from bedpe chunk
             bedpe.drop(lowqual.index,axis=0,inplace=True)
+
+            ## Remove inter chromosome reads
+            if intraonly:
+                interc = bedpe[(bedpe.Inter>0)].copy()
+                interc['Error'] = 'inter'
+                ## Append to not used list
+                not_used.append(interc) if interc.shape[0] else None 
+                ## Drop from bedpe chunk
+                bedpe.drop(interc.index,axis=0,inplace=True)
+            else:
+                pass 
 
             ## If restriction sites were passed 
             if restriciton_sites: 
@@ -303,6 +319,7 @@ if __name__ == "__main__":
                 ## save the output 
                 pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) 
             
+            ## IF we have reads to concat 
             if bedpe.shape[0]:
                 ## append to path 
                 hic_valid_paths.append(hic_valid_path)
