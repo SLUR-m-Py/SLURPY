@@ -30,14 +30,13 @@ def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:i
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, P_help, force_help, node_help, dove_help
+from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, P_help, force_help, node_help, dove_help, intra_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
 s_help     = 'Sample starting name to form wild card extraction of paths'
 I_help     = "List of chormosomes/contigs to only include in analysis"
 c_help     = 'The current working directory'
-intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -62,14 +61,14 @@ if __name__ == "__main__":
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
-    parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,     default = None       )
+    parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,     default = None      )
 
     ## Add boolean 
     parser.add_argument("--keep-dovetail",  dest="tails",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--force",          dest="force",  help = force_help,   action = 'store_true' )
     parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = 'store_true' )
-    parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true')
+    parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true' )
 
 
     ## Set the paresed values as inputs
@@ -104,7 +103,7 @@ if __name__ == "__main__":
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
         ## format the command 
-        filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ')
+        filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') 
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
 
