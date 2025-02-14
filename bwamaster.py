@@ -148,7 +148,7 @@ if __name__ == "__main__":
     ## Iniate list 
     bwa_reports = []
     ## if we are formating hic run
-    options = hic_options if ishic else '-M'
+    options = hic_options# if ishic else '-M'
         
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
