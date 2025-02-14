@@ -54,7 +54,7 @@ if __name__ == "__main__":
         ## Forma tthe output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
         ## Save out the csv 
-        dd.read_csv(input_path,sep=hicsep,usecols=['Rname1','Pos1','End2']).to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
+        dd.read_csv(input_path,sep=hicsep,usecols=['Rname1','Pos1','End2']).to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
 
     else:
         ## SEt output path

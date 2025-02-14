@@ -92,7 +92,7 @@ def peakattack(bedpe:str,n,report,broad=False,gsize='hs',mg=None,ml=None,extraop
     ## Forma tthe conversion commands
     con_coms = [f'{slurpydir}/toshort.py --macs3 -i {bedpe}\n']
     ## Format the macs3 callpeak command
-    macs_coms = [f'macs3 callpeak {threebedpe(bedpe)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
+    macs_coms = [f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
     return con_coms + macs_coms
 
 ## Set the narrow peak names
