@@ -37,6 +37,7 @@ filtdescr  = 'The submission script of filterbedpe across sample paritions'
 s_help     = 'Sample starting name to form wild card extraction of paths'
 I_help     = "List of chormosomes/contigs to only include in analysis"
 c_help     = 'The current working directory'
+intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 
     ## Add optional args
     parser.add_argument("-x", dest="X", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
-    parser.add_argument("-i", dest="I", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
+    parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
     parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-e", dest="E", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
     parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
@@ -68,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--force",          dest="force",  help = force_help,   action = 'store_true' )
     parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = 'store_true' )
+    parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true')
 
 
     ## Set the paresed values as inputs
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     ref_path    = inputs.R
     the_cwd     = inputs.C
     xcludos     = inputs.X
-    includos    = inputs.I
+    includos    = inputs.i
     map_q_thres = inputs.Q
     error_dist  = inputs.E
     elibrary    = inputs.L
@@ -90,6 +92,7 @@ if __name__ == "__main__":
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
     forced      = inputs.force  ## Flag to force 
+    intra_only  = inputs.Intra
 
     ## Bring in bedpe paths
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')

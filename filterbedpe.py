@@ -20,7 +20,7 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 ## Bring in pandas
 import pandas as pd, dask.dataframe as dd
 ## Load in params
-from parameters import Q_help, map_q_thres, hicsep, error_dist, L_help, E_help, r_help, X_help, Z_help, chunksize
+from parameters import chunksize, map_q_thres, hicsep, error_dist
 ## Bring in ftns from slurpy 
 from defaults import fileexists
 ## Bring in seqIO
@@ -156,7 +156,9 @@ def inref(refobj,inlist,outlist):
 B_help     = "Path to an input bed paired-end file (bedpe)."
 I_help     = "List of chormosomes/contigs to only include in analysis"
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
-intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
+
+## Import help messages
+from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help
 
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
