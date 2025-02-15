@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/slurm.py -r ../GreenMVA/Chlorocebus_sabeus_mva.fasta -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 100000 20000000 --restart --merge -a 879499
+./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 100000 20000000 --restart --merge -a 879499
 
  --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """
@@ -250,14 +250,20 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
     ist2t = (reference_path.lower() == 't2t')
+    isvero = (reference_path.lower() == 'vero')
+
+    ## If human reference 
     reference_path = t2t_refpath if ist2t else reference_path
     feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
 
+    ## If vero was pass
+    reference_path = vero_refpath if isvero else reference_path
+
     ## Set bwa master partition to mpi (FOR ROTH only)
-    bwa_partition   = 'mpi' if ist2t else partition
-    filt_partition  = 'mpi' if ist2t else partition
-    clean_partition = 'mpi' if ist2t else partition
-    time_partition  = 'mpi' if ist2t else partition
+    bwa_partition   = 'mpi' if ist2t or isvero else partition
+    filt_partition  = 'mpi' if ist2t or isvero else partition
+    clean_partition = 'mpi' if ist2t or isvero else partition
+    time_partition  = 'mpi' if ist2t or isvero else partition
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 

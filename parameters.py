@@ -40,6 +40,9 @@ else:
     t2t_refpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCA_009914755.4_T2T-CHM13v2.0_genomic.named.fasta' 
     t2t_gffpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gff'
 
+## Set local path to vero gm ref
+vero_refpath = '../GreenMVA/Chlorocebus_sabeus_mva.fasta'
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## SET thread cound 
 threads = 8
