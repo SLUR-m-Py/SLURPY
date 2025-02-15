@@ -116,13 +116,13 @@ if __name__ == "__main__":
         ## Write the bwa command to file 
         writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + [filter_com+'\n'], debug)
 
-        ## Submit the command to SLURM
-        submitsbatch(f'sbatch --partition={partitions} {filter_file}')
-
         ## append the report
         filter_reports.append(filter_repo)
         ## Sleep a second
         sleep(waittime)
+
+        ## Submit the command to SLURM
+        submitsbatch(f'sbatch --partition={partitions} {filter_file}')
 
     ## Check the reports
     kicker = True 
