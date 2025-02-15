@@ -147,11 +147,37 @@ def bycigar(seq,cigar):
     else:
         ## split the cigar, with a positive strand
         cigs = splitcigar(cigar,1)
+        new_seq = []
+        for i,c in cigs:
+            ## If the the cigar is a match, insertion, deleation, or gap
+            if i < 4:
+                new_seq.append(seq[:c])
+            ## trim the sequence 5' to 3' to match next cigar start 
+            seq = seq[c:]
+        ## Format the new seq
+        retseq = ''.join(new_seq)
         ## Calc the front and back indexes 
-        front_ = cigs[0][1] if cigs[0][0] >= 4 else 0
-        backs_ = -cigs[-1][1] if cigs[-1][0] >= 4 else len(seq) + 1
+        #front_ = cigs[0][1] if cigs[0][0] >= 4 else 0
+        #backs_ = -cigs[-1][1] if cigs[-1][0] >= 4 else len(seq) + 1
         ## Set the return seq
-        retseq = seq[front_:backs_]
+        #retseq = seq[front_:backs_]
+    ## Return the sequences
+    return retseq
+
+def lencigar(cigar):
+    ## Check if cigar is unmapped
+    if cigar == '*':
+        retseq = 0
+    else:
+        ## split the cigar, with a positive strand
+        cigs = splitcigar(cigar,1)
+        new_len = []
+        for i,c in cigs:
+            ## If the the cigar is a match, insertion, deleation, or gap
+            if i < 4:
+                new_len.append(c)
+        ## Calc new length 
+        retseq = sum(new_len)
     ## Return the sequences
     return retseq
 
@@ -181,11 +207,11 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     ## Concat the dfs 
     long = pd.concat([df1,df2],axis=1)
     ## Calculate distance
-    long['Distance'] = long.Pos2 - long.Pos1
+    long['Distance'] = long.Pos2 - long.End1
     ## Remap the distances
     long.loc[long.Distance<0] = long.loc[long.Distance<0,df2.columns.tolist()+df1.columns.tolist()+['Distance']].values
     ## Recalc distance metric
-    long['Distance'] = long.Pos2 - long.Pos1
+    long['Distance'] = long.Pos2 - long.End1 
     ## Clac where the chromosomes are not left right sorted
     long['Test'] = long.Chrn1 - long.Chrn2
     ## Remap so chromosomes are left right sorted
@@ -242,7 +268,7 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     ## Gather and trim the seq
     newmap['Seq'] = newmap.apply(lambda row: bycigar(row['Seq'],row['Cigar']),axis=1)
     ## Add in seq len
-    newmap['Len'] = newmap.Seq.apply(len)
+    newmap['Len'] = newmap['Cigar'].apply(lencigar)
     ## Add in end positoin
     newmap['End'] = newmap.Pos + newmap.Len 
     ## Check the danginling ends
