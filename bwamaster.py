@@ -145,11 +145,13 @@ if __name__ == "__main__":
     ## Check the size of the read pairs 
     read_pairs = sizecheck(read_ones,read_twos)
 
-    ## Iniate list 
-    bwa_reports = []
     ## if we are formating hic run
     options = hic_options if ishic else '-M'
-        
+
+    ## Iniate list 
+    bwa_reports = []
+    bwa_files   = []
+ 
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
         ## SEt report and file name 
@@ -168,11 +170,17 @@ if __name__ == "__main__":
 
         ## Write the bwa command to file 
         writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
-        ## Sleep here to wait
-        sleep(waittime)
-        ## append the report
+        ## append the report and files
         bwa_reports.append(bwa_repo)
+        bwa_files.append(bwa_file)
 
+    ## Sleep here to wait
+    sleep(waittime)
+
+    ## iterate thru the bwa files to submit
+    for bwa_file in bwa_files:
+        ## Wiat a few seconds
+        sleep(waittime)
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')
 
@@ -180,11 +188,11 @@ if __name__ == "__main__":
     kicker = True 
 
     ## While thekicker is true 
-    while kicker and len(bwa_reports):
+    while kicker and len(bwa_files):
         kicker = not reportcheck(bwa_reports)
         ## Wait a minitue 
         sleep(2*waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(len(bwa_reports),sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(len(bwa_files),sample_name))
 ## EOF 

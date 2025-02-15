@@ -70,7 +70,6 @@ if __name__ == "__main__":
     parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = 'store_true' )
     parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true' )
 
-
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
@@ -91,15 +90,17 @@ if __name__ == "__main__":
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
     forced      = inputs.force  ## Flag to force 
-    intra_only  = inputs.Intra
+    intra_only  = inputs.Intra  ## Flag for intra chromosomal contacts only 
 
     ## Bring in bedpe paths
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
     ## Check work
     assert len(bedpe_paths), "ERROR: Unable to find bedpe files associated with sample: %s"%sample_name
 
-    ## INiate filter repos
-    filter_reports = []
+    ## INiate filter repos, commands, and files
+    filter_reports  = []
+    filter_files    = []
+
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
         ## format the command 
@@ -115,12 +116,17 @@ if __name__ == "__main__":
 
         ## Write the bwa command to file 
         writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + [filter_com+'\n'], debug)
-
-        ## append the report
+        ## append the report and files 
         filter_reports.append(filter_repo)
+        filter_files.append(filter_file)
+    
+    ## Wait for the files to be written 
+    sleep(waittime)
+
+    ## Iterate thru the files to submit
+    for filter_file in filter_files:
         ## Sleep a second
         sleep(waittime)
-
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
 
@@ -128,11 +134,11 @@ if __name__ == "__main__":
     kicker = True 
 
     ## While thekicker is true 
-    while kicker and len(filter_reports):
+    while kicker and len(filter_files):
         kicker = not reportcheck(filter_reports)
         ## Wait a minitue 
         sleep(waittime*2)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(len(filter_reports),sample_name))
-
+    print("Finished %s bwa submissions for sample: %s"%(len(filter_files),sample_name))
+## EOF 
