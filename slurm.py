@@ -231,7 +231,6 @@ if __name__ == "__main__":
     sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
     ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
     skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
-
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
 
@@ -244,11 +243,21 @@ if __name__ == "__main__":
         bwa_threads     = threads           ##     Number of threads in bwa alignments
         daskthreads     = threads           ##     Number of threads in dask 
 
+    ## Reset paortions into a comma joined list
+    partition = ','.join(partitions)
+
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
-    reference_path = t2t_refpath if (reference_path.lower() == 't2t') else reference_path
+    ist2t = (reference_path.lower() == 't2t')
+    reference_path = t2t_refpath if ist2t else reference_path
     feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
+
+    ## Set bwa master partition to mpi (FOR ROTH only)
+    bwa_partition   = 'mpi' if ist2t else partition
+    filt_partition  = 'mpi' if ist2t else partition
+    clean_partition = 'mpi' if ist2t else partition
+    time_partition  = 'mpi' if ist2t else partition
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -266,8 +275,6 @@ if __name__ == "__main__":
     ## Initilizse list for sbatch
     sub_sbatchs = []
 
-    ## Reset paortions into a comma joined list
-    partition = ','.join(partitions)
 
     ## Set the lib error
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
@@ -695,11 +702,11 @@ if __name__ == "__main__":
     ## 
     ##      1) SUBMITTING BWA ALIGNMENTS           
     ## Call the submit bwa ftn
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[1],hic_pipeline[0],stamp,partition,debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[1],hic_pipeline[0],stamp,bwa_partition,debug=debug)
     ##
     ##      2) SUBMITTING BEDPE FILTERING and SPLITTING
     ## Submit the bedpe filtering scirpt 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[2],hic_pipeline[1],stamp,partition,debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[2],hic_pipeline[1],stamp,filt_partition,debug=debug)
     ##
     ##      3) SUBMITTING DEDUPLICATING AND SORTING 
     ## Submit the dedup and sort script 
@@ -737,11 +744,11 @@ if __name__ == "__main__":
     ##
     ##      6) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',last_step,stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',last_step,stamp,time_partition,group='Experiment',debug=debug) 
 
     ##      6) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','timestamp',stamp,partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','timestamp',stamp,clean_partition,group='Experiment',debug=debug) 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         
 
