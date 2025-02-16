@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 200000 20000000 --merge -a 882476
+./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 150000 15000000 --merge --restart 
 
  --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """

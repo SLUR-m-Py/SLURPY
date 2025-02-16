@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ## Set the run local var
 runlocal = False 
 """
@@ -55,7 +54,7 @@ parallelbwa  = splitsize     ##     Number of parallel runs of bwa
 fastpthreads = threads       ##     Number of threads in fastp 
 parts        = ['tb']        ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
-waittime     = 5             ##     Seconds of buffer time 
+waittime     = 1             ##     Seconds of buffer time 
 error_dist   = 10000         ##     The idstance to check for erros 
 circle_dist  = 10000         ##     The distance to check for self circles 
 lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
