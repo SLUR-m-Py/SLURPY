@@ -158,7 +158,8 @@ if __name__ == "__main__":
         bwa_check = bwa_checkers[i]
 
         ## format the command 
-        bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n',
+        bwa_coms = [f'refpath={ref_path}\n',
+                    f'bwa mem -v 1 -t {thread_count-1} {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip
