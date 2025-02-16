@@ -7,11 +7,13 @@
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=tb                  ## Set the partition
 ## bring in mods
-import dask.dataframe as dd 
+import dask.dataframe as dd, pandas as pd 
 ## Brin in defaults
 from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
+## Lod in chunk size
+from parameters import chunksize
 """
 Juicer short format:
 
@@ -29,6 +31,17 @@ desc = "Converts an input bedpe file (representing Hi-C contacts from SLURPY) to
 ## Set help message
 I_help = "Input path to a bedpe file from SLURPY Hi-C pipeline."
 M_help = "Format input bedpe to macs3 compatible version."
+
+## Def ftn for taking min of row
+def minrow(row):
+    return row.min()
+
+## Def ftn for taking max of row 
+def maxrow(row):
+    return row.max()
+
+## Set position col
+pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
 
 ## If the script is envoked 
 if __name__ == "__main__":
@@ -50,12 +63,23 @@ if __name__ == "__main__":
     ## Check path
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
 
+    ## If in macs 3 mode 
     if formacs3:
         ## Forma tthe output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
-        ## Save out the csv 
-        dd.read_csv(input_path,sep=hicsep,usecols=['Rname1','Pos1','End2']).to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
 
+        ## Open with chunking 
+        with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
+            ## Iterate thru chunks 
+            for i,chunk in enumerate(chunks):
+                ## ADd min and max of position columns 
+                chunk['Min'] = chunk[pos_cols[1:]].min(axis=1)
+                chunk['Max'] = chunk[pos_cols[1:]].max(axis=1)
+
+                ## Append the min and max of each fragment to tsv (bedpe)
+                chunk[['Rname1','Min','Max']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+        ## Save out the csv 
+        #bedpe = dd.read_csv(input_path,sep=hicsep,usecols=pos_cols).to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
     else:
         ## SEt output path
         output_path = input_path.split(file_end)[0] + '.short' 
