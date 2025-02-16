@@ -6,7 +6,7 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, comsdir, debugdir, bedtmpdir, slurpydir
+from defaults import sortglob, sbatch, submitsbatch, fileexists, remove
 ## Load in params
 from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime
 ## Load in write to file from pysam tools 
@@ -15,6 +15,8 @@ from pysamtools import writetofile
 from time import sleep
 ## Load in report check 
 from bwamaster import reportcheck, hic_flag
+## Load in directories
+from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 
 ## Set stage in piepline
 pix = 2
@@ -92,10 +94,16 @@ if __name__ == "__main__":
     forced      = inputs.force  ## Flag to force 
     intra_only  = inputs.Intra  ## Flag for intra chromosomal contacts only 
 
-    ## Bring in bedpe paths
+    ## Bring in bedpe paths, calc len
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
+    nbedpe = len(bedpe_paths)
     ## Check work
-    assert len(bedpe_paths), "ERROR: Unable to find bedpe files associated with sample: %s"%sample_name
+    assert nbedpe, "ERROR: Unable to find bedpe files associated with sample: %s"%sample_name
+
+    ## Format bed pe checks
+    bed_checkers = [f'{checkerdir}/{i}.{sample_name}.bedpe.log' for i in range(nbedpe)]
+    ## Remove the previous checks if any
+    [remove(bed_check) for bed_check in bed_checkers if fileexists(bed_check)]
 
     ## INiate filter repos, commands, and files
     filter_reports  = []
@@ -103,21 +111,24 @@ if __name__ == "__main__":
 
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
-        ## format the command 
-        filter_com   = f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') 
+        ## Format the report, file and check for this filt of bedpe split 
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
+        bed_check    = bed_checkers[i]
+
+        ## Format commands 
+        filter_coms   = [f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') + '\n',
+                         f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip
-        prekick = reportcheck([filter_repo])
-        if (prekick and fileexists(filter_file)) and (not forced):
+        if fileexists(filter_repo) and fileexists(filter_file) and reportcheck(filter_repo):
             print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
-            continue
+            ## Reformat the commands
+            filter_coms = [filter_coms[-1]]
 
         ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + [filter_com+'\n'], debug)
+        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + filter_coms, debug)
         ## append the report and files 
-        filter_reports.append(filter_repo)
         filter_files.append(filter_file)
 
     ## Iterate thru the files to submit
@@ -127,15 +138,11 @@ if __name__ == "__main__":
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
 
-    ## Check the reports
-    kicker = True 
-
     ## While thekicker is true 
-    while kicker and len(filter_files):
-        kicker = not reportcheck(filter_reports)
+    while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):
         ## Wait a minitue 
-        sleep(waittime*2)
+        sleep(2*waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(len(filter_files),sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(nbedpe,sample_name))
 ## EOF 

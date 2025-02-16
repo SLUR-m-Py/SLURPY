@@ -5,10 +5,10 @@
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize
-from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
+from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove
+from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## Load in write to file from pysam tools 
-from pysamtools import writetofile, listzip
+from pysamtools import writetofile, listzip, ifprint
 ## load in sleep
 from time import sleep
 ## Load input vars from params
@@ -35,40 +35,16 @@ def formatread2(firstreads:list) -> list:
     return ['_R2_'.join(r.split('_R1_')) for r in firstreads]
 
 ## Def for checkign report 
-def reportcheck(reportpaths) -> bool:
-    finreports = [r for r in reportpaths if fileexists(r)]
-    ## If the report list lengths match 
-    if len(finreports) == len(reportpaths):
-        finished = []
-        for r in finreports:
-            with open(r,'r') as infile:
-                finished.append(infile.readlines()[-1].startswith('Finished'))
-                infile.close()
-        ## Sum the kicker 
-        kicker = (sum(finished) == len(finreports))
-    else: ## other wise keep kicken 
-        kicker = False
-    return kicker
-
-## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
-    ## Format command 
-    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
-    ## Format report 
-    report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
-    return [command], report 
-
-## Ftn for echo bwa finish to a log
-def bwaecho(o,l=None) -> str:
-    """Formats an echo command to print finishing statment of bwa alignment to log."""
-    ## Format the message given the output (o) file name and log (l)
-    return  f'{slurpydir}/myecho.py Finished alignment of split: {o} {l}' if l else ''
-    
-## Write ftn for formating bwa mem command with paired reads
-def bwamem_paired(r1,r2,ref,outbam,log,vmode=1,threads=4,opts='-M') -> list[str]:
-    """Formats a bwa command and requires as input paired-reads, a reference name, an output bam file, a log file, experiment type."""
-    ## Set the bwa mem option based on experiment type and format the bwa mem call, submit to shell via submit command
-    return [f'bwa mem {opts} -v {vmode} -t {threads} {ref} {r1} {r2} 2>> {log} | samtools view -hb -@ {threads} -o {outbam} -O BAM\n', bwaecho(outbam,log)]
+def reportcheck(reportpath) -> bool:
+    finished = False 
+    if fileexists(reportpath):
+        with open(reportpath,'r') as infile:
+            for l in infile:
+                if 'finished' in l.lower():
+                    finished = True
+                    break
+            infile.close()
+    return finished
 
 ## Write ftn to check filesize fo fastq
 def sizecheck(read1,read2) -> list: 
@@ -95,6 +71,14 @@ from parameters import s_help, r_help, b_help, P_help, L_help, N_help, debug_hel
 c_help     = 'The current working directory'
 l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
 hic_flag   = 'Flag to run in Hi-C mode.'
+
+## Ftn for formating the bwa master 
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
+    ## Format command 
+    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+    ## Format report 
+    report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
+    return [command], report 
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -136,42 +120,56 @@ if __name__ == "__main__":
     ishic        = inputs.hic 
     forced       = inputs.force 
 
-    ## Gather the first reads 
-    read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
-    read_twos  = formatread2(read_ones)
-    
-    ## Print to file 
-    print('INFO: Spawning %s calls to bwa.'%len(read_twos))
-    ## Check the size of the read pairs 
-    read_pairs = sizecheck(read_ones,read_twos)
-
     ## if we are formating hic run
     options = hic_options if ishic else '-M'
+
+    ## Gather the first reads 
+    read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
+    ## Format the second read in pair and calculate len of read two
+    read_twos  = formatread2(read_ones)
+    nreadtwo = len(read_twos)
+
+    ## Check the size of the read pairs 
+    read_pairs = sizecheck(read_ones,read_twos)
+    nreads  = len(read_pairs)
+    assert nreads, "ERROR: No read pairs were found to have reads!"
+
+    ## Calc difference in size 
+    sizedif = nreadtwo-nreads 
+    sizewarn = 'WARNING: %s read pairs (in .fastq.gz) were detected to have no reads.'%(sizedif)
+    ## PRint if the size dif is nonzero 
+    ifprint(sizewarn,sizedif)
+    
+    ## format list of checks
+    bwa_checkers = [f'{checkerdir}/{i}.{sample_name}.bwa.log' for i in range(nreads)]
+    ## Remove the previous checks if any
+    [remove(bwa_check) for bwa_check in bwa_checkers if fileexists(bwa_check)]
 
     ## Iniate list 
     bwa_reports = []
     bwa_files   = []
- 
+
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
         ## SEt report and file name 
-        bwa_repo = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
-        bwa_file = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
-        outfile  = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
+        bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
+        bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
+        outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
+        bwa_check = bwa_checkers[i]
 
         ## format the command 
-        bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n## EOF']
+        bwa_coms = [f'bwa mem -v 1 -t {thread_count-1} {options} {ref_path} {r1} {r2} | {slurpydir}/tobedpe.py {ref_path} {library} {outfile} {line_count}\n',
+                    f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip
-        prekick = reportcheck([bwa_repo])
-        if (prekick and fileexists(bwa_file) and fileexists(outfile)) and (not forced):
-            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
-            continue
-
+        if fileexists(outfile) and fileexists(bwa_repo) and reportcheck(bwa_repo):
+            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo} and {bwa_check}.\nINFO: Skipping.\n')
+            ## REformat coms so its just the check 
+            bwa_coms = [bwa_coms[-1]]
+        
         ## Write the bwa command to file 
         writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
         ## append the report and files
-        bwa_reports.append(bwa_repo)
         bwa_files.append(bwa_file)
 
     ## iterate thru the bwa files to submit
@@ -181,15 +179,11 @@ if __name__ == "__main__":
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')
 
-    ## Check the reports
-    kicker = True 
-
     ## While thekicker is true 
-    while kicker and len(bwa_files):
-        kicker = not reportcheck(bwa_reports)
+    while not (sum([fileexists(f) for f in bwa_checkers]) == nreads):
         ## Wait a minitue 
         sleep(2*waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(len(bwa_files),sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(nreads,sample_name))
 ## EOF 

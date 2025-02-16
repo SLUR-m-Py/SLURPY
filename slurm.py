@@ -341,7 +341,7 @@ if __name__ == "__main__":
     ## Load in defluats 
     from defaults import confirmreset
     ## Format group dirs 
-    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir] + ([macs3dir] if ((atac_seq or chip_control) and not skippeaks) else [])
+    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir,checkerdir] + ([macs3dir] if ((atac_seq or chip_control) and not skippeaks) else [])
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -683,7 +683,7 @@ if __name__ == "__main__":
         ## Format command to remove uneedeed files 
         remove_sh   = f'{comsdir}/{pix}B.cleanup.sh'             ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
-        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n']
+        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes)+ remove_comm, debug)
         ## Append the clean up command to file
