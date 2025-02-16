@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     ## Just sorting and not deduplciateing 
     elif sorting and (not deduplicate):
-        df = bedpe.sort_values(drop_by[:-3])
+        df = bedpe.sort_values(drop_by[:-2])
     ## Otherwise just concat inputs 
     else:
         df = bedpe
