@@ -207,11 +207,11 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     ## Concat the dfs 
     long = pd.concat([df1,df2],axis=1)
     ## Calculate distance
-    long['Distance'] = long.Pos2 - long.End1
+    long['Distance'] = long.Pos2 - long.Pos1
     ## Remap the distances
     long.loc[long.Distance<0] = long.loc[long.Distance<0,df2.columns.tolist()+df1.columns.tolist()+['Distance']].values
     ## Recalc distance metric
-    long['Distance'] = long.Pos2 - long.End1 
+    long['Distance'] = long.Pos2 - long.Pos1  
     ## Clac where the chromosomes are not left right sorted
     long['Test'] = long.Chrn1 - long.Chrn2
     ## Remap so chromosomes are left right sorted
