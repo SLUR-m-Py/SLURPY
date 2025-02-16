@@ -174,9 +174,6 @@ if __name__ == "__main__":
         bwa_reports.append(bwa_repo)
         bwa_files.append(bwa_file)
 
-    ## Sleep here to wait
-    sleep(waittime)
-
     ## iterate thru the bwa files to submit
     for bwa_file in bwa_files:
         ## Wiat a few seconds

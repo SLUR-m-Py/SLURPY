@@ -119,9 +119,6 @@ if __name__ == "__main__":
         ## append the report and files 
         filter_reports.append(filter_repo)
         filter_files.append(filter_file)
-    
-    ## Wait for the files to be written 
-    sleep(waittime)
 
     ## Iterate thru the files to submit
     for filter_file in filter_files:

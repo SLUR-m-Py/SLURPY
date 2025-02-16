@@ -206,7 +206,7 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     df1,df2 = renamecols(df1,1), renamecols(df2,2)
     ## Concat the dfs 
     long = pd.concat([df1,df2],axis=1)
-    ## Calculate distance
+    ## Calculate distance beteween left of pairs, its negative if read 1 is to the right of read 2
     long['Distance'] = long.Pos2 - long.Pos1
     ## Remap the distances
     long.loc[long.Distance<0] = long.loc[long.Distance<0,df2.columns.tolist()+df1.columns.tolist()+['Distance']].values
