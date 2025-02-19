@@ -6,7 +6,7 @@ from defaults import pathexists
 ## Load in variables and ftn from my other libs
 from pysamtools import samnames, samtypes, dictzip, loadref, getmatchsum, listzip
 ## Bring in return site ftn form to bedp 
-from filterbedpe import returnsite
+from filtering import returnsite
 ## Load in params
 from parameters import hicsep
 

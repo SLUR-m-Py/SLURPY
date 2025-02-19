@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 150000 15000000 --merge --restart 
+./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 150000 15000000 --merge 
 
  --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """
@@ -52,7 +52,7 @@ from pysamtools import checksam, writetofile
 ## Load in panda cat ftn
 from pandacat import pandacat
 ## Load in bwa master
-from bwamaster import bwamaster
+from bwatobedpe import bwamaster
 ## Load in filter master
 from filtermaster import filtermaster
 

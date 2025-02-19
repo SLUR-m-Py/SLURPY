@@ -75,9 +75,9 @@ hic_flag   = 'Flag to run in Hi-C mode.'
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
     ## Format command 
-    command = f'{slurpydir}/bwamaster.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     ## Format report 
-    report  = f'{debugdir}/{pix}.bwa.master.{sname}.log'
+    report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     return [command], report 
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
@@ -107,18 +107,18 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
     ## Set inputs 
-    sample_name  = inputs.s
-    ref_path     = inputs.r
-    thread_count = inputs.b
-    the_cwd      = inputs.c 
-    partitions   = inputs.P
-    library      = inputs.L
-    line_count   = inputs.l
-    nice         = inputs.N
-    nodes        = inputs.nodes
-    debug        = inputs.debug 
-    ishic        = inputs.hic 
-    forced       = inputs.force 
+    sample_name  = inputs.s         ## Set sample name
+    ref_path     = inputs.r         ## Path to reference file
+    thread_count = inputs.b         ## Number of threads
+    the_cwd      = inputs.c         ## The cwd
+    partitions   = inputs.P         ## Paritions to run nodes on 
+    library      = inputs.L         ## Library used in hic construcition
+    line_count   = inputs.l         ## Number of lines to parse from file
+    nice         = inputs.N         ## Nice parameter, "Its nice to be nice"
+    nodes        = inputs.nodes     ## Node list 
+    debug        = inputs.debug     ## To debug, or not debug
+    ishic        = inputs.hic       ## Are we human? or are we dancers, or is it a hic experiment
+    forced       = inputs.force     ## Use the force Luke, let go Luke. Luke trust me.
 
     ## if we are formating hic run
     options = hic_options if ishic else '-M'

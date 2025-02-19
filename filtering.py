@@ -52,29 +52,29 @@ def returnsite(enzyme) -> tuple:
     return restsites, dangsites
 
 ## Check the restriction sites 
-def checkrests(gdf,restsites:list,refpath:str) -> tuple[list,list]:
-    ## Iniate counts and index 
-    rest_count, rest_index = [], []
-    ## Gather the chroms 
-    chroms = gdf.Rname1.unique()
-    for ref in SeqIO.parse(refpath,format='fasta'):
-        if (ref.id in chroms) or (ref.name in chroms):
-        ## Group by the chromosome names
-            df = gdf[(gdf.Rname1==ref.id) | (gdf.Rname1==ref.name)]
-            ## Itreat thru the rows
-            for rix,row in df.iterrows():
-                ## Count the restriciton sites 
-                k = 0
-                for rsite in restsites:
-                    ## calc start and end 
-                    fragm_start = min([row['Pos1'],row['Pos2']]) + len(rsite)
-                    fragm_end   = max([row['End1'],row['End2']]) - len(rsite)
-                    k += str(ref.seq[fragm_start:fragm_end]).upper().count(rsite.upper())
-                ## Append results for the row 
-                rest_count.append(k)
-                rest_index.append(rix)
-    ## return nothing 
-    return rest_index,rest_count
+#def checkrests(gdf,restsites:list,refpath:str) -> tuple[list,list]:
+#    ## Iniate counts and index 
+#    rest_count, rest_index = [], []
+#    ## Gather the chroms 
+#    chroms = gdf.Rname1.unique()
+#    for ref in SeqIO.parse(refpath,format='fasta'):
+#        if (ref.id in chroms) or (ref.name in chroms):
+#        ## Group by the chromosome names
+#            df = gdf[(gdf.Rname1==ref.id) | (gdf.Rname1==ref.name)]
+#            ## Itreat thru the rows
+#            for rix,row in df.iterrows():
+#                ## Count the restriciton sites 
+#                k = 0
+#                for rsite in restsites:
+#                    ## calc start and end 
+#                    fragm_start = min([row['Pos1'],row['Pos2']]) + len(rsite)
+#                    fragm_end   = max([row['End1'],row['End2']]) - len(rsite)
+#                    k += str(ref.seq[fragm_start:fragm_end]).upper().count(rsite.upper())
+#                ## Append results for the row 
+#                rest_count.append(k)
+#                rest_index.append(rix)
+#    ## return nothing 
+#    return rest_index,rest_count
 
 ## Calc the max len fo resistance sites 
 def maxrestlen(restsites) -> int: 

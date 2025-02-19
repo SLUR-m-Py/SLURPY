@@ -14,7 +14,7 @@ from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwamaster import reportcheck, hic_flag
+from bwatobedpe import reportcheck, hic_flag
 ## Load in directories
 from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         bed_check    = bed_checkers[i]
 
         ## Format commands 
-        filter_coms   = [f'{slurpydir}/filterbedpe.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') + '\n',
+        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') + '\n',
                          f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip

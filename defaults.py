@@ -193,8 +193,15 @@ def getfastqs(fpath:str) -> list:
     """Lists fastq files in pair from input, wildcard path."""
     ## Gather all read fastq.gz files
     reads = sortglob(fpath)
+    ## parse r1 and r2 
+    r1,r2 = reads[::2], reads[1::2]
+    ## Check r1 and r2, for proper naming convention
+    for r in r1:
+        assert '_R1_' in r, "ERROR: the first in pair needs to have the name _R1_ in the read name."
+    for r in r2:
+        assert '_R2_' in r, "ERROR: the second in pair needs to have the name _R2_ in the read name."
     ## Gather the pairs
-    return listzip(reads[::2],reads[1::2])
+    return listzip(r1,r2)
 
 ## Ftn for calling sub-process
 def submitsbatch(pathtoscript:str) -> int:
