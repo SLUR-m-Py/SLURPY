@@ -536,9 +536,9 @@ if __name__ == "__main__":
 
         ## 3B. Mergign unused contacts 
         ## Set start name for wildcard use to bring in inputs to ftn , the output file and the ouput report, set ouptu name  
-        unused_start = '*.notused.bedpe' if postmerging else f'*.{sample_name}.notused.bedpe'
+        unused_start = bedtmpdir + ('/*.notused.bedpe' if postmerging else f'/*.{sample_name}.notused.bedpe')
         unused_out   = f'{aligndir}/{sample_name}.notused.bedpe'
-        unused_repo  = reportname(unused_start,hic_pipeline[pix],i=pix)
+        unused_repo  = reportname(unused_start.split('*.')[-1],hic_pipeline[pix],i=pix)
         unused_file  = f'{comsdir}/{pix}.merge.{sample_name}.notused.sh'
 
         ## Set the command for concat of unsued 
