@@ -497,9 +497,8 @@ if __name__ == "__main__":
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
   
-    ##      FILE and TXT MERGING 
+    ##      MERGING, CONCATONATION, DEDUPLICATION, SORTING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 3A. merging,  deduplicating and sorintg
     ## Iterate over the sample names
     for si,sname in enumerate(samplenames):
         ## Set the smaple name 
@@ -508,10 +507,11 @@ if __name__ == "__main__":
         if (si > 0) and postmerging:
             continue
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## 3. Deduplicating and sorintg 
         ## Initiate list of out put hic files for each chromosome
         hiccats_outs = []
         hicdups_outs = []
-        ## Set pix 
+        ## Set pipeline step 
         pix = 3
         ## Set the new concat file name by chromosome index 
         for chrom in chrlist:
@@ -533,58 +533,39 @@ if __name__ == "__main__":
             writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes) + hiccat_coms, debug)
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
-
-        ## 3B. Mergign unused contacts 
-        ## Set start name for wildcard use to bring in inputs to ftn , the output file and the ouput report, set ouptu name  
-        unused_start = bedtmpdir + ('/*.notused.bedpe' if postmerging else f'/*.{sample_name}.notused.bedpe')
-        unused_out   = f'{aligndir}/{sample_name}.notused.bedpe'
-        unused_repo  = reportname(unused_start.split('*.')[-1],hic_pipeline[pix],i=pix)
-        unused_file  = f'{comsdir}/{pix}.merge.{sample_name}.notused.sh'
-
-        ## Set the command for concat of unsued 
-        unused_coms = pandacat([unused_start],unused_out,report=unused_repo,rmheader=True)
-
-        ## Write the concat command to file
-        writetofile(unused_file, sbatch(unused_file,daskthreads,the_cwd,unused_repo,nice=nice,nodelist=nodes) + unused_coms, debug)
-        ## Append the concat command
-        command_files.append((unused_file,sample_name,experi_mode,hic_pipeline[pix],unused_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
         ## Hi-C CONCATONATION
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 4B. Concat the duplicate Hi-C contacts from valid files, set pipeline. NOTE we reversed the order there 
+        ## 4. Merging unused contacts, and concatonation of duplicates and valid sets 
+        ## Set pipeline step 
         pix = 4
-        ## Format the infilename, we need this last filename in the loop for the hic
-        newcatfile = f'{aligndir}/{sample_name}.duplicates.bedpe'
-        ## Format report for pandacat
-        concat_repo = reportname(newcatfile,hic_pipeline[pix],i=f'{pix}B')
-        ## Format command to merge the chromosome bedpe files to each, the chromosome order is important 
-        concat_coms = pandacat(hicdups_outs,newcatfile,report=concat_repo,rmheader=True)
-        ## make concat file name
-        concat_file = f'{comsdir}/{pix}.concat.{sample_name}.duplicates.sh'
-        ## Write the concat command to file
-        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo,nice=nice,nodelist=nodes) + concat_coms, debug)
-        ## Append the concat command
-        command_files.append((concat_file,sample_name,experi_mode,hic_pipeline[pix],concat_repo,0,''))  
+        ## Set start name for wildcard use to bring in inputs to ftn , the output file and the ouput report, set ouptu name  
+        unused_start  = [bedtmpdir + ('/*.notused.bedpe' if postmerging else f'/*.{sample_name}.notused.bedpe')]
         
-        ## 4A. Concat the input Hi-C contacts from valid files, set pipeline 
-        ## Format the infilename, we need this last filename in the loop for the hic
-        newcatfile = f'{aligndir}/{sample_name}.valid.bedpe'
-        ## Format report for pandacat
-        concat_repo = reportname(newcatfile,hic_pipeline[pix],i=f'{pix}A')
-        ## Format command to merge the chromosome bedpe files to each, the chromosome order is important 
-        concat_coms = pandacat(hiccats_outs,newcatfile,report=concat_repo,rmheader=True)
-        ## make concat file name
-        concat_file = f'{comsdir}/{pix}.concat.{sample_name}.valid.sh'
-        ## Write the concat command to file
-        writetofile(concat_file, sbatch(concat_file,1,the_cwd,concat_repo,nice=nice,nodelist=nodes) + concat_coms, debug)
-        ## Append the concat command
-        command_files.append((concat_file,sample_name,experi_mode,hic_pipeline[pix],concat_repo,0,'')) 
+        ## Set file names, concat the inputs, set output names, repor tnames, and files 
+        hic_fileends   = ['notused','duplicates','valid']
+        concat_inputs  = [unused_start,hicdups_outs,hiccats_outs]
+        concat_outputs = [f'{aligndir}/{sample_name}.{f}.bedpe' for f in hic_fileends]
+        concat_reports = [reportname(f,hic_pipeline[pix],i=f'{pix}{a}') for a,f in zip(['A','B','C'],concat_outputs)]
+        concat_files   = [f'{comsdir}/{pix}.concat.{sample_name}.{f}.sh' for f in hic_fileends]
+
+        ## Iterate thru the zipped concat files 
+        for (con_ins,con_out,con_rep,con_fil) in zip(concat_inputs,concat_outputs,concat_reports,concat_files):
+            ## Format the commands 
+            concat_coms = pandacat(con_ins,con_out,report=con_rep,rmheader=True)
+            ## Write commands to file 
+            writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes) + concat_coms, debug)
+            ## append command to command file list
+            command_files.append((con_fil,sample_name,experi_mode,hic_pipeline[pix],con_rep,0,'')) 
+
+        ## Patch new cat file to next analysis step, must be the valid contacts/alignments 
+        newcatfile = concat_outputs[-1]
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-        ## OPTIONAL ANALYSES
+        ## OPTIONAL ANALYZES
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         """
         Optional analyzes
@@ -594,6 +575,7 @@ if __name__ == "__main__":
         """
         ## GENE X GENE interaction 
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## Set pipeline step 
         pix = 5
         ## 5A. Create a feature space 
         if feature_space and inhic:
