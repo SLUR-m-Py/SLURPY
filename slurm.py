@@ -499,7 +499,7 @@ if __name__ == "__main__":
   
     ##      FILE and TXT MERGING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 3. merging,  deduplicating and sorintg
+    ## 3A. merging,  deduplicating and sorintg
     ## Iterate over the sample names
     for si,sname in enumerate(samplenames):
         ## Set the smaple name 
@@ -534,21 +534,20 @@ if __name__ == "__main__":
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
 
-        ## Set start name for wildcard use to bring in inputs  to ftn 
-        sample_start = '*.notused.bedpe' if postmerging else f'*.{sample_name}.notused.bedpe'
-        hiccat_out = f'{aligndir}/{sample_name}.notused.bedpe'
-        ## SEt the report name
-        hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
-        ## Set the command
-        #hiccat_coms =  [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
-        hiccat_coms = pandacat(sample_start,hiccat_out,report=hiccat_repo,rmheader=True)
-        
-        ## make concat file name
-        hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.notused.sh'
+        ## 3B. Mergign unused contacts 
+        ## Set start name for wildcard use to bring in inputs to ftn , the output file and the ouput report, set ouptu name  
+        unused_start = '*.notused.bedpe' if postmerging else f'*.{sample_name}.notused.bedpe'
+        unused_out   = f'{aligndir}/{sample_name}.notused.bedpe'
+        unused_repo  = reportname(unused_start,hic_pipeline[pix],i=pix)
+        unused_file  = f'{comsdir}/{pix}.merge.{sample_name}.notused.sh'
+
+        ## Set the command for concat of unsued 
+        unused_coms = pandacat([unused_start],unused_out,report=unused_repo,rmheader=True)
+
         ## Write the concat command to file
-        writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes) + hiccat_coms, debug)
+        writetofile(unused_file, sbatch(unused_file,daskthreads,the_cwd,unused_repo,nice=nice,nodelist=nodes) + unused_coms, debug)
         ## Append the concat command
-        command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))
+        command_files.append((unused_file,sample_name,experi_mode,hic_pipeline[pix],unused_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
