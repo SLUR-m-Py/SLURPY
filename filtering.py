@@ -51,31 +51,6 @@ def returnsite(enzyme) -> tuple:
     ## Return the sites
     return restsites, dangsites
 
-## Check the restriction sites 
-#def checkrests(gdf,restsites:list,refpath:str) -> tuple[list,list]:
-#    ## Iniate counts and index 
-#    rest_count, rest_index = [], []
-#    ## Gather the chroms 
-#    chroms = gdf.Rname1.unique()
-#    for ref in SeqIO.parse(refpath,format='fasta'):
-#        if (ref.id in chroms) or (ref.name in chroms):
-#        ## Group by the chromosome names
-#            df = gdf[(gdf.Rname1==ref.id) | (gdf.Rname1==ref.name)]
-#            ## Itreat thru the rows
-#            for rix,row in df.iterrows():
-#                ## Count the restriciton sites 
-#                k = 0
-#                for rsite in restsites:
-#                    ## calc start and end 
-#                    fragm_start = min([row['Pos1'],row['Pos2']]) + len(rsite)
-#                    fragm_end   = max([row['End1'],row['End2']]) - len(rsite)
-#                    k += str(ref.seq[fragm_start:fragm_end]).upper().count(rsite.upper())
-#                ## Append results for the row 
-#                rest_count.append(k)
-#                rest_index.append(rix)
-#    ## return nothing 
-#    return rest_index,rest_count
-
 ## Calc the max len fo resistance sites 
 def maxrestlen(restsites) -> int: 
     return max([len(r) for r in restsites])
@@ -140,17 +115,6 @@ def nearestrest(pos,restsites,chromseq,isleft,pads=[100,500,1000,2000,5000,10000
             
     ## Return the minimum index of distances if we have onces greater than -one pluse mpos 
     return findmindist(modpos,dists_away,isleft) 
-
-## Check ends ftn 
-def endcheck(read:str,strand:int,dangends:list) -> int:
-    ## Checks the presesne of deanglign ends 
-    return sum([read.upper().endswith(d) for d in dangends] if strand else [read.upper().startswith(d) for d in dangends])
-
-## Ftn for checking if a ref obj is in list
-def inref(refobj,inlist,outlist):
-    chrom_id,chrom_name = refobj.id, refobj.name
-    ## Return the id, name, and boolean
-    return chrom_id,chrom_name,(chrom_id not in inlist) or (chrom_id in outlist) or (chrom_name not in inlist) or (chrom_name in outlist)
 
 ## ------------------------------------- Define Variables ------------------------------------------------- ##
 B_help     = "Path to an input bed paired-end file (bedpe)."

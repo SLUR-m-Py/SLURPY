@@ -64,10 +64,10 @@ if __name__ == "__main__":
     inputs = parser.parse_args()
 
     ## Set inputs 
-    inpaths      = inputs.I ## Input text files 
-    outputfile   = inputs.O ## Output files
-    removeheader = inputs.R ## Removeing the header
-    sorting      = inputs.S ## Flag to sort 
+    inpaths      = inputs.I     ## Input text files 
+    outputfile   = inputs.O     ## Output files
+    removeheader = inputs.R     ## Removeing the header
+    sorting      = inputs.S     ## Flag to sort 
 
     ## Make sure we have files
     assert len(inpaths), "ERROR: No files were passed. Failed to generate %s!"%outputfile

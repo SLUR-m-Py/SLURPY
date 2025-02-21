@@ -27,7 +27,7 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 """ 
 ## List slurpy command for VERO analysis
 """
-./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 150000 15000000 --merge 
+./SLURPY/slurm.py -r vero -P tb fast gpu -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -M NC_008066.1 -F 150000 15000000 --merge --restart 
 
  --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """
@@ -528,22 +528,23 @@ if __name__ == "__main__":
             hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
 
             ## make concat file name
-            hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.valid.{chrom}.sh'
+            hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
             ## Write the concat command to file
             writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes) + hiccat_coms, debug)
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
 
         ## Set start name for wildcard use to bring in inputs  to ftn 
-        sample_start = 'notused.bedpe' if postmerging else f'{sample_name}.notused.bedpe'
+        sample_start = '*.notused.bedpe' if postmerging else f'*.{sample_name}.notused.bedpe'
         hiccat_out = f'{aligndir}/{sample_name}.notused.bedpe'
         ## SEt the report name
         hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
         ## Set the command
-        hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
+        #hiccat_coms =  [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out}\n']
+        hiccat_coms = pandacat(sample_start,hiccat_out,report=hiccat_repo,rmheader=True)
         
         ## make concat file name
-        hiccat_file = f'{comsdir}/{pix}.hiccat.{sample_name}.notused.sh'
+        hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.notused.sh'
         ## Write the concat command to file
         writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes) + hiccat_coms, debug)
         ## Append the concat command

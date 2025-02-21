@@ -18,7 +18,7 @@ desc = "Concats, sorts, and removes duplicates from input bedpe files representi
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
-import dask.dataframe as dd
+import dask.dataframe as dd, numpy as np 
 ## Bring in params
 from parameters import hicsep
 ## Bring in ftn from defaults
@@ -26,7 +26,8 @@ from directories import bedtmpdir
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 
-drop_by = ['Chrn1','Chrn2','Pos1','Pos2','Mcount1','Mcount2','Seqrev1','Seqrev2']
+drop_by = ['Chrn1','Chrn2','Pos1','Pos2','Seqrev1','Seqrev2','Mcount1','Mcount2']
+sort_by = drop_by[:-4]
 """
 Why?
 Chrn1 and Chrn2:       Duplicates must map to the same pair of chromosomes / contigs.
@@ -67,11 +68,11 @@ if __name__ == "__main__":
     inputs = parser.parse_args()
 
     ## Set inputs 
-    filebackend = inputs.B
-    output_path = inputs.O
-    dedupe_path = inputs.D 
-    sorting     = inputs.sort
-    deduplicate = inputs.dup
+    filebackend = inputs.B      ## Set the file backend 
+    output_path = inputs.O      ## Output path   
+    dedupe_path = inputs.D      ## Deduplication out file
+    sorting     = inputs.sort   ## Are we sorting
+    deduplicate = inputs.dup    ## Are we deduplicating
 
     ## Check input
     assert filebackend.split('.')[-1] == 'bedpe', "ERROR: The given extension ending -- %s -- is not a bedpe file!"%filebackend
@@ -84,37 +85,36 @@ if __name__ == "__main__":
 
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
     if sorting and deduplicate:
-        ## Print to screen
-        start_count = bedpe.Qname1.count().compute()
-        print("INFO: %s rows at start."%start_count)
+        ## Gather the counts and number of uniq pos1 and 2
+        (pos1,pc1), (pos2,pc2) = np.unique(bedpe.Pos1,return_counts=True), np.unique(bedpe.Pos2,return_counts=True)
+        ## Gather duplicated pos
+        dpos1,dpos2 = pos1[(pc1>1)], pos2[(pc2>1)]
         
-        ## Apply match count 
-        bedpe['Mcount1'] = bedpe.Cigar1.apply(matchcount,meta=int)
-        bedpe['Mcount2'] = bedpe.Cigar2.apply(matchcount,meta=int)
+        ## Compute the possible duplicates
+        pos_dups = bedpe[(bedpe.Pos1.isin(dpos1) & bedpe.Pos2.isin(dpos2))].compute()
+        ## Calculate the mcounds, apply match count 
+        pos_dups['Mcount1'] = pos_dups.Cigar1.apply(matchcount)
+        pos_dups['Mcount2'] = pos_dups.Cigar2.apply(matchcount)
 
-        ## Drop duplicates 
-        df = bedpe.drop_duplicates(drop_by).sort_values(drop_by[:4])
-        ## Calculate end count of rows and print 
-        end_count = df.Qname1.count().compute()
-        ## Calc n removed 
-        nremoved = int(start_count - end_count)
+        ## Drop duplicates
+        pos_uniq   = pos_dups.drop_duplicates(drop_by)
+        ## Gather duplicate hits by read names 
+        duplicates = pos_dups[~(pos_dups.Qname1.isin(pos_uniq.Qname1))] 
+        ## Save the duplicates to csv 
+        duplicates.to_csv(dedupe_path,header=True,index=False,sep=hicsep) if duplicates.shape[0] else None 
 
-        ## Print to file 
-        print("INFO: %s rows at end."%end_count)
-        print("INFO: %s rows removed."%(nremoved))
+        ## Drop duplicates and sort values 
+        df = bedpe[~(bedpe.Qname1.isin(duplicates.Qname1))].sort_values(sort_by)
 
-        ## Gather the duplicate reads and save to csv 
-        bedpe[~(bedpe.Qname1.isin(df.Qname1))].to_csv(dedupe_path,index=False,sep=hicsep,single_file=True) if nremoved else None 
-
-    ## Just sorting and not deduplciateing 
+    ## Just sorting and not deduplciating 
     elif sorting and (not deduplicate):
-        df = bedpe.sort_values(drop_by[:4])
+        df = bedpe.sort_values(sort_by)
     ## Otherwise just concat inputs 
     else:
         df = bedpe
 
     ## Save out valid non dedupe counts 
-    df.to_csv(output_path,index=False,single_file=True,sep=hicsep)
+    df.to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
 
     ## Print to log
     print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s"%filebackend)
