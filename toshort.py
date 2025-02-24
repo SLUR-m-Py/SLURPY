@@ -13,7 +13,7 @@ from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
 ## Lod in chunk size
-from parameters import chunksize
+from parameters import chunksize, pairs_help
 """
 Juicer short format:
 
@@ -24,8 +24,19 @@ chr:  the chormosome of the contact
 pos:  the position of the contact
 frag: the fragment, if using dummy var must be different for the pair 
 """
-## Set use columns
-use_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2']
+## Set use columns for short format
+short_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2']
+
+"""
+https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
+
+Pairs format:
+
+        readID chr1 pos1 chr2 pos2 strand1 strand2
+"""
+## Set use columns for pairs format
+pairs_cols = ['Qname1','Rname1','Pos1','Rname2','Pos2','Seqrev1','Seqrev2']
+
 ## Generate a pre cursor to a .hic flie
 desc = "Converts an input bedpe file (representing Hi-C contacts from SLURPY) to a short formated text file for juicer pre command."
 ## Set help message
@@ -52,6 +63,7 @@ if __name__ == "__main__":
     ## Add the required arguments
     parser.add_argument("-i",       dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
     parser.add_argument('--macs3',  dest="M", help=M_help,  action = 'store_true')
+    parser.add_argument('--pairs',  dest="P", help=pairs_help,  action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -59,6 +71,7 @@ if __name__ == "__main__":
     ## Set input
     input_path  = inputs.I 
     formacs3    = inputs.M
+    makepairs   = inputs.P
 
     ## Check path
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
@@ -80,19 +93,30 @@ if __name__ == "__main__":
                 chunk[['Rname1','Min','Max']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
         ## Save out the csv 
         #bedpe = dd.read_csv(input_path,sep=hicsep,usecols=pos_cols).to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
+    elif makepairs:
+        ## SEt output path
+        output_path = input_path.split(file_end)[0] + '.pairs' 
+
+        ## Load in data
+        df = dd.read_csv(input_path,sep=hicsep,usecols=pairs_cols)
+        ## Save out data in pairs format, should be tab seperated 
+        df[pairs_cols].to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
+
+        ## Print to log
+        print("Finished converting input bedpe file (%s) to pairs format."%output_path)
     else:
         ## SEt output path
         output_path = input_path.split(file_end)[0] + '.short' 
 
         ## Load in data
-        df = dd.read_csv(input_path,sep=hicsep,usecols=use_cols)
+        df = dd.read_csv(input_path,sep=hicsep,usecols=short_cols)
         ## Remap mapq coulmns as our fragment dummy vars
         df['Mapq1'] = 0
         df['Mapq2'] = 1
 
         ## Save out data
-        df[use_cols].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
+        df[short_cols].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
 
         ## Print to log
-        print("Finished converting input bedpe file (%s) to short format."%input_path)
+        print("Finished converting input bedpe file (%s) to short format."%output_path)
 ## End of file 

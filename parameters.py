@@ -132,6 +132,7 @@ dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads w
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."
 intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 mcool_help = "Flag to make an mcool file with cooler."
+pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 

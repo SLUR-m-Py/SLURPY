@@ -164,12 +164,14 @@ if __name__ == "__main__":
 
     ## Set boolean flags 
     parser.add_argument("--toshort",              dest="toshort",   help = short_help,    action = 'store_true')
+    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,    action = 'store_true')
     parser.add_argument("--restart",              dest="restart",   help = restart_help,  action = 'store_true')
     parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true')
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true')
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
+    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
     
     ## Set ATAC-seq specifict
     parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--broad",                dest="broad",     help = broad_help,    action = 'store_true')
     parser.add_argument("--skipmacs3",            dest="peaks",     help = peaks_help,    action = 'store_true')
     parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
-    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
+
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -223,6 +225,7 @@ if __name__ == "__main__":
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
+    makepairs       = inputs.makepairs    ##     Flag to make pairs file 
     hardreset       = inputs.restart      ##     Resetart the slurpy run, removing previous
     force           = inputs.force        ##     Force overwrite of output alignment files 
     debug           = inputs.debug        ##     Run in debug mode 
@@ -294,6 +297,10 @@ if __name__ == "__main__":
     if jarpath:
         assert fileexists(jarpath), "ERROR: The given jarpath %s could not be found! Please check path the given path and try again."%jarpath
         toshort = True 
+
+    ## If we are making a cool file 
+    if make_mcool:
+        makepairs = True 
 
     ## Set feature space to a boolean var, needed to make my settings work 
     if feature_space == 'none':
@@ -594,7 +601,7 @@ if __name__ == "__main__":
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-        ## BEDPE TO SHORT
+        ## BEDPE TO SHORT or PAIRS
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5B. Make the bedpe file into a short file for juicer pre command 
         if toshort and inhic:
@@ -604,6 +611,19 @@ if __name__ == "__main__":
             short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
             ## Set command file 
             short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
+            ## Wriet the short command to file
+            writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+            ## append the short command
+            command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+
+        ## 5B. Make the bedpe file into a short file for juicer pre command 
+        if makepairs and inhic:
+            ## make a report
+            short_repo = reportname(sample_name,'pairs',i=f'{pix}B')
+            ## Format the command
+            short_commands = [f'{slurpydir}/toshort.py --pairs -i {newcatfile}\n'] 
+            ## Set command file 
+            short_file = f'{comsdir}/{pix}B.pairs.{sample_name}.sh'
             ## Wriet the short command to file
             writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
             ## append the short command
@@ -735,11 +755,11 @@ if __name__ == "__main__":
     ##
     ##      5B) SUBMITTING CONVERSION FROM BEDPE to JUICER SHORT 
     ## Submit the toshort.py command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if toshort else []) 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs) else []) 
     ##
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic',('toshort' if jarpath else hic_pipeline[4]),stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (jarpath or make_mcool) else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic','toshort',stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (jarpath or make_mcool) else [])
     ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
