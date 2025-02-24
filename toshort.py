@@ -13,7 +13,7 @@ from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
 ## Lod in chunk size
-from parameters import chunksize, pairs_help
+from parameters import chunksize, pairs_help, inter_help
 """
 Juicer short format:
 
@@ -25,7 +25,7 @@ pos:  the position of the contact
 frag: the fragment, if using dummy var must be different for the pair 
 """
 ## Set use columns for short format
-short_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2']
+short_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2','Inter']
 
 """
 https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
@@ -61,9 +61,10 @@ if __name__ == "__main__":
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
-    parser.add_argument("-i",       dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
-    parser.add_argument('--macs3',  dest="M", help=M_help,  action = 'store_true')
-    parser.add_argument('--pairs',  dest="P", help=pairs_help,  action = 'store_true')
+    parser.add_argument("-i",           dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
+    parser.add_argument('--macs3',      dest="M", help=M_help,      action = 'store_true')
+    parser.add_argument('--pairs',      dest="P", help=pairs_help,  action = 'store_true')
+    parser.add_argument('--inter-only', dest="O", help=inter_help,  action= 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -72,6 +73,7 @@ if __name__ == "__main__":
     input_path  = inputs.I 
     formacs3    = inputs.M
     makepairs   = inputs.P
+    getinter    = inputs.O
 
     ## Check path
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
@@ -110,12 +112,16 @@ if __name__ == "__main__":
 
         ## Load in data
         df = dd.read_csv(input_path,sep=hicsep,usecols=short_cols)
+
         ## Remap mapq coulmns as our fragment dummy vars
         df['Mapq1'] = 0
         df['Mapq2'] = 1
 
+        ## Parse inter chromosome
+        df = df[(df.Inter>0)] if getinter else df
+
         ## Save out data
-        df[short_cols].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
+        df[short_cols[:-1]].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
 
         ## Print to log
         print("Finished converting input bedpe file (%s) to short format."%output_path)

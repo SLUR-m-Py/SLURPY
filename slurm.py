@@ -172,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
     parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
+    parser.add_argument("--inter-only",           dest="inter",     help = inter_help,    action = 'store_true')
     
     ## Set ATAC-seq specifict
     parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
@@ -222,6 +223,7 @@ if __name__ == "__main__":
     nodes           = inputs.nodes        ##     List of nodes 
     keep_dovetail   = inputs.dovetail     ##     Boolean for dove tailing 
     make_mcool      = inputs.mcool        ##     Flag to make mcool file  
+    get_inter       = inputs.inter        ##     Flag to return inter chromosome counts in bedpe file
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
@@ -580,6 +582,8 @@ if __name__ == "__main__":
 
 
         ## OPTIONAL ANALYZES
+        ## Set pipeline step 
+        pix = 5
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         """
         Optional analyzes
@@ -587,101 +591,110 @@ if __name__ == "__main__":
         bedpe ---> short format
         jucier pre command for hic creation 
         """
-        ## GENE X GENE interaction 
+        ## GENE X GENE from HIC
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## Set pipeline step 
-        pix = 5
-        ## 5A. Create a feature space 
-        if feature_space and inhic:
-            ## Iterate over chromosome list 
-            for i,coi in enumerate(chrlist):
-                ## Set the report, commands, and gxg script file name 
-                gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
-                gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
-                ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
-                writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes) + gxg_commands, debug)
-                ## Append to command list for calling/submission later 
-                command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
-        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## 5A. Create a feature space
+        if inhic:  
+            if feature_space:
+                ## Iterate over chromosome list 
+                for i,coi in enumerate(chrlist):
+                    ## Set the report, commands, and gxg script file name 
+                    gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
+                    gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                    gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
+                    ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
+                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes) + gxg_commands, debug)
+                    ## Append to command list for calling/submission later 
+                    command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+            ## BEDPE TO SHORT or PAIRS
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+            ## 5B. Make the bedpe file into a short file for juicer pre command 
+            if toshort: 
+                ## make a report
+                short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
+                ## Format the command
+                short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
+                ## Set command file 
+                short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
+                ## Wriet the short command to file
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                ## append the short command
+                command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+
+            if get_inter:
+                ## make a report
+                short_repo = reportname(sample_name,'inter.short',i=f'{pix}B')
+                ## Format the command
+                short_commands = [f'{slurpydir}/toshort.py --inter-only -i {newcatfile}\n'] 
+                ## Set command file 
+                short_file = f'{comsdir}/{pix}B.inter.short.{sample_name}.sh'
+                ## Wriet the short command to file
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                ## append the short command
+                command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+
+            ## 5B. Make the bedpe file into a short file for juicer pre command 
+            if makepairs:
+                ## make a report
+                short_repo = reportname(sample_name,'pairs',i=f'{pix}B')
+                ## Format the command
+                short_commands = [f'{slurpydir}/toshort.py --pairs -i {newcatfile}\n'] 
+                ## Set command file 
+                short_file = f'{comsdir}/{pix}B.pairs.{sample_name}.sh'
+                ## Wriet the short command to file
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                ## append the short command
+                command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+                ## Format the pairs file name
+                newpairsfile = newcatfile.split('.bedpe')[0] + '.pairs'
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+            ##  HIC FILE CREATION / JUICER PRE 
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+            ## 5C. IF we have a valid jar path
+            if jarpath:
+                ## Set the output hic path
+                shortfile, outhicpath = newcatfile.split('.bedpe')[0] + '.short', newcatfile.split('.bedpe')[0] +'.hic'
+                ## Sort and saveout the the concatonated hic file 
+                jpre_coms, jpre_repo = juicerpre(shortfile,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom)
+                ## make concat file name
+                jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
+                ## Write the concat command to file
+                writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes) + jpre_coms, debug)
+                ## Append the concat command
+                command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
+
+            ## 5C. Otherwise, make a cooler and mcool file
+            if make_mcool: 
+                ## format call to cooler
+                """
+                From: https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
+                cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 chr_file.txt:10000 ZmEn_HiC_2_1_2.hicup.bsorted.pairs ZmEn_2_10k.cool
+                """
+                ## Set out cool and mcool files
+                outcool  = newpairsfile + '.cool'
+                outmcool = newpairsfile + '.mcool'
+                ## Set cooler report and file name 
+                coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
+                coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
+                ## Set cooler commands 
+                cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
+                            f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
+                            f'rm {outcool}\n',
+                            f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
+                ## Write the concat command to file
+                writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes) + cooler_coms, debug)
+                ## Append the concat command
+                command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-        ## BEDPE TO SHORT or PAIRS
-        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 5B. Make the bedpe file into a short file for juicer pre command 
-        if toshort and inhic:
-            ## make a report
-            short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
-            ## Format the command
-            short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
-            ## Set command file 
-            short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
-            ## Wriet the short command to file
-            writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
-            ## append the short command
-            command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
-
-        ## 5B. Make the bedpe file into a short file for juicer pre command 
-        if makepairs and inhic:
-            ## make a report
-            short_repo = reportname(sample_name,'pairs',i=f'{pix}B')
-            ## Format the command
-            short_commands = [f'{slurpydir}/toshort.py --pairs -i {newcatfile}\n'] 
-            ## Set command file 
-            short_file = f'{comsdir}/{pix}B.pairs.{sample_name}.sh'
-            ## Wriet the short command to file
-            writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
-            ## append the short command
-            command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
-            ## Format the pairs file name
-            newpairsfile = newcatfile.split('.bedpe')[0] + '.pairs'
-        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
-        ##  HIC FILE CREATION / JUICER PRE 
-        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 5C. IF we have a valid jar path
-        if jarpath and inhic:
-            ## Set the output hic path
-            shortfile, outhicpath = newcatfile.split('.bedpe')[0] + '.short', newcatfile.split('.bedpe')[0] +'.hic'
-            ## Sort and saveout the the concatonated hic file 
-            jpre_coms, jpre_repo = juicerpre(shortfile,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom)
-            ## make concat file name
-            jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
-            ## Write the concat command to file
-            writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes) + jpre_coms, debug)
-            ## Append the concat command
-            command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
-
-        ## 5C. Otherwise, make a cooler and mcool file
-        if make_mcool and inhic:
-            ## format call to cooler
-            """
-            From: https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
-            cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 chr_file.txt:10000 ZmEn_HiC_2_1_2.hicup.bsorted.pairs ZmEn_2_10k.cool
-            """
-            ## Set out cool and mcool files
-            outcool  = newpairsfile + '.cool'
-            outmcool = newpairsfile + '.mcool'
-            ## Set cooler report and file name 
-            coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
-            coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
-            ## Set cooler commands 
-            cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
-                           f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
-                           f'rm {outcool}\n',
-                           f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
-            ## Write the concat command to file
-            writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes) + cooler_coms, debug)
-            ## Append the concat command
-            command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
-        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
-        ##      PEAK CALLING WITH MAC2
+        ##      PEAK CALLING WITH MACS3
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
-        if peakcalling:
+        elif peakcalling:
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
@@ -762,7 +775,7 @@ if __name__ == "__main__":
     ##
     ##      5B) SUBMITTING CONVERSION FROM BEDPE to JUICER SHORT 
     ## Submit the toshort.py command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs) else []) 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs or get_inter) else []) 
     ##
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
