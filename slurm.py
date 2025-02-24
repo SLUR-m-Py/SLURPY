@@ -628,6 +628,8 @@ if __name__ == "__main__":
             writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
             ## append the short command
             command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+            ## Format the pairs file name
+            newpairsfile = newcatfile.split('.bedpe')[0] + '.pairs'
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -654,13 +656,13 @@ if __name__ == "__main__":
             cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 chr_file.txt:10000 ZmEn_HiC_2_1_2.hicup.bsorted.pairs ZmEn_2_10k.cool
             """
             ## Set out cool and mcool files
-            outcool  = newcatfile.split('.bedpe')[0] + '.cool'
-            outmcool = newcatfile.split('.bedpe')[0] + '.mcool'
+            outcool  = newpairsfile + '.cool'
+            outmcool = newpairsfile + '.mcool'
             ## Set cooler report and file name 
             coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
             coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
             ## Set cooler commands 
-            cooler_coms = [f'cooler cload pairs -c1 3 -p1 4 -c2 15 -p2 16 {pathtochrom}:{min(binsizes)} {newcatfile} {outcool}\n',
+            cooler_coms = [f'cooler cload pairs -c1 3 -p1 4 -c2 15 -p2 16 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
                            f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
                            f'rm {outcool}\n',
                            f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
