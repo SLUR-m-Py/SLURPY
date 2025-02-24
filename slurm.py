@@ -623,6 +623,28 @@ if __name__ == "__main__":
             writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes) + jpre_coms, debug)
             ## Append the concat command
             command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
+        ## Otherwise, make a cooler and mcool file
+        elif inhic:
+            ## format call to cooler
+            """
+            From: https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
+            cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 chr_file.txt:10000 ZmEn_HiC_2_1_2.hicup.bsorted.pairs ZmEn_2_10k.cool
+            """
+            ## Set out cool and mcool files
+            outcool  = newcatfile.split('.bedpe')[0] + '.cool'
+            outmcool = newcatfile.split('.bedpe')[0] + '.mcool'
+            ## Set cooler report and file name 
+            coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
+            coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
+            ## Set cooler commands 
+            cooler_coms = [f'cooler cload pairs -c1 3 -p1 4 -c2 15 -p2 16 {pathtochrom}:{min(binsizes)} {newcatfile} {outcool}\n',
+                           f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
+                           f'rm {outcool}\n',
+                           f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
+            ## Write the concat command to file
+            writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes) + cooler_coms, debug)
+            ## Append the concat command
+            command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 

@@ -103,19 +103,15 @@ if __name__ == "__main__":
         ## Save the duplicates to csv 
         duplicates.to_csv(dedupe_path,header=True,index=False,sep=hicsep) if duplicates.shape[0] else None 
 
-        ## Drop duplicates and sort values 
-        df = bedpe[~(bedpe.Qname1.isin(duplicates.Qname1))].sort_values(sort_by)
+        ## Drop duplicates,sort values, and save out a csv file 
+        bedpe[~(bedpe.Qname1.isin(duplicates.Qname1))].sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
 
     ## Just sorting and not deduplciating 
     elif sorting and (not deduplicate):
-        df = bedpe.sort_values(sort_by)
+        bedpe.sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
     ## Otherwise just concat inputs 
-    else:
-        df = bedpe
-
-    ## Save out valid non dedupe counts 
-    df.to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
-
+    else: ## Do nothing
+        print("WARNING: A combination of arguments left us doing nothing for this call of deduphic.py.")
     ## Print to log
     print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s"%filebackend)
 ## End of file 
