@@ -131,6 +131,7 @@ node_help = "Space seperated list of nodes to run jobs on."
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."
 intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
+mcool_help = "Flag to make an mcool file with cooler."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 

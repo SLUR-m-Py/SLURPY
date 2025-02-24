@@ -177,6 +177,7 @@ if __name__ == "__main__":
     parser.add_argument("--broad",                dest="broad",     help = broad_help,    action = 'store_true')
     parser.add_argument("--skipmacs3",            dest="peaks",     help = peaks_help,    action = 'store_true')
     parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
+    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -218,6 +219,7 @@ if __name__ == "__main__":
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
     keep_dovetail   = inputs.dovetail     ##     Boolean for dove tailing 
+    make_mcool      = inputs.mcool        ##     Flag to make mcool file  
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
@@ -623,8 +625,9 @@ if __name__ == "__main__":
             writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes) + jpre_coms, debug)
             ## Append the concat command
             command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
-        ## Otherwise, make a cooler and mcool file
-        elif inhic:
+
+        ## 5C. Otherwise, make a cooler and mcool file
+        if make_mcool and inhic:
             ## format call to cooler
             """
             From: https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
@@ -650,7 +653,7 @@ if __name__ == "__main__":
 
         ##      PEAK CALLING WITH MAC2
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 6B. If we are running analysis on atac-seq experiments and the peak calling is taking place 
+        ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         if peakcalling:
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
@@ -736,7 +739,7 @@ if __name__ == "__main__":
     ##
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic','toshort',stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if jarpath else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'hic',('toshort' if jarpath else hic_pipeline[4]),stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (jarpath or make_mcool) else [])
     ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
@@ -749,6 +752,8 @@ if __name__ == "__main__":
         last_step = 'toshort'
     elif peakcalling:
         last_step = 'macs3'
+    elif make_mcool:
+        last_step = 'hic'
     else:
         last_step = hic_pipeline[4]   
     ##
