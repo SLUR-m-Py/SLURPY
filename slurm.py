@@ -296,11 +296,16 @@ if __name__ == "__main__":
     ## Check if we have a jarpath
     if jarpath:
         assert fileexists(jarpath), "ERROR: The given jarpath %s could not be found! Please check path the given path and try again."%jarpath
-        toshort = True 
+        ## Set othe booleans 
+        toshort    = True 
+        make_mcool = False
+        makepairs  = False 
 
     ## If we are making a cool file 
     if make_mcool:
         makepairs = True 
+        jarpath   = False
+        toshort   = False
 
     ## Set feature space to a boolean var, needed to make my settings work 
     if feature_space == 'none':
@@ -402,7 +407,7 @@ if __name__ == "__main__":
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
     ## Gather a list of chromosomes 
-    chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes)
+    chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes,not make_mcool)
     ## Calculate chrlist
     nchrom = len(chrlist)
     ## Print if there are fewer than ten
@@ -662,7 +667,7 @@ if __name__ == "__main__":
             coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
             coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
             ## Set cooler commands 
-            cooler_coms = [f'cooler cload pairs -c1 3 -p1 4 -c2 15 -p2 16 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
+            cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
                            f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
                            f'rm {outcool}\n',
                            f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']

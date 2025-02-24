@@ -10,13 +10,17 @@ from defaults import fileexists, readtable, readann
 from directories import aligndir
 ## Bring in chrom df from py-sam tools
 from pysamtools import chromdf
+## Load in sep from params 
+from parameters import hicsep
 
 ## Set defalut messaging
 chromgathering = 'INFO: Gathering chromosomes for processing...' 
 
 ## Set ftn for gathering chromosome map
-def gathering(path_to_ref,path_to_chrom,list_exclude) -> tuple:
+def gathering(path_to_ref,path_to_chrom,list_exclude:list,jarorcool:bool) -> tuple:
     """Formats a map of the refernece genome, which includes chromosome names and lengths"""
+    ## Set seperation
+    outsep = hicsep if jarorcool else '\t'
     ## Set fai path
     ann_path = path_to_ref + '.ann'
     ## Set new path to chrom
@@ -32,7 +36,7 @@ def gathering(path_to_ref,path_to_chrom,list_exclude) -> tuple:
         ## Load in the fai file fromt he reference 
         chrbed = readann(ann_path)
         ## SAve out the bed file 
-        chrbed[[0,1]].to_csv(path_to_chrom,sep=' ',index=False,header=False)
+        chrbed[[0,1]].to_csv(path_to_chrom,sep=outsep,index=False,header=False)
 
     ## Make a dataframe of the files 
     else: ## Bring in the list of chromosomes from the fasta file
@@ -45,7 +49,7 @@ def gathering(path_to_ref,path_to_chrom,list_exclude) -> tuple:
             ## Gather tupes of chromosome ids and lengths 
             chrbed = chromdf(path_to_ref)
             ## Save out the chrbed as an .txt file for next time or further analysis 
-            chrbed.to_csv(path_to_chrom,sep=' ',index=False,header=False)
+            chrbed.to_csv(path_to_chrom,sep=outsep,index=False,header=False)
       
     ## Gather the list of chromosomes from first column from the chr bed df
     chrlist = chrbed[0].tolist()
