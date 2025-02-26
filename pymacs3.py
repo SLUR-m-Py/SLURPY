@@ -175,14 +175,10 @@ if __name__ == "__main__":
     ## Calc total
     total = bedpe.Chrom.count().compute()
 
-    ## Load in narrow peak path, initate read count
-    narrow = loadnarrowpeak(peak_path)
+    ## Load in narrow peak path, initate read count, and drop ducpliates to unique peaks 
+    narrow          = loadnarrowpeak(peak_path)
     narrow['Reads'] = 0
-
-    ## Calc number of peaks and summits
-    nsummits = narrow.Chrom.count()
-    peaks    = narrow[['Chrom','Start','End']].drop_duplicates()
-    npeaks   = peaks.Chrom.count()
+    peaks           = narrow[['Chrom','Start','End','Reads']].drop_duplicates()
 
     ## Count the number of reads in peaks for each chromosome 
     for chrom,cdf in peaks.groupby('Chrom'):
@@ -194,15 +190,16 @@ if __name__ == "__main__":
             ## Set the read count for each 
             peaks.loc[i,'Reads'] = creads[(creads.Left <= row.End) & (creads.Right >= row.Start)].Chrom.count()
     
-    ## Calculat the frip
+    ## Calculate statists like the fript score, the number of peaks and sumits 
     fripscore = peaks.Reads.sum()/total
-    ## Cacluaate the bp coverage 
-    bp = (peaks.End - peaks.Start).sum()
+    bp        = (peaks.End - peaks.Start).sum()
+    nsummits  = narrow.Chrom.count()
+    npeaks    = peaks.Chrom.count()
     
     ## Iniate and fill in list for peak info 
-    peak_info = [peak_path.split('/')[-1],nsummits,npeaks,fripscore,bp]
+    peak_info = [peak_path.split('/')[-1],total,nsummits,npeaks,fripscore,bp]
     ## Format into a df
-    peak_info = pd.DataFrame(peak_info,columns = ['Peak File','Summits','Peaks','FRiP','BP'])
+    peak_info = pd.DataFrame(peak_info,columns = ['Peak File','Fragments','Summits','Peaks','FRiP','BP'])
     ## IF genome size was givven
     if genomesize:
         ## Calculate the perecnt genome
