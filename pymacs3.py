@@ -24,7 +24,7 @@ croth@lanl.gov
 import pandas as pd 
 
 ## Load in scripts dir 
-from defaults import slurpydir, macs3dir 
+from directories import slurpydir, macs3dir 
 
 ## Ftn for formating length parameter
 def formatlen(minlen):
@@ -129,104 +129,84 @@ def makemap(inbam):
     ## Return the dataframe 
     return pd.DataFrame(zip(inbam.references,inbam.lengths),columns=['Chrom','Length'])
 
-## ---------------------------------------------- DEFAULT VARIABLES ---------------------------------------------------- ## 
-## Set description of this library and scirpt
-description = 'Calculates the fraction of reads within peaks from input bam and bed files.'
-
-## Set defaults
-savename, dplace = './frip.stats.csv', 4
-
-## Set help messages
-b_help = "Path(s) to input BAM files."
-p_help = "Path(s) to input peak (BED) files from macs3."
-s_help = "Path and name of output diagnostic statistics."
-d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
 if __name__ == "__main__":
+    ## ---------------------------------------------- DEFAULT VARIABLES ---------------------------------------------------- ## 
+    ## Set description of this library and scirpt
+    description = 'Calculates the fraction of reads within peaks from input bedpe and narrow peaks files.'
+
+    ## Set defaults
+    savename, dplace = './frip.stats.csv', 4
+
+    ## Set help messages
+    b_help = "Path to input bedpe file."
+    p_help = "Path to input peak (BED) files from macs3."
+    s_help = "Path and name of output diagnostic statistics."
+    d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
+
     ## ------------------------------------------- MODULE LOADING ---------------------------------------------------- ## 
     ## Load in pandas and arg parser
-    import argparse 
+    import argparse, dask.dataframe as dd 
+    ## Load in help messages from parameters 
+    from parameters import g_help
 
-    ## Ftn for parsing files 
-    from defaults import sortglob, aligndir, macs3dir, diagdir
-
-    ## Load bam ftn 
-    from pysamtools import loadbam, isbam, hasix
-
-    ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
+    ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser
     parser = argparse.ArgumentParser(description=description)
 
     ## Add optional arguments
-    parser.add_argument("-b", "--bam-files",  dest="b", required=False, type=list, help=b_help, default=[],nargs='+')
-    parser.add_argument("-p", "--bed-files",  dest="p", required=False, type=list, help=p_help, default=[],nargs='+')
-    parser.add_argument("-s", "--save-path",  dest="s", required=False, type=str,  help=s_help, default=None        )  
-    parser.add_argument("-d", "--decimals",   dest="d", required=False, type=int,  help=d_help, default=dplace      )
-
+    parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                       )
+    parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                       )
+    parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None      )  
+    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
+    parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False     )
     ## Parse the arguments
     args = parser.parse_args()
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 
-    bams_paths, peak_paths, save_path, dplace = args.b, args.p, args.s, args.d
+    bedpe_path, peak_path, save_path, dplace, genomesize = args.b, args.p, args.s, args.d, args.g
 
-    ## Re-assign bam paths form the local aligned dir by gathering the primary mapped bam files from the aligned dir if run name was passed 
-    bams_paths = bams_paths if len(bams_paths) else sortglob(f'./{aligndir}/*.primary.*.bam') 
+    ## Load in dask 
+    bedpe = dd.read_csv(bedpe_path,sep='\t',names=['Chrom','Left','Right'],header=None)
 
-    ## Re-assign bed paths from local macs3 dir if we were passed a run name, gather the peaks from the macs3 dir
-    peak_paths = peak_paths if len(peak_paths) else sortglob(f'./{macs3dir}/*_peaks.*Peak') 
+    ## Calc total
+    total = bedpe.Chrom.count().compute()
 
-    ## Reset the save path if none was given 
-    save_path = save_path if save_path else f'./{diagdir}/{savename}' 
+    ## Load in narrow peak path, initate read count
+    narrow = loadnarrowpeak(peak_path)
+    narrow['Reads'] = 0
 
-    ## Check we have paths 
-    assert len(bams_paths), "ERROR: No bam files were detected!"
-    assert len(peak_paths), "ERROR: No macs3 peak files were detected!"
+    ## Calc number of peaks and summits
+    nsummits = narrow.Chrom.count()
+    peaks    = narrow[['Chrom','Start','End']].drop_duplicates()
+    npeaks   = peaks.Chrom.count()
 
-    ## Check all the input bam files are bam files
-    for b in bams_paths: ## Check if the input bam file is a bam file
-        assert isbam(b), "ERROR: The input bam file -- %s -- is not a bamfile!"%b
-        assert hasix(b), "ERROR: The input bam file -- %s -- is not indexed!"%b
+    ## Count the number of reads in peaks for each chromosome 
+    for chrom,cdf in peaks.groupby('Chrom'):
+        ## Set the tmporary creads df for this chromosome 
+        creads = bedpe[(bedpe.Chrom==chrom)].compute()
 
-    ## --------------------------------------- FRiP Calculation --------------------------------------------------- ## 
-    ## Initlizse peak count and info
-    peak_info = []
-    ## Iterate thru the narrow peak files 
-    for peak_path in peak_paths:
-        ## Load in the narrow peak file and initilize the read counts and totals
-        narrow, read_total, read_peaks  = loadnarrowpeak(peak_path), [], []
-        ## Slim down the narrow peak file
-        slimpeak = slimdown(narrow)
-        ## Calculate the total bp covered
-        total_bp = sum(slimpeak['End'].values - slimpeak['Start'].values)
-        
-        ## Iterate thru the bam files 
-        for bam_path in bams_paths:
-            ## Load in the bam
-            bam = loadbam(bam_path)
-            ## Count reads in bam file
-            read_total.append(readsinbam(bam))
-            ## Count reads in peak
-            read_peaks.append(readsinpeaks(bam,slimpeak))
-            
-        ## Calc the frip 
-        peak_frip = round(sum(read_peaks)/sum(read_total),dplace)
-        ## Append the resutls
-        peak_info.append([peak_path.split('/')[-1],narrow.shape[0],slimpeak.shape[0],peak_frip,total_bp])
-
-    ## Get the chrom map
-    chrommap = makemap(bam)
-    ## Gather the chromosome list
-    chrlist = slimpeak.Chrom.unique()
-    ## Calcualte the genome size 
-    genomesize = chrommap[(chrommap.Chrom.isin(chrlist))].Length.sum()
-        
+        ## Iterate thru the cdf 
+        for i,row in cdf.iterrows():
+            ## Set the read count for each 
+            peaks.loc[i,'Reads'] = creads[(creads.Left <= row.End) & (creads.Right >= row.Start)].Chrom.count()
+    
+    ## Calculat the frip
+    fripscore = peaks.Reads.sum()/total
+    ## Cacluaate the bp coverage 
+    bp = (peaks.End - peaks.Start).sum()
+    
+    ## Iniate and fill in list for peak info 
+    peak_info = [peak_path.split('/')[-1],nsummits,npeaks,fripscore,bp]
     ## Format into a df
     peak_info = pd.DataFrame(peak_info,columns = ['Peak File','Summits','Peaks','FRiP','BP'])
-    ## Calculate the perecnt genome
-    peak_info['Percent'] = round(100*peak_info.BP/genomesize,dplace)
+    ## IF genome size was givven
+    if genomesize:
+        ## Calculate the perecnt genome
+        peak_info['Percent'] = round(100*peak_info.BP/genomesize,dplace) 
     ## Save the peak info
     peak_info.to_csv(save_path,index=False)
 ## End of file 

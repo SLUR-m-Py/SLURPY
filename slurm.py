@@ -22,7 +22,7 @@ croth@lanl.gov
 ## List command for canceling all
 """
 squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
-squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
 ## List slurpy command for VERO analysis
@@ -698,7 +698,7 @@ if __name__ == "__main__":
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
-            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -s {diagdir}/{sample_name}.frip.stats.csv\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.bedpe -p {macs3dir}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 
