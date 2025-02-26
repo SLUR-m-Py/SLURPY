@@ -181,7 +181,6 @@ if __name__ == "__main__":
     parser.add_argument("--skipmacs3",            dest="peaks",     help = peaks_help,    action = 'store_true')
     parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
 
-
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##

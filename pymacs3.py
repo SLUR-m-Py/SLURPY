@@ -199,7 +199,7 @@ if __name__ == "__main__":
     ## Iniate and fill in list for peak info 
     peak_info = [peak_path.split('/')[-1],total,nsummits,npeaks,fripscore,bp]
     ## Format into a df
-    peak_info = pd.DataFrame(peak_info,columns = ['Peak File','Fragments','Summits','Peaks','FRiP','BP'])
+    peak_info = pd.DataFrame(peak_info,index=['Peak File','Fragments','Summits','Peaks','FRiP','BP']).T
     ## IF genome size was givven
     if genomesize:
         ## Calculate the perecnt genome
