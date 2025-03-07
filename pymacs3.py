@@ -160,14 +160,14 @@ if __name__ == "__main__":
     parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                       )
     parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                       )
     parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None      )  
-    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
     parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False     )
+    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
     ## Parse the arguments
     args = parser.parse_args()
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 
-    bedpe_path, peak_path, save_path, dplace, genomesize = args.b, args.p, args.s, args.d, args.g
+    bedpe_path, peak_path, save_path, genomesize,  dplace = args.b, args.p, args.s, args.g, args.d, 
 
     ## Load in dask 
     bedpe = dd.read_csv(bedpe_path,sep='\t',names=['Chrom','Left','Right'],header=None)
@@ -191,7 +191,7 @@ if __name__ == "__main__":
             peaks.loc[i,'Reads'] = creads[(creads.Left <= row.End) & (creads.Right >= row.Start)].Chrom.count()
     
     ## Calculate statists like the fript score, the number of peaks and sumits 
-    fripscore = peaks.Reads.sum()/total
+    fripscore = round(peaks.Reads.sum()/total,dplace)
     bp        = (peaks.End - peaks.Start).sum()
     nsummits  = narrow.Chrom.count()
     npeaks    = peaks.Chrom.count()

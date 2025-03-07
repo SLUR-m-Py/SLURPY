@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | grep 'fast' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -245,9 +245,9 @@ if __name__ == "__main__":
     ## Check if we are in atac seq mode    
     if threadn:
         ## reset threads                           
-        fastp_threads   = threads           ##     Number of fastp threads
-        bwa_threads     = threads           ##     Number of threads in bwa alignments
-        daskthreads     = threads           ##     Number of threads in dask 
+        fastp_threads   = threadn           ##     Number of fastp threads
+        bwa_threads     = threadn           ##     Number of threads in bwa alignments
+        daskthreads     = threadn           ##     Number of threads in dask 
 
     ## Reset paortions into a comma joined list
     partition = ','.join(partitions)
