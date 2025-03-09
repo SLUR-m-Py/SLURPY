@@ -442,7 +442,7 @@ if __name__ == "__main__":
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
-    in_fastqs = getfastqs(fastqdir+f'/*.{fends}')
+    in_fastqs = getfastqs(fastqdir+f'/*{fends}')
     ## Assert we have fastq files
     assert len(in_fastqs), missingfqs
     ## Sort by fastq size
