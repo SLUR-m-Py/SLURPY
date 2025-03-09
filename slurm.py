@@ -139,7 +139,6 @@ if __name__ == "__main__":
     parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
     parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
     parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
-    parser.add_argument("-q", "--fastq",          dest="q",       type=str,  required=False, help = q_help, metavar = '.fastq.gz',            default = fends        )
     parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
     parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
 
@@ -199,7 +198,6 @@ if __name__ == "__main__":
     excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
     mapq            = inputs.Q            ##     Set the mapping quality threshold 
     rerun           = inputs.R            ##     Setp to rerun pipeline from 
-    fends           = inputs.q            ##     End of the input fastq files
     bwaix_jobid     = inputs.a            ##     The job id to have all submissions wait on   
     nice            = inputs.N            ##     Sets the nice parameter 
 
@@ -442,7 +440,7 @@ if __name__ == "__main__":
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
-    in_fastqs = getfastqs(fastqdir+f'/*{fends}')
+    in_fastqs = getfastqs(fastqdir+'/*.fastq.gz')
     ## Assert we have fastq files
     assert len(in_fastqs), missingfqs
     ## Sort by fastq size
