@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | grep 'fast' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth'  | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -199,7 +199,7 @@ if __name__ == "__main__":
     excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
     mapq            = inputs.Q            ##     Set the mapping quality threshold 
     rerun           = inputs.R            ##     Setp to rerun pipeline from 
-    fend            = inputs.q            ##     End of the input fastq files
+    fends           = inputs.q            ##     End of the input fastq files
     bwaix_jobid     = inputs.a            ##     The job id to have all submissions wait on   
     nice            = inputs.N            ##     Sets the nice parameter 
 
@@ -442,7 +442,7 @@ if __name__ == "__main__":
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
-    in_fastqs = getfastqs(fastqdir+'/*.gz')
+    in_fastqs = getfastqs(fastqdir+f'/*.{fends}')
     ## Assert we have fastq files
     assert len(in_fastqs), missingfqs
     ## Sort by fastq size
