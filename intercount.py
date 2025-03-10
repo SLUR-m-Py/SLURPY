@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#SBATCH --job-name=hictojuice           ## Name of job
+#SBATCH --job-name=inter.count          ## Name of job
 #SBATCH --output=%x.%j.out              ## Name stdout
 #SBATCH --error=%x.%j.err               ## Name stderr
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
