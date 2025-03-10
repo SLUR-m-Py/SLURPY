@@ -6,6 +6,11 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=mpi                 ## Set the partition
+## Bring in sysand getcwd
+import sys
+from os import getcwd
+## append path path
+sys.path.append(getcwd()) 
 
 ## bring in mods
 import dask.dataframe as dd, pandas as pd, numpy as np    
