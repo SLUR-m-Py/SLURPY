@@ -252,5 +252,5 @@ if __name__ == "__main__":
     plt.ylabel('log$_2$ (Interaction Score)',fontsize=myfs);
 
     ## Saveout the png 
-    plt.savefig(outname.replace('.inter.intra','contacts')+'.png',dpi=150,bbox_inches='tight')
+    plt.savefig(outname.replace('.inter.intra','.contacts')+'.png',dpi=150,bbox_inches='tight')
 ## EOF      
