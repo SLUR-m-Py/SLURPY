@@ -253,6 +253,11 @@ if __name__ == "__main__":
             plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
             ## Add to the percentage 
             cumper = cumper + vper 
+
+        ## Add the total to error dict
+        error_dict['Valid'] = error_dict['Inter'] + error_dict['Intra']
+        error_dict['Total'] = total_pairs
+
         ## Save out the counts
         pd.DataFrame(error_dict.values(),index=error_dict.keys()).T.to_csv(outpath.replace(inter_save,'.contacts'),index=False,header=True)
     
@@ -289,5 +294,5 @@ if __name__ == "__main__":
     plt.ylabel('log$_2$ (Interaction Score)',fontsize=myfs)
 
     ## Saveout the png 
-    plt.savefig(outname.replace(inter_save,'.contacts')+'.png',dpi=150,bbox_inches='tight')
+    plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
 ## EOF      
