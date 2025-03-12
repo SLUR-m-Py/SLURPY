@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #SBATCH --job-name=inter.count          ## Name of job
-#SBATCH --output=%x.%j.out              ## Name stdout
-#SBATCH --error=%x.%j.err               ## Name stderr
+#SBATCH -o inter.count.out              ## Name of output for std err and log
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
@@ -242,7 +241,7 @@ if __name__ == "__main__":
         total_pairs = sum(error_dict.values())
         cumper = 0
 
-        #print(total_pairs)
+        ## Iterrate over the error keys in reverse orer
         for key in error_keys[::-1]:
             ## GAther value and percent 
             value = error_dict[key]
@@ -257,8 +256,8 @@ if __name__ == "__main__":
         ## Save out the counts
         pd.DataFrame(error_dict.values(),index=error_dict.keys()).T.to_csv(outpath.replace(inter_save,'.contacts'),index=False,header=True)
     
-    else:
-        ## Add fake color
+    ## Otherwise, just plot hte inter:intra contact ratio 
+    else: ## Add dummby plotting values 
         plt.plot(0,0,'s',color='tan',label=f'Inter: {ninter}')
         plt.plot(0,0,'s',color='tab:blue',label=f'Intra: {nintra}')
 
