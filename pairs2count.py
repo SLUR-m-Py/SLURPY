@@ -115,7 +115,7 @@ interc      = mycols[:-1]
 debugging   = False
 
 ## Load in paraamters from slurpy mods hic sep 
-from parameters import hicsep, Z_help, chunksize
+from parameters import hicsep, Z_help, chunksize, atac_help
 ## Bring in diag dir 
 from directories import diagdir
 
@@ -130,14 +130,17 @@ if __name__ == "__main__":
     parser.add_argument("-w", dest="W", type=int, required=False, help=w_help, metavar="n", default=binsize)
     parser.add_argument("-s", dest="S", type=int, required=False, help=s_help, metavar="n", default=span)
     parser.add_argument("-c", dest="C", type=int, required=False, help=Z_help, metavar='n', default=chunksize)
+    parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
+
     ## Set inputs
     inputs = parser.parse_args()
     
     ## Set inputs
-    inpath    = inputs.I    ## Set input path
-    binsize   = inputs.W    ## Set binsize
-    span      = inputs.S    ## Span for rolling median filter 
-    chunksize = inputs.C    ## Number of rows per chunk 
+    inpath    = inputs.I        ## Set input path
+    binsize   = inputs.W        ## Set binsize
+    span      = inputs.S        ## Span for rolling median filter 
+    chunksize = inputs.C        ## Number of rows per chunk 
+    inatac    = inputs.atac     ## ATAC-seq mode 
 
     ## Set output path
     basename = inpath.split('/')[-1].replace('.bedpe',inter_save)
@@ -167,133 +170,222 @@ if __name__ == "__main__":
         if item not in chrlist:
             chrlist.append(item)
 
-    ## Open with with statment, and iterat thru chunks 
-    with pd.read_csv(inpath,sep=hicsep,chunksize=chunksize,usecols=mycols) as chunks:
-        for i,chunk in enumerate(chunks):
-            ## If this is the first chunk, count otherwise add to existing df 
-            inter_counts = inter_counts.add(countinter(chunk[interc]),fill_value=0) if i else countinter(chunk[interc]) 
-            distances    = distances.add(countdistance(chunk,binsize),fill_value=0) if i else countdistance(chunk,binsize)
-            ## Gather the chromosomes 
-            chroms = chunk['Rname1'].drop_duplicates().tolist()
-            ## Iterate thru the chroms and append to set, keepign order 
-            for c in chroms:
-                append_to_chrlist(c)
+    ## If in atac seq mode 
+    if inatac:
+        with pd.read_csv(inpath,sep=hicsep,chunksize=chunksize,usecols=['Pos1','Pos2','End1','End2']) as chunks:
+            for i,chunk in enumerate(chunks):
+                ## Clac fragments
+                frag_size = pd.DataFrame(chunk.max(axis=1) - chunk.min(axis=1),columns=['Fragsize'])
+                frag_size['Counts'] = 1
+                ## Count
+                frag_dist = frag_dist.add(frag_size.groupby('Fragsize').count(),fill_value=0) if i else frag_size.groupby('Fragsize').count()
 
-    ## Set columns to integers
-    inter_counts['Inter'] = inter_counts.Inter.apply(int)
-    distances['Contacts'] = distances.Contacts.apply(int)
+        ## Modify counts to an int and reset index
+        frag_dist['Counts'] = frag_dist.Counts.apply(int)
+        frag_dist.reset_index(inplace=True)
 
-    ## Reset indect of inter counts
-    inter_counts.reset_index(inplace=True)
-    distances.reset_index(inplace=True)
+        ## Save out the fragmetn dist
+        frag_dist.to_csv(outpath.replace(inter_save,'.frag.dist'),index=False)
 
-    ## Print to sreen
-    if debugging:
-        print(inter_counts.head())
-        print()
-        print(distances.head())
-    ## Count the inter and intra contacts
-    ninter = inter_counts.Inter.sum()
-    nintra = distances.Contacts.sum()
+        ## Calc totals
+        totals = frag_dist.Counts.sum()
 
-    ## If the dictionary was made 
-    if len(error_counts):
-        error_dict['Inter'] = ninter
-        error_dict['Intra'] = nintra
+        ## Call figure 
+        fig,ax = plt.subplots(1,1,figsize=(5,5))
+        fig.set_facecolor('w')
 
-    ## Calc total and ratio 
-    ntotal = ninter + nintra
-    rintra = round(nintra/ntotal,4)
+        ## If errors were counted 
+        if len(error_counts):
+            ## Add fragment count
+            error_dict['Fragments'] = totals
 
-    ## Calcluat the inter chromosomal scores
-    inter_score_df = interscoring(inter_counts,chrlist)
+            ## Add a bar showing percent of contcats
+            barax = fig.add_axes([-0.015,0.0975,0.05,0.78])
+            spinesoff(barax)
+            ## Set keys 
+            error_keys  = list(error_dict.keys())
+            ## Caluclatte total and preset cumlative percent 
+            total_pairs = sum(error_dict.values())
+            cumper = 0
 
-    ## save the inter scores, counts, and distance decay to csvs givin outpath 
-    inter_score_df.to_csv(outpath,index=True,header=True)
-    inter_counts.to_csv(outpath.replace('.score','.counts'),index=False)
-    distances.to_csv(outpath.replace(inter_save,'.distance.decay'),index=False)
+            ## Iterrate over the error keys in reverse orer
+            for key in error_keys[::-1]:
+                ## GAther value and percent 
+                value = error_dict[key]
+                vper  = round(value/total_pairs,3)
+                ## Plot fake point for label
+                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {100*vper} %)')
+                mcolor = m.get_color()
+                ## Plot the percentage 
+                plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
+                ## Add to the percentage 
+                cumper = cumper + vper 
+                    
+            ## Modify x-axis 
+            plt.xlim(-0.001,0.001)
+            plt.xticks([])
 
-    ## Add a pad of one to counts
-    distances['Contacts'] = distances['Contacts'] + 1
+            ## Modify y axis 
+            plt.ylim(0,1)
+            plt.ylabel('Percent of Read Pairs ( %s )'%total_pairs if len(error_counts) else None,fontsize=myfs)
 
-    ## Convert log to base 10 
-    median_dd = np.log10(distances.Contacts.rolling(span).median().values/distances.Contacts.sum())
-    log10_dis = np.log10(distances.Distance.values+1)
+            ## Add legend
+            plt.legend(bbox_to_anchor=(-1.75,1),frameon=False,fontsize=myfs-2)
+            
+            ## Add the total to error dict
+            error_dict['Total'] = total_pairs
 
-    ## Call figure 
-    fig,ax = plt.subplots(1,2,figsize=(11,5))
-    fig.set_facecolor('w')
+            ## Save out the counts
+            pd.DataFrame(error_dict.values(),index=error_dict.keys()).T.to_csv(outpath.replace(inter_save,'.readpairs'),index=False,header=True)
+        
+        ## cald the log 10 distance
+        log10_dis = np.log10(frag_dist.Fragsize.values)
+        frag_freq = frag_dist.Counts/totals
 
-    ## Plot distance decay 
-    spinesoff(ax[0])
-    plt.plot(log10_dis,median_dd,color='tab:grey')
-    plt.xlabel('Genomic Distance (log$_{10}$ bp)',fontsize=myfs)
-    plt.ylabel('Contact Frequency (log$_{10}$)',fontsize=myfs)
+        ## Plot distance decay 
+        spinesoff(ax)
+        plt.plot(log10_dis,frag_freq,'.',color='tab:grey')
 
-    ## Add a bar showing percent of contcats
-    barax = fig.add_axes([-0.015,0.0975,0.05,0.78])
-    spinesoff(barax)
+        ## Modify yticks 
+        p,l = plt.yticks()
+        yticks = ['%s$^{-3}$'%(int(p*1000)) for p in p[1:-1]]
+        plt.yticks(p[1:-1],yticks)
 
-    ## If errors were counted 
-    if len(error_counts):
-        ## Set keys 
-        error_keys  = list(error_dict.keys())
-        ## Caluclatte total and preset cumlative percent 
-        total_pairs = sum(error_dict.values())
-        cumper = 0
+        ## Annotate the xaxis 
+        plt.xlabel('Fragment Size (log$_{10}$ bp)',fontsize=myfs)
+        plt.ylabel('Size Frequency',fontsize=myfs)
+        ## Add ttile 
+        plt.title(None if len(error_counts) else 'Fragments: %s'%totals,fontsize=myfs)
 
-        ## Iterrate over the error keys in reverse orer
-        for key in error_keys[::-1]:
-            ## GAther value and percent 
-            value = error_dict[key]
-            vper  = round(value/total_pairs,3)
-            ## Plot fake point for label
-            m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {100*vper} %)')
-            mcolor = m.get_color()
-            ## Plot the percentage 
-            plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
-            ## Add to the percentage 
-            cumper = cumper + vper 
+        ## Saveout the png 
+        plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
+    else:
+        ## Open with with statment, and iterat thru chunks 
+        with pd.read_csv(inpath,sep=hicsep,chunksize=chunksize,usecols=mycols) as chunks:
+            for i,chunk in enumerate(chunks):
+                ## If this is the first chunk, count otherwise add to existing df 
+                inter_counts = inter_counts.add(countinter(chunk[interc]),fill_value=0) if i else countinter(chunk[interc]) 
+                distances    = distances.add(countdistance(chunk,binsize),fill_value=0) if i else countdistance(chunk,binsize)
+                ## Gather the chromosomes 
+                chroms = chunk['Rname1'].drop_duplicates().tolist()
+                ## Iterate thru the chroms and append to set, keepign order 
+                for c in chroms:
+                    append_to_chrlist(c)
 
-        ## Add the total to error dict
-        error_dict['Valid'] = error_dict['Inter'] + error_dict['Intra']
-        error_dict['Total'] = total_pairs
+        ## Set columns to integers
+        inter_counts['Inter'] = inter_counts.Inter.apply(int)
+        distances['Contacts'] = distances.Contacts.apply(int)
 
-        ## Save out the counts
-        pd.DataFrame(error_dict.values(),index=error_dict.keys()).T.to_csv(outpath.replace(inter_save,'.contacts'),index=False,header=True)
-    
-    ## Otherwise, just plot hte inter:intra contact ratio 
-    else: ## Add dummby plotting values 
-        plt.plot(0,0,'s',color='tan',label=f'Inter: {ninter}')
-        plt.plot(0,0,'s',color='tab:blue',label=f'Intra: {nintra}')
+        ## Reset indect of inter counts
+        inter_counts.reset_index(inplace=True)
+        distances.reset_index(inplace=True)
 
-        plt.vlines(0,0,1,color='tan',linewidth=50)
-        plt.vlines(0,0,rintra,color='tab:blue',linewidth=50)
-    
-    ## Modify x-axis 
-    plt.xlim(-0.001,0.001)
-    plt.xticks([])
+        ## Print to sreen
+        if debugging:
+            print(inter_counts.head())
+            print()
+            print(distances.head())
 
-    ## Modify y axis 
-    plt.ylim(0,1)
-    plt.ylabel('Percent of Read Pairs ( %s )'%total_pairs if len(error_counts) else 'Percent of Contacts ( %s )'%ntotal,fontsize=myfs)
+        ## Count the inter and intra contacts
+        ninter = inter_counts.Inter.sum()
+        nintra = distances.Contacts.sum()
 
-    ## Add legend
-    plt.legend(bbox_to_anchor=(-1.75,1),frameon=False,fontsize=myfs-2)
-    
-    ## Set a color bar 
-    cbar = fig.add_axes([0.92,0.25,0.01,0.5])
+        ## Calc total and ratio 
+        ntotal = ninter + nintra
+        rintra = round(nintra/ntotal,4)
 
-    ## Plot interaction scores 
-    spinesoff(ax[1])
-    sns.heatmap(np.log2(inter_score_df),cbar_ax=cbar,cmap='cividis',vmin=-2,vmax=2)
-    ## Modify tick marks 
-    plt.xticks(fontsize=10);plt.yticks(fontsize=myfs-2)
+        ## Calcluat the inter chromosomal scores
+        inter_score_df = interscoring(inter_counts,chrlist)
 
-    ## Set color bar labels 
-    plt.sca(cbar)
-    plt.ylabel('log$_2$ (Interaction Score)',fontsize=myfs)
+        ## save the inter scores, counts, and distance decay to csvs givin outpath 
+        inter_score_df.to_csv(outpath,index=True,header=True)
+        inter_counts.to_csv(outpath.replace('.score','.counts'),index=False)
+        distances.to_csv(outpath.replace(inter_save,'.distance.decay'),index=False)
 
-    ## Saveout the png 
-    plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
-## EOF      
+        ## Add a pad of one to counts
+        distances['Contacts'] = distances['Contacts'] + 1
+
+        ## Convert log to base 10 
+        median_dd = np.log10(distances.Contacts.rolling(span).median().values/distances.Contacts.sum())
+        log10_dis = np.log10(distances.Distance.values+1)
+
+        ## Call figure 
+        fig,ax = plt.subplots(1,2,figsize=(11,5))
+        fig.set_facecolor('w')
+
+        ## Plot distance decay 
+        spinesoff(ax[0])
+        plt.plot(log10_dis,median_dd,color='tab:grey')
+        plt.xlabel('Genomic Distance (log$_{10}$ bp)',fontsize=myfs)
+        plt.ylabel('Contact Frequency (log$_{10}$)',fontsize=myfs)
+
+        ## Add a bar showing percent of contcats
+        barax = fig.add_axes([-0.015,0.0975,0.05,0.78])
+        spinesoff(barax)
+
+        ## If errors were counted 
+        if len(error_counts):
+            ## Add inter and intra 
+            error_dict['Inter'] = ninter
+            error_dict['Intra'] = nintra
+            ## Set keys 
+            error_keys  = list(error_dict.keys())
+            ## Caluclatte total and preset cumlative percent 
+            total_pairs = sum(error_dict.values())
+            cumper = 0
+
+            ## Iterrate over the error keys in reverse orer
+            for key in error_keys[::-1]:
+                ## GAther value and percent 
+                value = error_dict[key]
+                vper  = round(value/total_pairs,3)
+                ## Plot fake point for label
+                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {round(100*vper,3)} %)')
+                mcolor = m.get_color()
+                ## Plot the percentage 
+                plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
+                ## Add to the percentage 
+                cumper = cumper + vper 
+
+            ## Add the total to error dict
+            error_dict['Valid'] = error_dict['Inter'] + error_dict['Intra']
+            error_dict['Total'] = total_pairs
+
+            ## Save out the counts
+            pd.DataFrame(error_dict.values(),index=error_dict.keys()).T.to_csv(outpath.replace(inter_save,'.contacts'),index=False,header=True)
+        
+        ## Otherwise, just plot hte inter:intra contact ratio 
+        else: ## Add dummby plotting values 
+            plt.plot(0,0,'s',color='tan',label=f'Inter: {ninter}')
+            plt.plot(0,0,'s',color='tab:blue',label=f'Intra: {nintra}')
+
+            plt.vlines(0,0,1,color='tan',linewidth=50)
+            plt.vlines(0,0,rintra,color='tab:blue',linewidth=50)
+        
+        ## Modify x-axis 
+        plt.xlim(-0.001,0.001)
+        plt.xticks([])
+
+        ## Modify y axis 
+        plt.ylim(0,1)
+        plt.ylabel('Percent of Read Pairs ( %s )'%total_pairs if len(error_counts) else 'Percent of Contacts ( %s )'%ntotal,fontsize=myfs)
+
+        ## Add legend
+        plt.legend(bbox_to_anchor=(-1.75,1),frameon=False,fontsize=myfs-2)
+        
+        ## Set a color bar 
+        cbar = fig.add_axes([0.92,0.25,0.01,0.5])
+
+        ## Plot interaction scores 
+        spinesoff(ax[1])
+        sns.heatmap(np.log2(inter_score_df),cbar_ax=cbar,cmap='cividis',vmin=-2,vmax=2)
+        ## Modify tick marks 
+        plt.xticks(fontsize=10);plt.yticks(fontsize=myfs-2)
+
+        ## Set color bar labels 
+        plt.sca(cbar)
+        plt.ylabel('log$_2$ (Interaction Score)',fontsize=myfs)
+
+        ## Saveout the png 
+        plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
+    ## EOF      

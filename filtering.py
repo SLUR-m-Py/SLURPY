@@ -122,7 +122,7 @@ I_help     = "List of chormosomes/contigs to only include in analysis"
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
 
 ## Import help messages
-from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help
+from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help
 
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
@@ -148,7 +148,8 @@ if __name__ == "__main__":
     parser.add_argument("-q", dest="q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-x", dest="x", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
     parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
-    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='n',         default=chunksize    )
+    parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='rown',      default=chunksize    )
+    parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar='n (bp)',    default=0)
     ## Add boolean 
     parser.add_argument("--keep-dovetail",  dest="D",  help = dove_help,    action = 'store_true')
     parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = 'store_true')
@@ -167,6 +168,7 @@ if __name__ == "__main__":
     chunksize  = inputs.Z  ## set the chuck size 
     dovetail   = inputs.D  ## Flag to remove dovetail reads
     intraonly  = inputs.I  ## FLag to keep only intra
+    max_dist   = inputs.M  ## Intiger to value to filter paired distances 
     
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
@@ -275,6 +277,17 @@ if __name__ == "__main__":
                 tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
                 ## Drop these from bedpe
                 bedpe.drop(tocheck.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            ## Filter those contacts larger distacen
+            if max_dist:
+                tolarge = bedpe[(bedpe.Distance>max_dist) & (bedpe.Inter==0)].copy()
+                tolarge['Error'] = 'largefrag'
+                ## Append to no not used list
+                not_used.append(tolarge) if tolarge.shape[0] else None
+                ## Drop from bedpe chunk
+                bedpe.drop(tolarge.index,axis=0,inplace=True)
             else:
                 pass 
 

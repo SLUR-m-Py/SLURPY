@@ -125,6 +125,9 @@ A_help = "The path to a gff or bed file with a feature space (i.e. genes) to cou
 a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination."
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
 R_help = "Step within the pipeline to re-run from. Options include: %s"
+m_help = "Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter."
+
+## Specific help messages
 node_help = "Space seperated list of nodes to run jobs on."
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."

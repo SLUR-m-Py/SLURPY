@@ -129,7 +129,6 @@ def makemap(inbam):
     ## Return the dataframe 
     return pd.DataFrame(zip(inbam.references,inbam.lengths),columns=['Chrom','Length'])
 
-
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
 if __name__ == "__main__":

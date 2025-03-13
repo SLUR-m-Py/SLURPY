@@ -26,13 +26,13 @@ def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize,nodelist=None,keepdovetail=False,removeinter=False):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,keepdovetail=False,removeinter=False):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, P_help, force_help, node_help, dove_help, intra_help
+from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -63,7 +63,8 @@ if __name__ == "__main__":
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
-    parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,     default = None      )
+    parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar = 'n',       default=0            )
+    parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
 
     ## Add boolean 
     parser.add_argument("--keep-dovetail",  dest="tails",  help = dove_help,    action = 'store_true' )
