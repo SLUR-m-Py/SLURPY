@@ -200,7 +200,7 @@ if __name__ == "__main__":
             error_dict['Fragments'] = totals
 
             ## Add a bar showing percent of contcats
-            barax = fig.add_axes([-0.015,0.0975,0.05,0.78])
+            barax = fig.add_axes([-0.05,0.0975,0.05,0.78])
             spinesoff(barax)
             ## Set keys 
             error_keys  = list(error_dict.keys())
@@ -213,8 +213,9 @@ if __name__ == "__main__":
                 ## GAther value and percent 
                 value = error_dict[key]
                 vper  = round(value/total_pairs,3)
+                tvper = "{:.3f}".format(100*vper)
                 ## Plot fake point for label
-                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {100*vper} %)')
+                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {tvper} %)')
                 mcolor = m.get_color()
                 ## Plot the percentage 
                 plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
@@ -339,8 +340,9 @@ if __name__ == "__main__":
                 ## GAther value and percent 
                 value = error_dict[key]
                 vper  = round(value/total_pairs,3)
+                tvper = "{:.3f}".format(100*vper)
                 ## Plot fake point for label
-                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {round(100*vper,3)} %)')
+                m, = plt.plot(-1,0,'s',label=f'{key.capitalize()}: {value} ( {tvper} %)')
                 mcolor = m.get_color()
                 ## Plot the percentage 
                 plt.vlines(0,cumper,cumper+vper,linewidth=50,color=mcolor)
