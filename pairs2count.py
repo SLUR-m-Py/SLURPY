@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
         ## Plot distance decay 
         spinesoff(ax)
-        plt.plot(log10_dis,frag_freq,'.',color='tab:grey')
+        plt.plot(log10_dis,frag_freq,'.',color='tab:blue')
 
         ## Modify yticks 
         p,l = plt.yticks()
@@ -319,7 +319,7 @@ if __name__ == "__main__":
 
         ## Plot distance decay 
         spinesoff(ax[0])
-        plt.plot(log10_dis,median_dd,color='tab:grey')
+        plt.plot(log10_dis,median_dd,color='tab:blue')
         plt.xlabel('Genomic Distance (log$_{10}$ bp)',fontsize=myfs)
         plt.ylabel('Contact Frequency (log$_{10}$)',fontsize=myfs)
 

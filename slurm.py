@@ -192,7 +192,7 @@ if __name__ == "__main__":
     reference_path  = inputs.r            ##     Set path to the reference genome
 
     ## Set default vairables              ##
-    splitsize       = inputs.F            ##     Number of splits in fastp 
+    splitsize       = 4*inputs.F          ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
     threadn         = inputs.T            ##     Set the number of parallel runs of bwa 
     partitions      = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
