@@ -190,7 +190,7 @@ if __name__ == "__main__":
             peaks.loc[i,'Reads'] = creads[(creads.Left <= row.End) & (creads.Right >= row.Start)].Chrom.count()
     
     ## Calculate statists like the fript score, the number of peaks and sumits 
-    fripscore = round(peaks.Reads.sum()/total,dplace)
+    fripscore = peaks.Reads.sum()/total
     bp        = (peaks.End - peaks.Start).sum()
     nsummits  = narrow.Chrom.count()
     npeaks    = peaks.Chrom.count()
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     ## IF genome size was givven
     if genomesize:
         ## Calculate the perecnt genome
-        peak_info['Percent'] = round(100*peak_info.BP/genomesize,dplace) 
+        peak_info['Percent'] = 100*peak_info.BP/genomesize
     ## Save the peak info
-    peak_info.to_csv(save_path,index=False)
+    peak_info.round(dplace).to_csv(save_path,index=False)
 ## End of file 
