@@ -46,11 +46,8 @@ dt2 = datetime.fromtimestamp(estamp)
 ## Gather logs from dir
 fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
 
-if len(fastp_log) > 1:
-    fastp_log = fastp_log[0]
-
 ## Format tiem stamp from fastp log if we find one 
-dt1 = datetime.fromtimestamp(getctime(fastp_log)) if len(fastp_log) else dt0 
+dt1 = datetime.fromtimestamp(getctime(fastp_log[0])) if len(fastp_log) else dt0 
 
 ## Calculate delta of time stamps and then the approx run time
 runtime = dt2 - dt1 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
