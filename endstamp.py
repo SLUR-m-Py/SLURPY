@@ -31,7 +31,7 @@ from pysamtools import writetofile
 ## Load in sort glbo 
 from defaults import sortglob
 ## load in log dir
-from directories import comsdir
+from directories import debugdir
 
 ## ------------------------------------------ Input Variables ------------------------------------------ ##
 ## Gather the file name, the start time stamp from input and calculate the end time stamp 
@@ -44,7 +44,7 @@ dt0 = datetime.fromtimestamp(sstamp)
 dt2 = datetime.fromtimestamp(estamp)
 
 ## Gather logs from dir
-fastp_log = sortglob(f'./{comsdir}/*.fastp.*.sh')
+fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
 
 if len(fastp_log) > 1:
     fastp_log = fastp_log[0]
