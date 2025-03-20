@@ -65,8 +65,11 @@ if __name__ == "__main__":
     ## Set sjon paths 
     fastp_paths = sortglob(f'{directory_path}/0.fastp.*.json')
 
+    ## GAther base anmes 
+    base_names = [f.split('/')[0] for f in fastp_paths]
+
     ## Calc new neame 
-    new_name = common_name(fastp_paths[:2]) if (len(fastp_paths) > 2) else fastp_paths[0].split('.json')[0]
+    new_name = common_name(base_names[:2]) if (len(base_names) > 2) else base_names[0].split('.json')[0]
 
     ## Set counts 
     counts = []
