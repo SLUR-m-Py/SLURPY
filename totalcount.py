@@ -58,7 +58,7 @@ def common_name(str1, str2):
 if __name__ == "__main__":
     ## ------------------------------------------ Input Variables ------------------------------------------ ##
     ## Gather the file name, the start time stamp from input and calculate the end time stamp 
-    directory_path = sys.arv[1]
+    directory_path = sys.argv[1]
     ## Correct directory path
     directory_path = directory_path[:-1] if (directory_path[-1] == '/') else directory_path
 
