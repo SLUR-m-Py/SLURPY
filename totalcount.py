@@ -29,6 +29,10 @@ croth@lanl.gov
 ## ----------------------------------------- LOAD IN MODULES ------------------------------------------ ## 
 ## Load time and sys mods 
 import json, sys 
+## Load in current wd 
+from os import getcwd
+## append path path
+sys.path.append(getcwd()) 
 
 ## Load in sortg glob ftn 
 from defaults import sortglob
