@@ -240,7 +240,7 @@ if __name__ == "__main__":
     
     ##      CORRECT SPLIT / Chunksize
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    max_splitsize = max(splitsize)
+    max_splitsize = max([int(s) for s in splitsize])
     if chunksize > max_splitsize:
         ## Reset chunksize
         chunksize = int(round(max_splitsize/3,0))
