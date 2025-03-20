@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     ## Format output file name
     out_file_name = directory_path + f'/{new_name}.counts.csv'
- 
+    print(out_file_name)
     ## Open and write to file, Format new lines to print to file 
     with open(out_file_name,'w') as outf:
         outf.writelines([f'{new_name}, {len(fastp_paths)}, {total_count}\n'])
