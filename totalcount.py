@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+#SBATCH --job-name=total.count          ## Name of job
+#SBATCH --output=%x.%j.out              ## Name stdout
+#SBATCH --error=%x.%j.err               ## Name stderr
+#SBATCH --nodes=1                       ## Number of nodes needed for the job
+#SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
+#SBATCH --cpus-per-task=1               ## Number of tasks to be launched
+#SBATCH --partition=mpi                 ## Set the partition
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -53,7 +60,7 @@ if __name__ == "__main__":
 
     ## Set sjon paths 
     fastp_paths = sortglob(f'{directory_path}/0.fastp.*.json')
-    
+
     ## Calc new neame 
     new_name = common_name(fastp_paths[:2]) if (len(fastp_paths) > 2) else fastp_paths[0].split('.json')[0]
 
