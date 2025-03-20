@@ -203,6 +203,8 @@ if __name__ == "__main__":
     if genomesize:
         ## Calculate the perecnt genome
         peak_info['Percent'] = 100*peak_info.BP/genomesize
+    ## round the peak data
+    peak_info = peak_info.round(dplace)
     ## Save the peak info
-    peak_info.round(dplace).to_csv(save_path,index=False)
+    peak_info.to_csv(save_path,index=False)
 ## End of file 
