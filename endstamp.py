@@ -21,28 +21,42 @@ croth@lanl.gov
 """
 ## ----------------------------------------- LOAD IN MODULES ------------------------------------------ ## 
 ## Load time and sys mods 
-import time, sys 
+import time, sys
+## Load in os path getctime
+from os.path import getctime
 ## Load in date and time
 from datetime import datetime
 ## load in write to file from our pysamtools 
 from pysamtools import writetofile
+## Load in sort glbo 
+from defaults import sortglob
+## load in log dir
+from directories import debugdir
 
 ## ------------------------------------------ Input Variables ------------------------------------------ ##
 ## Gather the file name, the start time stamp from input and calculate the end time stamp 
 filename,sstamp,estamp = sys.argv[1], float(sys.argv[2]), time.time()
 
 ## Format the start time stamp 
-dt1 = datetime.fromtimestamp(sstamp)
+dt0 = datetime.fromtimestamp(sstamp)
 
 ## Format the end time stamp
 dt2 = datetime.fromtimestamp(estamp)
 
+## Gather logs from dir
+fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
+
+if len(fastp_log) > 1:
+    fastp_log = fastp_log[0]
+
+## Format tiem stamp from fastp log if we find one 
+dt1 = datetime.fromtimestamp(getctime(fastp_log)) if len(fastp_log) else dt0 
+
 ## Calculate delta of time stamps and then the approx run time
-runtime = dt2 - dt1 
-#runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
+runtime = dt2 - dt1 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
 
 ## Write the timestamp to file 
-writetofile(filename,['START TIME: %s %s\n'%(dt1,sstamp),'END TIME: %s %s\n'%(dt2,estamp),'RUN TIME: %s %s\n'%(runtime,' ')],False)
+writetofile(filename,['SUBMIT TIME: %s\n'%dt0, 'START TIME: %s\n'%dt1, 'END TIME: %s\n'%dt2, 'RUN TIME: %s\n'%runtime],False)
 
 ## Print to log
 print("Finished our SLUR(M)-py!")

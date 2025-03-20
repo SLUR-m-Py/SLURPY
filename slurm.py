@@ -192,7 +192,7 @@ if __name__ == "__main__":
     reference_path  = inputs.r            ##     Set path to the reference genome
 
     ## Set default vairables              ##
-    splitsize       = inputs.F          ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
+    splitsize       = inputs.F            ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
     threadn         = inputs.T            ##     Set the number of parallel runs of bwa 
     partitions      = inputs.P            ##     Set the partition 
     mito            = inputs.M            ##     Set the mito contig name 
@@ -238,6 +238,12 @@ if __name__ == "__main__":
     skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
+    ##      CORRECT SPLIT / Chunksize
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    if chunksize > splitsize:
+        ## Reset chunksize
+        chunksize = int(round(splitsize/3,0))
+        print("WARNING: Reseting chunksize (Z) to: %s"%chunksize)
 
     ##      PRESET Thread counts
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
