@@ -54,42 +54,45 @@ def common_name(str1, str2):
             index2 += 1
     return common
 
-## If the script is envoked 
-if __name__ == "__main__":
-    ## ------------------------------------------ Input Variables ------------------------------------------ ##
-    ## Gather the file name, the start time stamp from input and calculate the end time stamp 
-    directory_path = sys.argv[1]
-    ## Correct directory path
-    directory_path = directory_path[:-1] if (directory_path[-1] == '/') else directory_path
+## Ftn for getting json files
+def getjson(inpath:str) -> list:
+    return sortglob(f'{inpath}/0.fastp.*.json')
 
-    ## Set sjon paths 
-    fastp_paths = sortglob(f'{directory_path}/0.fastp.*.json')
-
-    ## GAther base anmes 
-    base_names = [f.split('/')[-1] for f in fastp_paths]
-
-    ## Calc new neame 
-    new_name = common_name(base_names[:2]) if (len(base_names) > 2) else base_names[0].split('.json')[0]
-
+## Set ftn for counting sums
+def sumcounts(inpaths:list) -> int:
     ## Set counts 
     counts = []
     ## Iterate over fastp paths 
-    for filename_in in fastp_paths:
-
+    for filename_in in inpaths:
         ## Load in json report
         with open(filename_in,'r') as file:
             data = json.load(file)
             file.close()
-        
         ## Calc total pair reads 
         counts.append(gettotal(data))
-
     ## Sum the counts 
-    total_count = sum(counts)
+    return sum(counts)
+
+## If the script is envoked 
+if __name__ == "__main__":
+    ## ------------------------------------------ Input Variables ------------------------------------------ ##
+    ## Gather the file name, the start time stamp from input and calculate the end time stamp 
+    new_name       = sys.argv[1]
+    directory_path = sys.argv[2]
+
+    ## Correct directory path
+    directory_path = directory_path[:-1] if (directory_path[-1] == '/') else directory_path
+
+    ## Set sjon paths 
+    fastp_paths = getjson(directory_path)
+
+    ## Calc totlas
+    total_count = sumcounts(fastp_paths)
 
     ## Format output file name
     out_file_name = directory_path + f'/{new_name}.counts.csv'
-    print(out_file_name)
+    #print(out_file_name)
+
     ## Open and write to file, Format new lines to print to file 
     with open(out_file_name,'w') as outf:
         outf.writelines([f'{new_name}, {len(fastp_paths)}, {total_count}\n'])

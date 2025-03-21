@@ -41,6 +41,7 @@ hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic'
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
 max_dist = 0
+count_mod = ''
 ## 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -331,6 +332,7 @@ if __name__ == "__main__":
         inhic         = False
         enzymelib     = 'none'
         max_dist      = 1000
+        count_mod     = '--atac-seq'
     
         ## Load in macs3 ftns
         from pymacs3 import peakattack
@@ -521,6 +523,8 @@ if __name__ == "__main__":
   
     ##      MERGING, CONCATONATION, DEDUPLICATION, SORTING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Iniate new cat files
+    new_catfiles = []
     ## Iterate over the sample names
     for si,sname in enumerate(samplenames):
         ## Set the smaple name 
@@ -584,6 +588,7 @@ if __name__ == "__main__":
 
         ## Patch new cat file to next analysis step, must be the valid contacts/alignments 
         newcatfile = concat_outputs[-1]
+        new_catfiles.append(newcatfile)
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -716,12 +721,14 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## 6A. Final timestamp, out clean up
     pix = 6
+    ## Format count commands 
+    counting_coms = [ f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
     ## Set the timesampe assocaited file names 
     timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
     timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
+    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n', f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + counting_coms
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
     ## Append the timestamp command to file

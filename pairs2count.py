@@ -104,6 +104,9 @@ def countunused(inpath:str,chunksize:int) -> dict:
 def formatp(p:float) -> str:
     return "{:.2f}".format(100*p)
 
+## Load in ftns from total count 
+from totalcount import sumcounts, getjson
+
 ## Set the help messages
 i_help = "The path to an input bedpe file from SLURM.py."
 w_help = "Genomic bin size (bp) for calculating distance decay. Default: 10000 bp."
@@ -152,6 +155,11 @@ if __name__ == "__main__":
     outname = f'./{diagdir}/{basename}' if exists(f'./{diagdir}') else inpath.replace('.bedpe',inter_save)
     ## Format the csv output path name 
     outpath = outname+'.csv'
+
+    ## Gather total counts if they exist, set sjon paths and calc totals 
+    fastp_paths = getjson(diagdir)
+    print(f'WARNING: Unable to find fastp logs in {diagdir}!') if not len(fastp_paths) else None 
+    pairs_totals = sumcounts(fastp_paths) if len(fastp_paths) else 0
 
     ## Set paths of duplicates and notused
     not_used_path   = inpath.replace(split_on,'.notused.')
@@ -206,10 +214,19 @@ if __name__ == "__main__":
             ## Add a bar showing percent of contcats
             barax = fig.add_axes([-0.1,0.0975,0.05,0.78])
             spinesoff(barax)
-            ## Set keys 
-            error_keys  = list(error_dict.keys())
+
             ## Caluclatte total and preset cumlative percent 
-            total_pairs = sum(error_dict.values())
+            error_sum = sum(error_dict.values())
+            total_pairs = pairs_totals if pairs_totals else error_sum
+
+            ## Calc the those removed by fastp 
+            fastp_removed = total_pairs - error_sum
+            ## add fratp removed
+            if fastp_removed:
+                error_dict['fastp'] = fastp_removed
+
+            ## Set keys, iniate cumlative percent 
+            error_keys  = list(error_dict.keys())
             cumper = 0
 
             ## Iterrate over the error keys in reverse orer
@@ -332,12 +349,14 @@ if __name__ == "__main__":
             ## Add inter and intra 
             error_dict['Inter'] = ninter
             error_dict['Intra'] = nintra
-            ## Set keys 
-            error_keys  = list(error_dict.keys())
+ 
             ## Caluclatte total and preset cumlative percent 
-            total_pairs = sum(error_dict.values())
+            error_sum = sum(error_dict.values())
+            total_pairs = pairs_totals if pairs_totals else error_sum
             cumper = 0
 
+            ## Set keys 
+            error_keys  = list(error_dict.keys())
             ## Iterrate over the error keys in reverse orer
             for key in error_keys[::-1]:
                 ## GAther value and percent 
