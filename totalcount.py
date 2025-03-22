@@ -90,7 +90,7 @@ if __name__ == "__main__":
     total_count = sumcounts(fastp_paths)
 
     ## Reset new name if none was passed
-    new_name = directory_path.split('/diag')[0].split('/')[-1] if (new_name =='none') or (new_name is None) else new_name
+    new_name = directory_path.split('/diag')[0].split('/')[-1] if ((new_name.lower() =='none') or (new_name is None)) else new_name
 
     ## Format output file name
     out_file_name = directory_path + f'/{new_name}.counts.csv'
