@@ -309,9 +309,10 @@ if __name__ == "__main__":
     del bedpe, not_used
     ## Set the intra qnames
     intra_all_qnames = set()
-
+    print("Above if statment")
     ## If we are checking rest sites and we have dataframes to check 
     if restriciton_sites and len(too_check_paths):
+        print("Within if statment")
         ## Bring in the reads to check 
         allcheck = dd.read_csv(too_check_paths,sep=hicsep)
         ## Gather the chromosome list
@@ -337,13 +338,17 @@ if __name__ == "__main__":
         
             ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
             intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
+            intra_count = intra_frags.Left1.count()
             ## Gather qnames if intrafrags has hsape
-            if intra_frags.shape[0]:
+            if intra_count:
                 ## Gather qnames and update the list of qnames
+                print(ref.id,intra_count)
                 intra_all_qnames.update(intra_frags.Qname1.tolist())
 
+        print('Do we have intra fragments')
         ## IF we have qnames that are errors
         if len(intra_all_qnames):
+            print('Yes we do!')
             ## Set the qnames 
             errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
             errors['Error'] = 'intrafrag'
