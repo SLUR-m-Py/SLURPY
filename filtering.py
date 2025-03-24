@@ -316,14 +316,16 @@ if __name__ == "__main__":
         ## Bring in the reads to check 
         allcheck = dd.read_csv(too_check_paths,sep=hicsep)
         ## Gather the chromosome list
-        chrlist = allcheck.Rname1.unique().compute()
+        chrlist = list(allcheck.Rname1.unique().compute())
+        print(chrlist)
+        print(type(chrlist))
 
         ## Load in the reference 
         refs_parse = SeqIO.parse(refpath,format='fasta')
         ## Iterate thru ref parser 
         print('Parsing per chromosome')
         for ref in refs_parse:
-            print('Within chromosome loop')
+            print('Within chromosome loop: %s %s'%(ref.id,ref.name))
             if (ref.id in chrlist) | (ref.name in chrlist):
                 print('Found hits for: %s'%ref.id)
                 ## set the dataframe to check 
