@@ -308,7 +308,7 @@ if __name__ == "__main__":
     ## Delet the last chunks, we don't need these
     del bedpe, not_used
     ## Set the intra qnames
-    intra_all_qnames = []
+    intra_all_qnames = set()
 
     ## If we are checking rest sites and we have dataframes to check 
     if restriciton_sites and len(too_check_paths):
@@ -339,10 +339,8 @@ if __name__ == "__main__":
             intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
             ## Gather qnames if intrafrags has hsape
             if intra_frags.shape[0]:
-                ## Gather qnames 
-                intra_qnames = intra_frags.Qname1.tolist()
-                ## Append output list
-                intra_all_qnames = intra_all_qnames + intra_qnames
+                ## Gather qnames and update the list of qnames
+                intra_all_qnames.update(intra_frags.Qname1.tolist())
 
         ## IF we have qnames that are errors
         if len(intra_all_qnames):
