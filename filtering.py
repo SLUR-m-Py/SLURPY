@@ -205,12 +205,12 @@ if __name__ == "__main__":
             bedpe.drop(unmapped.index,axis=0,inplace=True)
 
             ## Set dangling ends, those that we know have dangling ends, and set error 
-            dang_ends = bedpe[(bedpe.Dangend1>0) | (bedpe.Dangend2>0)].copy()
-            dang_ends['Error'] = 'dangend'
+            #dang_ends = bedpe[(bedpe.Dangend1>0) | (bedpe.Dangend2>0)].copy()
+            #dang_ends['Error'] = 'dangend'
             ## Append to not used
-            not_used.append(dang_ends) if dang_ends.shape[0] else None 
-            ## Drop the dang ends
-            bedpe.drop(dang_ends.index,axis=0,inplace=True)
+            #not_used.append(dang_ends) if dang_ends.shape[0] else None 
+            ### Drop the dang ends
+            #bedpe.drop(dang_ends.index,axis=0,inplace=True)
 
             ## Remove dovetailed reads, if doing so 
             if not dovetail:
