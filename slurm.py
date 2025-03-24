@@ -800,16 +800,17 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if peakcalling else [])
     ##
     ## Set the last step
-    if feature_space:
-        last_step = 'gxg'
-    elif jarpath or toshort:
-        last_step = 'toshort'
-    elif peakcalling:
-        last_step = 'macs3'
-    elif make_mcool:
-        last_step = 'hic'
-    else:
-        last_step = hic_pipeline[4]   
+    #if feature_space:
+    #    last_step = 'gxg'
+    #elif jarpath or toshort:
+    #    last_step = 'toshort'
+    #elif peakcalling:
+    #    last_step = 'macs3'
+    #elif make_mcool:
+    #    last_step = 'hic'
+    #else:
+    #    last_step = hic_pipeline[4]   
+    last_step = hic_pipeline[4]   
     ##
     ##      6) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
