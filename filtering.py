@@ -18,7 +18,7 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
-import pandas as pd, dask.dataframe as dd
+import pandas as pd, dask.dataframe as dd, subprocess
 ## Load in params
 from parameters import chunksize, map_q_thres, hicsep, error_dist
 ## Bring in ftns from slurpy 
@@ -309,28 +309,27 @@ if __name__ == "__main__":
     del bedpe, not_used
     ## Set the intra qnames
     intra_all_qnames = set()
-    print("Above if statment")
+    #print("Above if statment")
     ## If we are checking rest sites and we have dataframes to check 
     if restriciton_sites and len(too_check_paths):
-        print("Within if statment")
+        #print("Within if statment")
         ## Bring in the reads to check 
         allcheck = dd.read_csv(too_check_paths,sep=hicsep)
         ## Gather the chromosome list
-        chrlist = list(allcheck.Rname1.unique().compute())
-        print(chrlist)
-        print(type(chrlist))
-
+        chrlist = list(allcheck.Rname1.unique().compute()) ## NOTE: This must be of type list for boolean statemetns below to work
+        #print(chrlist)
+        #print(type(chrlist))
         ## Load in the reference 
         refs_parse = SeqIO.parse(refpath,format='fasta')
         ## Iterate thru ref parser 
-        print('Parsing per chromosome')
+        #print('Parsing per chromosome')
         for ref in refs_parse:
-            print('Within chromosome loop: %s %s'%(ref.id,ref.name))
+            #print('Within chromosome loop: %s %s'%(ref.id,ref.name))
             if (ref.id in chrlist) | (ref.name in chrlist):
-                print('Found hits for: %s'%ref.id)
+                #print('Found hits for: %s'%ref.id)
                 ## set the dataframe to check 
                 tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
-                print(tocheck.shape)
+                #print(tocheck.shape)
                 ## Initiate the fragment sites
                 tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
 
@@ -344,19 +343,18 @@ if __name__ == "__main__":
                 ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
                 intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
                 intra_count = intra_frags.Left1.count()
-                print(intra_count)
+                #print(intra_count)
                 ## Gather qnames if intrafrags has hsape
                 if intra_count:
                     ## Gather qnames and update the list of qnames
-                    print(ref.id,intra_count)
+                    #print(ref.id,intra_count)
                     intra_all_qnames.update(intra_frags.Qname1.tolist())
             else:
                 pass 
-
-        print('Do we have intra fragments')
+        #print('Do we have intra fragments')
         ## IF we have qnames that are errors
         if len(intra_all_qnames):
-            print('Yes we do!')
+            #print('Yes we do!')
             ## Set the qnames 
             errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
             errors['Error'] = 'intrafrag'

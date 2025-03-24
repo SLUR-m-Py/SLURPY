@@ -17,9 +17,17 @@ from time import sleep
 from bwatobedpe import reportcheck, hic_flag
 ## Load in directories
 from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
+## laod in subprocess 
+import subprocess
 
 ## Set stage in piepline
 pix = 2
+
+def submitter(command:str) -> list:
+    return subprocess.check_output(command, shell=True).decode("utf-8").split('\n')   
+
+def checkqueue(step:str) -> int:
+    return sum([step in l for l in submitter('squeue')]) 
 
 ## Ftn for formating / joinign a list 
 def formatinput(inlist):
@@ -139,6 +147,11 @@ if __name__ == "__main__":
         sleep(waittime)
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
+        ## Gather the counts
+        job_counts = checkqueue('2.filt')
+        while job_counts > 3:
+            sleep(waittime)
+            job_counts = checkqueue('2.filt')
 
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):
