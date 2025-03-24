@@ -339,6 +339,7 @@ if __name__ == "__main__":
             ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
             intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
             intra_count = intra_frags.Left1.count()
+            print(intra_count)
             ## Gather qnames if intrafrags has hsape
             if intra_count:
                 ## Gather qnames and update the list of qnames
