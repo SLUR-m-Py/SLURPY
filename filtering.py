@@ -322,29 +322,30 @@ if __name__ == "__main__":
         refs_parse = SeqIO.parse(refpath,format='fasta')
         ## Iterate thru ref parser 
         for ref in refs_parse:
-            if (ref.id not in chrlist) & (ref.name not in chrlist):
-                continue
-            ## set the dataframe to check 
-            tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
-            ## Initiate the fragment sites
-            tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
+            if (ref.id in chrlist) | (ref.name in chrlist):
+                ## set the dataframe to check 
+                tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
+                ## Initiate the fragment sites
+                tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
 
-            ## Set the chrom sequence
-            chrseq = ref.seq
- 
-            ## Iterate thru the tupels 
-            for (a,b,c) in value_tuple:
-                tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
-        
-            ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
-            intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
-            intra_count = intra_frags.Left1.count()
-            print(intra_count)
-            ## Gather qnames if intrafrags has hsape
-            if intra_count:
-                ## Gather qnames and update the list of qnames
-                print(ref.id,intra_count)
-                intra_all_qnames.update(intra_frags.Qname1.tolist())
+                ## Set the chrom sequence
+                chrseq = ref.seq
+    
+                ## Iterate thru the tupels 
+                for (a,b,c) in value_tuple:
+                    tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
+            
+                ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
+                intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
+                intra_count = intra_frags.Left1.count()
+                print(intra_count)
+                ## Gather qnames if intrafrags has hsape
+                if intra_count:
+                    ## Gather qnames and update the list of qnames
+                    print(ref.id,intra_count)
+                    intra_all_qnames.update(intra_frags.Qname1.tolist())
+            else:
+                pass 
 
         print('Do we have intra fragments')
         ## IF we have qnames that are errors
