@@ -6,9 +6,9 @@
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, remove
+from defaults import sortglob, sbatch, submitsbatch, fileexists, remove, checkqueue
 ## Load in params
-from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## load in sleep
@@ -17,30 +17,22 @@ from time import sleep
 from bwatobedpe import reportcheck, hic_flag
 ## Load in directories
 from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
-## laod in subprocess 
-import subprocess
 
 ## Set stage in piepline
 pix = 2
-
-def submitter(command:str) -> list:
-    return subprocess.check_output(command, shell=True).decode("utf-8").split('\n')   
-
-def checkqueue(step:str) -> int:
-    return sum([step in l for l in submitter('squeue')]) 
 
 ## Ftn for formating / joinign a list 
 def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,pix=2,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,keepdovetail=False,removeinter=False):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,keepdovetail=False,removeinter=False):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help
+from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -72,6 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar = 'n',       default=chunksize    )
     parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar = 'n',       default=0            )
+    parser.add_argument("-j", dest="j", type=int,  required=False,  help=j_help, metavar = 'n',       default=nparallel    )
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
 
     ## Add boolean 
@@ -98,6 +91,7 @@ if __name__ == "__main__":
     nice        = inputs.N
     chunksize   = inputs.Z 
     max_dist    = inputs.M 
+    nparallel   = inputs.j 
     nodes       = inputs.nodes
     dovetail    = inputs.tails  ## Flag to remove dovetail reads
     debug       = inputs.debug  ## Flag to debug 
@@ -148,10 +142,10 @@ if __name__ == "__main__":
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
         ## Gather the counts
-        job_counts = checkqueue('2.filt')
-        while job_counts > 3:
+        job_counts = checkqueue(f'{pix}.filt')
+        while job_counts > nparallel:
             sleep(waittime)
-            job_counts = checkqueue('2.filt')
+            job_counts = checkqueue(f'{pix}.filt')
 
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):

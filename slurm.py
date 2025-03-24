@@ -148,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
     parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
     parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
+    parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel)
 
     ## Set values for Hi-C analysis 
     parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
@@ -161,7 +162,6 @@ if __name__ == "__main__":
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
     parser.add_argument("-gxg","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
-    #parser.add_argument("--bwa-options",          dest="bwaopts", type=str,  required=False, help = bwa_help, metavar= '-5SMP',               default = hic_options  )
 
     ## Set boolean flags 
     parser.add_argument("--toshort",              dest="toshort",   help = short_help,    action = 'store_true')
@@ -207,6 +207,7 @@ if __name__ == "__main__":
     fastp_threads   = inputs.f            ##     Number of fastp threads
     bwa_threads     = inputs.b            ##     Number of threads in bwa alignments
     daskthreads     = inputs.t            ##     Number of threads in dask
+    nparallel       = inputs.j            ##     Number of parallel jobs to run at once acorss bwa and filter 
 
     ## Set variables for Hi-C                
     run_name        = inputs.n            ##     The name of the samples 
@@ -498,7 +499,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,library=enzymelib,inhic=inhic,forced=force,nodelist=nodes)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,inhic=inhic,forced=force,nodelist=nodes)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
         ## Append to command fil
@@ -513,7 +514,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,keepdovetail=keep_dovetail,removeinter= not inhic)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,keepdovetail=keep_dovetail,removeinter= not inhic)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file

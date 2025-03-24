@@ -50,13 +50,11 @@ splitsize    = 10**7         ##     The number of splits made by fastp
 bwathreads   = threads       ##     Number of threads used by calls to bwa 
 samthreads   = threads       ##     Number of threads used by calls to samtools 
 daskthreads  = threads       ##     Number of threads used by calls to dask df 
-parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
 fastpthreads = threads       ##     Number of threads in fastp 
 parts        = ['tb']        ##     Defalut partition 
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
 waittime     = 1             ##     Seconds of buffer time 
 error_dist   = 5000          ##     The idstance to check for erros 
-#circle_dist  = 10000         ##     The distance to check for self circles 
 lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
 hic_options  = '-5SMP'       ##     Hi-C options passed to bwa 
 chunksize    = 950000        ##     Chunks size for parsing with pandas
@@ -65,6 +63,7 @@ line_count   = 10**7         ##     Number of lines
 mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
 xmemory      = 49152         ##     Sets the memory used by juicer pre command 
 nice         = 10**8         ##     Set the nice parameter 
+nparallel    = 33            ##     Number of jobs to run in parallele 
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
                 2000000,
                 1000000,
@@ -106,13 +105,11 @@ b_help = "The number of threads used per bwa alignment on split input fastq file
 n_help = "Run name used to name output files. Default behavior is to take the common name from the input read pairs."
 M_help = "Name of the mitochondrial contig. Default is: %s."%mito
 X_help = "List of chromosomes/contigs to exclude from analysis. Default behavior is to process all within the passed .fasta or .fa file."
-B_help = "(Depreciated) Number of parallel bwa alignments to run. Defaults to %s. Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
 P_help = "The type of partition jobs formatted by slurpy run on. Default is %s."%parts[0]
 Q_help = "Mapping quality threshold to filter alignments. Default is: %s."%map_q_thres
 c_help = "Path to control or input bam/bedpe files used in ChIP-seq experiments."
 G_help = "Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
 g_help = "Size of the genome being analyzed, used as parameter for macs3. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
-#C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Default is %s. Passing zero (0) will skip this check."%circle_dist 
 E_help = "Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is %s. These pairs are also marked for dangling ends and self-circles."%error_dist
 L_help = "The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is %s. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped."%lib_default
 Z_help = "Number of rows loaded into pandas at a time. Default is: %s. WARNING: while increasing could speed up pipeline it could also cause memeory issues."%chunksize
@@ -126,6 +123,7 @@ a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run 
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
 R_help = "Step within the pipeline to re-run from. Options include: %s"
 m_help = "Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter."
+j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: %s"%nparallel
 
 ## Specific help messages
 node_help = "Space seperated list of nodes to run jobs on."

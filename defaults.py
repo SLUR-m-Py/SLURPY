@@ -45,6 +45,16 @@ from parameters import fakejobid, runlocal
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      SLURPY FUNCTIONS 
+## Ftn for submitting que checks
+def submitter(command:str) -> list:
+    ## Sub process check output 
+    return subprocess.check_output(command, shell=True).decode("utf-8").split('\n')   
+
+## Ftn for cehcking queue 
+def checkqueue(step:str) -> int:
+    ## Sum the setps in l 
+    return sum([step in l for l in submitter('squeue')]) 
+
 ## Ftn for sorting fastq files by size
 def sortfastq(infastq:list,splitsizes:list):
     ## Format input fastq zipped list into df

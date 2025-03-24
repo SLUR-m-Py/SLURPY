@@ -5,14 +5,14 @@
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove
+from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove, checkqueue
 from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile, listzip, ifprint
 ## load in sleep
 from time import sleep
 ## Load input vars from params
-from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime
+from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel
 
 ## Set opttions 
 line_count  = 5000
@@ -65,7 +65,7 @@ def sizecheck(read1,read2) -> list:
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load in help messages from parameters 
-from parameters import s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help
+from parameters import s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help
 
 ## Set help messages 
 c_help     = 'The current working directory'
@@ -73,9 +73,9 @@ l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%li
 hic_flag   = 'Flag to run in Hi-C mode.'
 
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
     ## Format command 
-    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     return [command], report 
@@ -98,6 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
+    parser.add_argument("-j", "--njobs",          dest="j",     type=int,  required=False, help = j_help, metavar = 'n',          default = nparallel    )
     parser.add_argument("--nodelist",             dest="nodes", nargs='+', required=False, help = node_help,                      default = None         )
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                          )
     parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = 'store_true'                                          )
@@ -115,6 +116,7 @@ if __name__ == "__main__":
     library      = inputs.L         ## Library used in hic construcition
     line_count   = inputs.l         ## Number of lines to parse from file
     nice         = inputs.N         ## Nice parameter, "Its nice to be nice"
+    nparallel    = inputs.j         ## Number of parallel bwa jobs to run 
     nodes        = inputs.nodes     ## Node list 
     debug        = inputs.debug     ## To debug, or not debug
     ishic        = inputs.hic       ## Are we human? or are we dancers, or is it a hic experiment
@@ -179,6 +181,11 @@ if __name__ == "__main__":
         sleep(waittime)
         ## Submit the command to SLURM
         submitsbatch(f'sbatch --partition={partitions} {bwa_file}')
+        ## Gather the counts
+        job_counts = checkqueue(f'{pix}.bwa')
+        while job_counts > nparallel:
+            sleep(waittime)
+            job_counts = checkqueue(f'{pix}.bwa')
 
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bwa_checkers]) == nreads):
