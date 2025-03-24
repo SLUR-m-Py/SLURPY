@@ -143,7 +143,7 @@ if __name__ == "__main__":
         submitsbatch(f'sbatch --partition={partitions} {filter_file}')
         ## Gather the counts
         job_counts = checkqueue(f'{pix}.filt')
-        while job_counts > nparallel:
+        while job_counts >= nparallel:
             sleep(waittime)
             job_counts = checkqueue(f'{pix}.filt')
 
