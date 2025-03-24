@@ -321,10 +321,14 @@ if __name__ == "__main__":
         ## Load in the reference 
         refs_parse = SeqIO.parse(refpath,format='fasta')
         ## Iterate thru ref parser 
+        print('Parsing per chromosome')
         for ref in refs_parse:
+            print('Within chromosome loop')
             if (ref.id in chrlist) | (ref.name in chrlist):
+                print('Found hits for: %s'%ref.id)
                 ## set the dataframe to check 
                 tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
+                print(tocheck.shape)
                 ## Initiate the fragment sites
                 tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
 
