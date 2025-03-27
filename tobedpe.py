@@ -295,12 +295,14 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     long.drop('Qname2',axis=1,inplace=True)
 
     ## calc intra vs intra contact, make inter -1 for unmapped reads
-    long['Inter'] = 0                                               ## intra
-    long.loc[(long.Chrn1!=long.Chrn2),'Inter'] = 1                  ## inter
-    long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Inter']  = -1         ## unmapped 
+    #long['Inter'] = 0                                               ## intra
+    #long.loc[(long.Chrn1!=long.Chrn2),'Inter'] = 1                  ## inter
+    #long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Inter']  = -1         ## unmapped 
+    long.loc[(long.Chrn1!=long.Chrn2),'Orientation'] = 'Inter'
+    long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Orientation']  = 'Unmapped'
 
     ## Set distance of inter-chrom contacts to a dummy var
-    long.loc[(long.Inter>0),'Distance'] = 0
+    long.loc[(long.Chrn1!=long.Chrn2),'Distance'] = 0
 
     ## Set filename 
     #if filename:

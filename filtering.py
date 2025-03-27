@@ -169,6 +169,8 @@ if __name__ == "__main__":
     dovetail   = inputs.D  ## Flag to remove dovetail reads
     intraonly  = inputs.I  ## FLag to keep only intra
     max_dist   = inputs.M  ## Intiger to value to filter paired distances 
+    outward_dist = 25000
+    inward_dist  = 5000
     
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
@@ -272,7 +274,8 @@ if __name__ == "__main__":
                 ## Append to list 
                 too_check_paths.append(too_check_path)
                 ## Gather the read pairs we plan to check for intra fragments
-                tocheck = bedpe[(bedpe.Distance<error_dist) & (bedpe.Inter==0)].copy()
+                tocheck = bedpe[((bedpe.Distance<outward_dist) & (bedpe.Inter==0) & (bedpe.Orientation=='Outward')) | 
+                                ((bedpe.Distance<inward_dist)  & (bedpe.Inter==0) & (bedpe.Orientation=='Inward'))].copy()
                 ## SAve out the reads to check for intra fragments
                 tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
                 ## Drop these from bedpe
