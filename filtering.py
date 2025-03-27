@@ -199,7 +199,7 @@ if __name__ == "__main__":
             too_check_path = makeoutpath(bedpe_path,f'tocheck.{i}')
 
             ## Gather the unmapped reads if any 
-            unmapped = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Inter<0)].copy()
+            unmapped = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Orientation=='Unmapped')].copy()
             unmapped['Error'] = 'unmapped'
             ## Append to not_used
             not_used.append(unmapped) if unmapped.shape[0] else None 
@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
             ## Remove inter chromosome reads
             if intraonly:
-                interc = bedpe[(bedpe.Inter>0)].copy()
+                interc = bedpe[(bedpe.Orientation=='Inter')].copy()
                 interc['Error'] = 'inter'
                 ## Append to not used list
                 not_used.append(interc) if interc.shape[0] else None 
@@ -274,8 +274,8 @@ if __name__ == "__main__":
                 ## Append to list 
                 too_check_paths.append(too_check_path)
                 ## Gather the read pairs we plan to check for intra fragments
-                tocheck = bedpe[((bedpe.Distance<outward_dist) & (bedpe.Inter==0) & (bedpe.Orientation=='Outward')) | 
-                                ((bedpe.Distance<inward_dist)  & (bedpe.Inter==0) & (bedpe.Orientation=='Inward'))].copy()
+                tocheck = bedpe[((bedpe.Distance<outward_dist) & (bedpe.Orientation=='Outward')) | 
+                                ((bedpe.Distance<inward_dist)  & (bedpe.Orientation=='Inward'))].copy()
                 ## SAve out the reads to check for intra fragments
                 tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
                 ## Drop these from bedpe
@@ -285,7 +285,7 @@ if __name__ == "__main__":
 
             ## Filter those contacts larger distacen
             if max_dist:
-                tolarge = bedpe[(bedpe.Distance>max_dist) & (bedpe.Inter==0)].copy()
+                tolarge = bedpe[(bedpe.Distance>max_dist) & (bedpe.Orientation!='Inter')].copy()
                 tolarge['Error'] = 'largefrag'
                 ## Append to no not used list
                 not_used.append(tolarge) if tolarge.shape[0] else None
