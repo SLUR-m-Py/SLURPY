@@ -213,16 +213,16 @@ if __name__ == "__main__":
             #bedpe.drop(dang_ends.index,axis=0,inplace=True)
 
             ## Remove dovetailed reads, if doing so 
-            if not dovetail:
-                ## Gather dovetailed reads, set error message 
-                dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
-                dovetailed['Error'] = 'dovetailed'
-                ## append to the not used
-                not_used.append(dovetailed) if dovetailed.shape[0] else None 
-                ## Drop from bedpe chunk
-                bedpe.drop(dovetailed.index,axis=0,inplace=True)
-            else:
-                pass 
+            #if not dovetail:
+            #    ## Gather dovetailed reads, set error message 
+            #    dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
+            #    dovetailed['Error'] = 'dovetailed'
+            #    ## append to the not used
+            #    not_used.append(dovetailed) if dovetailed.shape[0] else None 
+            #    ## Drop from bedpe chunk
+            #    bedpe.drop(dovetailed.index,axis=0,inplace=True)
+            #else:
+            #    pass 
             
             ## Remove reads mapping to excluded chromosomes/contigs 
             if len(excludes):

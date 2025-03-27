@@ -211,7 +211,7 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     ## Remap the distances
     long.loc[long.Distance<0] = long.loc[long.Distance<0,df2.columns.tolist()+df1.columns.tolist()+['Distance']].values
     ## Recalc distance metric
-    long['Distance'] = long.Pos2 - long.Pos1  
+    long['Distance'] = long.Pos2 - long.End1
     ## Clac where the chromosomes are not left right sorted
     long['Test'] = long.Chrn1 - long.Chrn2
     ## Remap so chromosomes are left right sorted
@@ -300,11 +300,11 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Inter']  = -1         ## unmapped 
 
     ## Set distance of inter-chrom contacts to a dummy var
-    long.loc[(long.Inter>0),'Distance'] = 10**8
+    long.loc[(long.Inter>0),'Distance'] = 0
 
     ## Set filename 
-    if filename:
-        long['File'] = filename
+    #if filename:
+    #    long['File'] = filename
 
     ## Save out the pairs and pass back to main
     appenddf(long,outdfpath) if long.shape[0] else None
