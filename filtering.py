@@ -274,8 +274,7 @@ if __name__ == "__main__":
                 ## Append to list 
                 too_check_paths.append(too_check_path)
                 ## Gather the read pairs we plan to check for intra fragments
-                tocheck = bedpe[((bedpe.Distance<outward_dist) & (bedpe.Orientation=='Outward')) | 
-                                ((bedpe.Distance<inward_dist)  & (bedpe.Orientation=='Inward'))].copy()
+                tocheck = bedpe[((bedpe.Distance<=outward_dist) & (bedpe.Orientation=='Outward')) | ((bedpe.Distance<=inward_dist)  & (bedpe.Orientation=='Inward'))].copy()
                 ## SAve out the reads to check for intra fragments
                 tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
                 ## Drop these from bedpe
