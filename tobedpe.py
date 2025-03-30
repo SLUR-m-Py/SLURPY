@@ -190,7 +190,10 @@ def checkread(df,c):
 def renamecols(df,k):
     df.drop(['Rnext','Pnext','Tlen','Read1','Read2','Matchsum'],axis=1,inplace=True)
     df.columns = [c+str(k) for c in df.columns]
-    return df    
+    return df   
+
+## Set orientation variable for easy use
+orient = 'Orientation'
 
 ## Ftn for formating long dataframe from juicer 
 def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
@@ -221,7 +224,7 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     ## Calculate min mapping quality
     long['Minmapq'] = long[['Mapq1','Mapq2']].min(axis=1)
     ## Add oriantation 
-    long['Orientation'] = long.apply(lambda x: getoriented(x["Seqrev1"], x["Seqrev2"]), axis=1) if (long.shape[0] > 0) else None
+    long[orient] = long.apply(lambda x: getoriented(x["Seqrev1"], x["Seqrev2"]), axis=1) if (long.shape[0] > 0) else None
     ## Return the longdf
     return long
 
@@ -266,16 +269,16 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     ## Make the matsum column an int
     newmap['Matchsum'] = newmap['Matchsum'].apply(int)
     ## Gather and trim the seq
-    newmap['Seq'] = newmap.apply(lambda row: bycigar(row['Seq'],row['Cigar']),axis=1)
+    #newmap['Seq'] = newmap.apply(lambda row: bycigar(row['Seq'],row['Cigar']),axis=1)
     ## Add in seq len
     newmap['Len'] = newmap['Cigar'].apply(lencigar)
     ## Add in end positoin
     newmap['End'] = newmap.Pos + newmap.Len 
     ## Check the danginling ends
-    if danglingends:
-        newmap['Dangend'] = newmap.apply(lambda row: endcheck(row['Seq'], row['Seqrev'], danglingends),axis=1) ## Removed, only check error fragments 
-    else:
-        newmap['Dangend'] = 0
+    #if danglingends:
+    #    newmap['Dangend'] = newmap.apply(lambda row: endcheck(row['Seq'], row['Seqrev'], danglingends),axis=1) ## Removed, only check error fragments 
+    #else:
+    #    newmap['Dangend'] = 0
 
     ## Check our shape and readnames
     assert newmap.shape[0] == mmapped.shape[0], "ERROR: Shape missmatch!"
@@ -295,15 +298,21 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     long.drop('Qname2',axis=1,inplace=True)
 
     ## calc intra vs intra contact, make inter -1 for unmapped reads
-    long['Inter'] = 0                                               ## intra
-    long.loc[(long.Chrn1!=long.Chrn2),'Inter'] = 1                  ## inter
-    long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Inter']  = -1         ## unmapped 
-    long.loc[(long.Chrn1!=long.Chrn2),'Orientation'] = 'Inter'
-    long.loc[(long.Chrn1<0) | (long.Chrn2<0),'Orientation']  = 'Unmapped'
+    long['Inter'] = 0                                              
+    ## Set inter bool
+    inter_bool    = (long.Chrn1!=long.Chrn2)
+    unmapped_bool = (long.Chrn1<0) | (long.Chrn2<0)
+
+    ## Set inter and reset orientation 
+    long.loc[inter_bool,'Inter']    = 1               
+    long.loc[inter_bool,orient]     = 'Inter'
+    long.loc[inter_bool,'Distance'] = 0
+
+    ## Set unmpaped orientation 
+    long.loc[unmapped_bool,'Inter'] = -1         
+    long.loc[unmapped_bool,orient]  = 'Unmapped'
 
     ## Set distance of inter-chrom contacts to a dummy var
-    long.loc[(long.Chrn1!=long.Chrn2),'Distance'] = 0
-
     ## Set filename 
     #if filename:
     #    long['File'] = filename

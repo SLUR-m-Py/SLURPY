@@ -25,6 +25,7 @@ from parameters import chunksize, map_q_thres, hicsep, error_dist
 from defaults import fileexists
 ## Bring in seqIO
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 ## ----------------------------------- FUNCTIONS DEFINING --------------------------------- ##
 ## Ftn for setting output path
@@ -125,10 +126,10 @@ dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads w
 from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help
 
 ## Set check names 
-check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1']
+check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1','Distance']
 
 ## set the value tuples 
-value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
+#value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -169,14 +170,15 @@ if __name__ == "__main__":
     dovetail   = inputs.D  ## Flag to remove dovetail reads
     intraonly  = inputs.I  ## FLag to keep only intra
     max_dist   = inputs.M  ## Intiger to value to filter paired distances 
-    outward_dist = 25000
-    inward_dist  = 5000
     
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
 
     ## Gather the restriciton sites and dangling ends 
     restriciton_sites, dangling_ends = returnsite(library)
+
+    ## Gather the complement of the restirction sites
+    all_sites = restriciton_sites + [str(Seq(r).complement()) for r in restriciton_sites]
 
     ## Iniate paths
     not_usede_paths = []
@@ -269,19 +271,6 @@ if __name__ == "__main__":
             else:
                 pass 
 
-            ## If restriction sites were passed 
-            if restriciton_sites: 
-                ## Append to list 
-                too_check_paths.append(too_check_path)
-                ## Gather the read pairs we plan to check for intra fragments
-                tocheck = bedpe[((bedpe.Distance<=outward_dist) & (bedpe.Orientation=='Outward')) | ((bedpe.Distance<=inward_dist)  & (bedpe.Orientation=='Inward'))].copy()
-                ## SAve out the reads to check for intra fragments
-                tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
-                ## Drop these from bedpe
-                bedpe.drop(tocheck.index,axis=0,inplace=True)
-            else:
-                pass 
-
             ## Filter those contacts larger distacen
             if max_dist:
                 tolarge = bedpe[(bedpe.Distance>max_dist) & (bedpe.Orientation!='Inter')].copy()
@@ -290,6 +279,19 @@ if __name__ == "__main__":
                 not_used.append(tolarge) if tolarge.shape[0] else None
                 ## Drop from bedpe chunk
                 bedpe.drop(tolarge.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            ## If restriction sites were passed 
+            if restriciton_sites: 
+                ## Append to list 
+                too_check_paths.append(too_check_path)
+                ## Gather the read pairs we plan to check for intra fragments
+                tocheck = bedpe[(bedpe.Distance<=error_dist) & (bedpe.Orientation.isin(['Outward','Inward'])) & (bedpe.Inter==0)].copy()
+                ## SAve out the reads to check for intra fragments
+                tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
+                ## Drop these from bedpe
+                bedpe.drop(tocheck.index,axis=0,inplace=True)
             else:
                 pass 
 
@@ -328,23 +330,33 @@ if __name__ == "__main__":
         for ref in refs_parse:
             #print('Within chromosome loop: %s %s'%(ref.id,ref.name))
             if (ref.id in chrlist) | (ref.name in chrlist):
+                ## Calc the chr seq
+                chrseq = ref.seq
                 #print('Found hits for: %s'%ref.id)
                 ## set the dataframe to check 
                 tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
-                #print(tocheck.shape)
-                ## Initiate the fragment sites
-                tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
+                
+                n_restsites = []
+                rest_index = []
 
-                ## Set the chrom sequence
-                chrseq = ref.seq
-    
-                ## Iterate thru the tupels 
-                for (a,b,c) in value_tuple:
-                    tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
-            
+                for i,row in tocheck.iterrows():
+                    ## Gather the positions
+                    a = row['Pos1']
+                    b = row['End2']
+                    n = sum([str(chrseq[a+len(r):b-len(r)]).upper().count(r) for r in all_sites])
+                    
+                    ## Append the count
+                    n_restsites.append(n)
+                    rest_index.append(i)
+
+                ## Format Rcount into df
+                rest_count = pd.DataFrame(n_restsites,index=rest_index,columns=['Rcount'])
+                ## SEt Rcount in to check 
+                tocheck['Rcount'] = rest_count['Rcount']
+
                 ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
-                intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
-                intra_count = intra_frags.Left1.count()
+                intra_frags = tocheck[(tocheck.Distance<0) | (tocheck.Rcount<1)]
+                intra_count = intra_frags.shape[0]
                 #print(intra_count)
                 ## Gather qnames if intrafrags has hsape
                 if intra_count:
