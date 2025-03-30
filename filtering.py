@@ -177,9 +177,6 @@ if __name__ == "__main__":
     ## Gather the restriciton sites and dangling ends 
     restriciton_sites, dangling_ends = returnsite(library)
 
-    ## Gather the complement of the restirction sites
-    all_sites = restriciton_sites + [str(Seq(r).complement()) for r in restriciton_sites]
-
     ## Iniate paths
     not_usede_paths = []
     too_check_paths = []
@@ -316,6 +313,9 @@ if __name__ == "__main__":
     #print("Above if statment")
     ## If we are checking rest sites and we have dataframes to check 
     if restriciton_sites and len(too_check_paths):
+        ## Gather the complement of the restirction sites
+        all_sites = (restriciton_sites + [str(Seq(r).complement()) for r in restriciton_sites]) if restriciton_sites else []
+
         #print("Within if statment")
         ## Bring in the reads to check 
         allcheck = dd.read_csv(too_check_paths,sep=hicsep)
@@ -332,17 +332,17 @@ if __name__ == "__main__":
             if (ref.id in chrlist) | (ref.name in chrlist):
                 ## Calc the chr seq
                 chrseq = ref.seq
-                #print('Found hits for: %s'%ref.id)
                 ## set the dataframe to check 
                 tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
                 
+                ## Format restrction site list and index 
                 n_restsites = []
                 rest_index = []
 
                 for i,row in tocheck.iterrows():
                     ## Gather the positions
-                    a = row['Pos1']
-                    b = row['End2']
+                    a = row[['Pos1','Pos2','End1','End2']].min()
+                    b = row[['Pos1','Pos2','End1','End2']].max()
                     n = sum([str(chrseq[a+len(r):b-len(r)]).upper().count(r) for r in all_sites])
                     
                     ## Append the count
@@ -357,7 +357,7 @@ if __name__ == "__main__":
                 ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
                 intra_frags = tocheck[(tocheck.Distance<0) | (tocheck.Rcount<1)]
                 intra_count = intra_frags.shape[0]
-                #print(intra_count)
+
                 ## Gather qnames if intrafrags has hsape
                 if intra_count:
                     ## Gather qnames and update the list of qnames

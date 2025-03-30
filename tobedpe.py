@@ -213,8 +213,12 @@ def formatlong(df:pd.DataFrame,r1_ix:list,r2_ix:list) -> pd.DataFrame:
     long['Distance'] = long.Pos2 - long.Pos1
     ## Remap the distances
     long.loc[long.Distance<0] = long.loc[long.Distance<0,df2.columns.tolist()+df1.columns.tolist()+['Distance']].values
-    ## Recalc distance metric
-    long['Distance'] = long.Pos2 - long.End1
+    ## Recalc distance metric, take mins and maxs over the fragments 
+    #long['Distance'] = long.Pos2 - long.End1
+    dist_min = long[['Pos1','Pos2','End1','End2']].min(axis=1)
+    dist_max = long[['Pos1','Pos2','End1','End2']].max(axis=1)
+    long['Distance'] = dist_max - dist_min
+
     ## Clac where the chromosomes are not left right sorted
     long['Test'] = long.Chrn1 - long.Chrn2
     ## Remap so chromosomes are left right sorted
