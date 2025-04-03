@@ -753,7 +753,7 @@ if __name__ == "__main__":
         counting_repo = reportname(run_name,'thecount',i=f'{pix}B')   ##   Set the report 
         counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
-        writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes)+ concat_coms, debug)
+        writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes)+ counting_coms, debug)
         ## Append the clean up command to file
         command_files.append((counting_sh,run_name,experi_mode,'count',counting_repo,0,''))
     else: ## Otherwise do nothing
