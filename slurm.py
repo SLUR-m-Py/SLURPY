@@ -301,6 +301,8 @@ if __name__ == "__main__":
     ## Initilizse list for sbatch
     sub_sbatchs = []
 
+    ## Reset bwa options
+    bwa_opts = bwa_opts if (bwa_opts[0] == ',') else (','+bwa_opts)
 
     ## Set the lib error
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
@@ -340,7 +342,7 @@ if __name__ == "__main__":
         enzymelib     = 'none'
         max_dist      = 1000
         count_mod     = '--atac-seq'
-        bwa_opts      = '-M' if (bwa_opts == hic_options) else bwa_opts
+        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
     
         ## Load in macs3 ftns
         from pymacs3 import peakattack

@@ -104,7 +104,6 @@ if __name__ == "__main__":
 
     ## Add boolean vars 
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = ST                                          )
-    parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = ST                                          )
     parser.add_argument("--force",                dest="force",     help = force_help,    action = ST                                          )
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
