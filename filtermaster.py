@@ -26,13 +26,13 @@ def formatinput(inlist):
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,keepdovetail=False,removeinter=False):
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}' + (' --keep-dovetail' if keepdovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False):
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}' + (' --dedovetail' if dovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' --hicexplorer' if hicexplorer else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help
+from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -68,11 +68,12 @@ if __name__ == "__main__":
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
 
     ## Add boolean 
-    parser.add_argument("--keep-dovetail",  dest="tails",  help = dove_help,    action = 'store_true' )
+    parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = 'store_true' )
     parser.add_argument("--force",          dest="force",  help = force_help,   action = 'store_true' )
     parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = 'store_true' )
     parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true' )
+    parser.add_argument("--hicexplorer",    dest="hicexp", help = hicex_help,   action = 'store_ture' )
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
@@ -93,10 +94,11 @@ if __name__ == "__main__":
     max_dist    = inputs.M 
     nparallel   = inputs.j 
     nodes       = inputs.nodes
-    dovetail    = inputs.tails  ## Flag to remove dovetail reads
-    debug       = inputs.debug  ## Flag to debug 
-    forced      = inputs.force  ## Flag to force 
-    intra_only  = inputs.Intra  ## Flag for intra chromosomal contacts only 
+    dovetail    = inputs.tails      ## Flag to remove dovetail reads
+    debug       = inputs.debug      ## Flag to debug 
+    forced      = inputs.force      ## Flag to force 
+    intra_only  = inputs.Intra      ## Flag for intra chromosomal contacts only 
+    hicexplorer = inputs.hicexp     ## Flag to run filtering in hicexplorer mode
 
     ## Bring in bedpe paths, calc len
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         bed_check    = bed_checkers[i]
 
         ## Format commands 
-        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --keep-dovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') + '\n',
+        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n',
                          f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip

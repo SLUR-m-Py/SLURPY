@@ -127,13 +127,13 @@ j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: 
 
 ## Specific help messages
 node_help = "Space seperated list of nodes to run jobs on."
-dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
+dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these)."
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."
 intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 mcool_help = "Flag to make an mcool file with cooler."
 pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."
 inter_help = "Flag to return only inter-chromosomal contacts"
-
+hicex_help = "Flag to run stricter intra-fragment filtering."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
@@ -148,6 +148,7 @@ debug_help    = "A flag to run in verbose mode, printing sbatch commands. Defaul
 mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
 broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details."
 clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
+count_help    = "Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples."
 skipq_help    = "Flag to skip initial quality control and filtering with fastp (i.e. only split reads)."
 merge_help    = "Passing this flag will merge across all pairs of fastqs for final output."
 peaks_help    = "A boolean flag to skip peak calling via macs3."

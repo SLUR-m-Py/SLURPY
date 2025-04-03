@@ -120,16 +120,15 @@ def nearestrest(pos,restsites,chromseq,isleft,pads=[100,500,1000,2000,5000,10000
 ## ------------------------------------- Define Variables ------------------------------------------------- ##
 B_help     = "Path to an input bed paired-end file (bedpe)."
 I_help     = "List of chormosomes/contigs to only include in analysis"
-dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is to remove these)."
 
 ## Import help messages
-from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help
+from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help, hicex_help, dove_help
 
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1','Distance']
 
 ## set the value tuples 
-#value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
+value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -152,24 +151,26 @@ if __name__ == "__main__":
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='rown',      default=chunksize    )
     parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar='n (bp)',    default=0)
     ## Add boolean 
-    parser.add_argument("--keep-dovetail",  dest="D",  help = dove_help,    action = 'store_true')
+    parser.add_argument("--dedovetail",     dest="D",  help = dove_help,    action = 'store_true')
     parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = 'store_true')
+    parser.add_argument("--hicexplorer",    dest="E",  help = hicex_help,   action = 'store_ture')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
     ## Set inputs 
-    bedpe_path = inputs.b  ## Path to bedpe file 
-    refpath    = inputs.r  ## Set path to reference, needed to check restriction 
-    error_dist = inputs.e  ## Set max distance to check for erros 
-    library    = inputs.l  ## Set the library used 
-    minmapq    = inputs.q  ## minimum mapping quality 
-    excludes   = inputs.x  ## List of chromosomes/contigs to exclude 
-    includos   = inputs.i  ## List of chormosomes to only includ
-    chunksize  = inputs.Z  ## set the chuck size 
-    dovetail   = inputs.D  ## Flag to remove dovetail reads
-    intraonly  = inputs.I  ## FLag to keep only intra
-    max_dist   = inputs.M  ## Intiger to value to filter paired distances 
+    bedpe_path  = inputs.b   ## Path to bedpe file 
+    refpath     = inputs.r   ## Set path to reference, needed to check restriction 
+    error_dist  = inputs.e   ## Set max distance to check for erros 
+    library     = inputs.l   ## Set the library used 
+    minmapq     = inputs.q   ## minimum mapping quality 
+    excludes    = inputs.x   ## List of chromosomes/contigs to exclude 
+    includos    = inputs.i   ## List of chormosomes to only includ
+    chunksize   = inputs.Z   ## set the chuck size 
+    dovetail    = inputs.D   ## Flag to remove dovetail reads
+    intraonly   = inputs.I   ## FLag to keep only intra
+    max_dist    = inputs.M   ## Intiger to value to filter paired distances 
+    hicexplorer = inputs.E   ## Boolean flag to run in hic explorer mode 
     
     ## Check that we have a file
     assert fileexists(bedpe_path), "ERROR: No input file ( %s ) was found!"%bedpe_path
@@ -214,16 +215,16 @@ if __name__ == "__main__":
             #bedpe.drop(dang_ends.index,axis=0,inplace=True)
 
             ## Remove dovetailed reads, if doing so 
-            #if not dovetail:
-            #    ## Gather dovetailed reads, set error message 
-            #    dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
-            #    dovetailed['Error'] = 'dovetailed'
-            #    ## append to the not used
-            #    not_used.append(dovetailed) if dovetailed.shape[0] else None 
-            #    ## Drop from bedpe chunk
-            #    bedpe.drop(dovetailed.index,axis=0,inplace=True)
-            #else:
-            #    pass 
+            if dovetail:
+                ## Gather dovetailed reads, set error message 
+                dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
+                dovetailed['Error'] = 'dovetailed'
+                ## append to the not used
+                not_used.append(dovetailed) if dovetailed.shape[0] else None 
+                ## Drop from bedpe chunk
+                bedpe.drop(dovetailed.index,axis=0,inplace=True)
+            else:
+                pass 
             
             ## Remove reads mapping to excluded chromosomes/contigs 
             if len(excludes):
@@ -335,34 +336,53 @@ if __name__ == "__main__":
                 ## set the dataframe to check 
                 tocheck = allcheck[(allcheck.Rname1==ref.id) | (allcheck.Rname1==ref.name)][check_names].compute()
                 
-                ## Format restrction site list and index 
-                n_restsites = []
-                rest_index = []
+                if hicexplorer: ## Perform our hic exploer filtering                 
+                    ## Initiate the fragment sites
+                    tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
 
-                for i,row in tocheck.iterrows():
-                    ## Gather the positions
-                    a = row[['Pos1','Pos2','End1','End2']].min()
-                    b = row[['Pos1','Pos2','End1','End2']].max()
-                    n = sum([str(chrseq[a+len(r):b-len(r)]).upper().count(r) for r in all_sites])
-                    
-                    ## Append the count
-                    n_restsites.append(n)
-                    rest_index.append(i)
+                    ## Set the chrom sequence
+                    chrseq = ref.seq
+        
+                    ## Iterate thru the tupels 
+                    for (a,b,c) in value_tuple:
+                        tocheck[a] = tocheck[b].apply(nearestrest, args=[restriciton_sites,chrseq,c])
+                
+                    ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
+                    intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
+                    intra_count = intra_frags.Left1.count()
+                    ## Gather qnames if intrafrags has hsape
+                    if intra_count:
+                        ## Gather qnames and update the list of qnames
+                        intra_all_qnames.update(intra_frags.Qname1.tolist())
+                else:
+                    ## Format restrction site list and index 
+                    n_restsites = []
+                    rest_index = []
 
-                ## Format Rcount into df
-                rest_count = pd.DataFrame(n_restsites,index=rest_index,columns=['Rcount'])
-                ## SEt Rcount in to check 
-                tocheck['Rcount'] = rest_count['Rcount']
+                    for i,row in tocheck.iterrows():
+                        ## Gather the positions
+                        a = row[['Pos1','Pos2','End1','End2']].min()
+                        b = row[['Pos1','Pos2','End1','End2']].max()
+                        n = sum([str(chrseq[a+len(r):b-len(r)]).upper().count(r) for r in all_sites])
+                        
+                        ## Append the count
+                        n_restsites.append(n)
+                        rest_index.append(i)
 
-                ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
-                intra_frags = tocheck[(tocheck.Distance<0) | (tocheck.Rcount<1)]
-                intra_count = intra_frags.shape[0]
+                    ## Format Rcount into df
+                    rest_count = pd.DataFrame(n_restsites,index=rest_index,columns=['Rcount'])
+                    ## SEt Rcount in to check 
+                    tocheck['Rcount'] = rest_count['Rcount']
 
-                ## Gather qnames if intrafrags has hsape
-                if intra_count:
-                    ## Gather qnames and update the list of qnames
-                    #print(ref.id,intra_count)
-                    intra_all_qnames.update(intra_frags.Qname1.tolist())
+                    ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
+                    intra_frags = tocheck[(tocheck.Distance<0) | (tocheck.Rcount<1)]
+                    intra_count = intra_frags.shape[0]
+
+                    ## Gather qnames if intrafrags has hsape
+                    if intra_count:
+                        ## Gather qnames and update the list of qnames
+                        #print(ref.id,intra_count)
+                        intra_all_qnames.update(intra_frags.Qname1.tolist())                    
             else:
                 pass 
         #print('Do we have intra fragments')

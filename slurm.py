@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth'  | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | grep 'Dependency' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -35,8 +35,8 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ## 
 ## HIC
 ## Set pipeline of hic analysis ## NOTE defined after defaults import 
-hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','macs3','clean']
-##                  0        1      2        3       4      5a      5b      5c     5d       6
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','macs3','count','clean']
+##                  0        1      2        3       4      5a      5b      5c     5d       6B      6C
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
@@ -171,16 +171,18 @@ if __name__ == "__main__":
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true')
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
     parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
+    parser.add_argument("--count",                dest="count",     help = count_help,    action = 'store_true')
     parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
     parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
     parser.add_argument("--inter-only",           dest="inter",     help = inter_help,    action = 'store_true')
     
     ## Set ATAC-seq specifict
-    parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
-    parser.add_argument("--skipfastp",            dest="sfast",     help = skipq_help,    action = 'store_true')
-    parser.add_argument("--broad",                dest="broad",     help = broad_help,    action = 'store_true')
-    parser.add_argument("--skipmacs3",            dest="peaks",     help = peaks_help,    action = 'store_true')
-    parser.add_argument("--keep-dovetail",        dest="dovetail",  help = dove_help,     action = 'store_true')
+    parser.add_argument("--atac-seq",             dest="atac",       help = atac_help,     action = 'store_true')
+    parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = 'store_true')
+    parser.add_argument("--broad",                dest="broad",      help = broad_help,    action = 'store_true')
+    parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = 'store_true')
+    parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = 'store_true')
+    parser.add_argument("--hicexplorer",          dest="hicexp",     help = hicex_help,    action = 'store_true')
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -221,9 +223,10 @@ if __name__ == "__main__":
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
-    keep_dovetail   = inputs.dovetail     ##     Boolean for dove tailing 
+    dedovetail      = inputs.tails        ##     Boolean for dove tailing 
     make_mcool      = inputs.mcool        ##     Flag to make mcool file  
     get_inter       = inputs.inter        ##     Flag to return inter chromosome counts in bedpe file
+    hicexplorer     = inputs.hicexp       ##     Flag to run stricter filtering like Hi-C explorer
                                             
     ## Set boolean vars                    
     toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
@@ -233,6 +236,7 @@ if __name__ == "__main__":
     debug           = inputs.debug        ##     Run in debug mode 
     skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates 
     ifclean         = inputs.clean        ##     Flag to run clean up script 
+    counting        = inputs.count        ##     Flag to count the read pairs
     postmerging     = inputs.merge        ##     Forces premerge of outputs 
     atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
     sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
@@ -514,7 +518,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,keepdovetail=keep_dovetail,removeinter= not inhic)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,dovetail=dedovetail,removeinter= not inhic,hicexplorer=hicexplorer)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file
@@ -723,27 +727,40 @@ if __name__ == "__main__":
     ## 6A. Final timestamp, out clean up
     pix = 6
     ## Format count commands 
-    counting_coms = [ f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
     ## Set the timesampe assocaited file names 
     timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
     timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n', f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + counting_coms
+    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n', f'{slurpydir}/totalcount.py {run_name} {diagdir}\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
     ## Append the timestamp command to file
     command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+    ##      COUNTING 
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 6B. If the clean boolean or rerun vars were set 
+    if counting:
+        ## Format command to remove uneedeed files 
+        counting_sh   = f'{comsdir}/{pix}B.thecount.sh'             ##   Set the bash file name 
+        counting_repo = reportname(run_name,'thecount',i=f'{pix}B')   ##   Set the report 
+        counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
+        ## Format the command to clean up          
+        writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes)+ concat_coms, debug)
+        ## Append the clean up command to file
+        command_files.append((counting_sh,run_name,experi_mode,'count',counting_repo,0,''))
+    else: ## Otherwise do nothing
+        pass
 
     ##      CLEANING UP FILES   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6B. If the clean boolean or rerun vars were set 
+    ## 6C. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
-        remove_sh   = f'{comsdir}/{pix}B.cleanup.sh'             ##   Set the bash file name 
-        remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
+        remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
+        remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
         remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes)+ remove_comm, debug)
@@ -815,10 +832,13 @@ if __name__ == "__main__":
     ##      6) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',last_step,stamp,time_partition,group='Experiment',debug=debug) 
+    ##
+    ##      7) COUNTING COMMANDS
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',last_step,stamp,clean_partition,group='Experiment',debug=debug) 
 
-    ##      6) CLEAN UP COMMANDS 
+    ##      8) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','timestamp',stamp,clean_partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','count' if counting else 'timestamp',stamp,clean_partition,group='Experiment',debug=debug) 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         
 
