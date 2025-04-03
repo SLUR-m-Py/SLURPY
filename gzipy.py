@@ -14,7 +14,7 @@ from os.path import exists
 from os import remove
 
 ## Set the error message
-no_file_error =  "ERROR: The input file path -- %s -- could not be found!"
+no_file_error = "WARNING: The input file path -- %s -- could not be found!"
 rm_file_error = "ERROR: Unable to gzip and remove input file: %s"
 
 ## Define ftn for gzippin 
@@ -22,21 +22,23 @@ def gzipfile(infilepath:str,outfilepath:str):
     """
     Given an input file string (INFILEPATH), this functions "gzips" the contents into a clone file (OUTFILEPATH) with the extension .gz."
     """
-    ## Check our work 
-    assert exists(infilepath), no_file_error%infilepath
-    ## Open the input file as binar 
-    with open(infilepath, 'rb') as f_in:
-        ## open the output gzip file 
-        with gzip.open(outfilepath, 'wb') as f_out:
-            ## Copy out as zipped file 
-            shutil.copyfileobj(f_in, f_out)
+    ## Check our work
+    if exists(infilepath): 
+        ## Open the input file as binar 
+        with open(infilepath, 'rb') as f_in:
+            ## open the output gzip file 
+            with gzip.open(outfilepath, 'wb') as f_out:
+                ## Copy out as zipped file 
+                shutil.copyfileobj(f_in, f_out)
 
-    ## Clost the files 
-    f_in.close()
-    f_out.close()
+        ## Clost the files 
+        f_in.close()
+        f_out.close()
 
-    ## Make sure we have the out file, print an error message if the file exists
-    remove(infilepath) if exists(outfilepath) else print(rm_file_error%infilepath)
+        ## Make sure we have the out file, print an error message if the file exists
+        remove(infilepath) if exists(outfilepath) else print(rm_file_error%infilepath)
+    #else:
+        #print(no_file_error%infilepath)
     pass 
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 

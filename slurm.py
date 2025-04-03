@@ -766,7 +766,7 @@ if __name__ == "__main__":
         ## Format command to remove uneedeed files 
         remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
-        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n']
+        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.valid.pairs\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes)+ remove_comm, debug)
         ## Append the clean up command to file
