@@ -65,7 +65,7 @@ def sizecheck(read1,read2) -> list:
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
 ## Load in help messages from parameters 
-from parameters import s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help
+from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help
 
 ## Set help messages 
 c_help     = 'The current working directory'
@@ -73,9 +73,9 @@ l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%li
 hic_flag   = 'Flag to run in Hi-C mode.'
 
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,inhic=False,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None):
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None,bwaopts='') -> tuple[list[str], str]:
     ## Format command 
-    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --hic' if inhic else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '')
+    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' -B %s'%bwaopts if len(bwaopts) else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     return [command], report 
@@ -99,10 +99,13 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
     parser.add_argument("-j", "--njobs",          dest="j",     type=int,  required=False, help = j_help, metavar = 'n',          default = nparallel    )
+    parser.add_argument("-B", "--bwa-opts",       dest="bwa",   type=str,  required=False, help = B_help, metavar = hic_options,  default = hic_options  )
     parser.add_argument("--nodelist",             dest="nodes", nargs='+', required=False, help = node_help,                      default = None         )
-    parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true'                                          )
-    parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = 'store_true'                                          )
-    parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true'                                          )
+
+    ## Add boolean vars 
+    parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = ST                                          )
+    parser.add_argument("--hic",                  dest="hic",       help = hic_flag,      action = ST                                          )
+    parser.add_argument("--force",                dest="force",     help = force_help,    action = ST                                          )
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -119,11 +122,11 @@ if __name__ == "__main__":
     nparallel    = inputs.j         ## Number of parallel bwa jobs to run 
     nodes        = inputs.nodes     ## Node list 
     debug        = inputs.debug     ## To debug, or not debug
-    ishic        = inputs.hic       ## Are we human? or are we dancers, or is it a hic experiment
     forced       = inputs.force     ## Use the force Luke, let go Luke. Luke trust me.
+    bwa_opts     = inputs.bwa       ## String of options to also feed into bwa 
 
-    ## if we are formating hic run
-    options = hic_options if ishic else '-M'
+    ## Format the options for bwa mem
+    options = f'-v 1 -t {thread_count-1} ' + ' '.join(bwa_opts.split(','))
 
     ## Gather the first reads 
     read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
@@ -161,7 +164,7 @@ if __name__ == "__main__":
 
         ## format the command 
         bwa_coms = [f'refpath={ref_path}\n',
-                    f'bwa mem -v 1 -t {thread_count-1} {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
+                    f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
         ## If the report exists and has alredy been run, just skip

@@ -32,7 +32,7 @@ def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:i
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help
+from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -68,12 +68,12 @@ if __name__ == "__main__":
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
 
     ## Add boolean 
-    parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = 'store_true' )
-    parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = 'store_true' )
-    parser.add_argument("--force",          dest="force",  help = force_help,   action = 'store_true' )
-    parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = 'store_true' )
-    parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = 'store_true' )
-    parser.add_argument("--hicexplorer",    dest="hicexp", help = hicex_help,   action = 'store_ture' )
+    parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = ST )
+    parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = ST )
+    parser.add_argument("--force",          dest="force",  help = force_help,   action = ST )
+    parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = ST )
+    parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = ST )
+    parser.add_argument("--hicexplorer",    dest="hicexp", help = hicex_help,   action = ST )
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()

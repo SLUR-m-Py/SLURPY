@@ -83,7 +83,7 @@ fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_
 
 ## Set list of experiments 
 explist = ['wgs','atac','chip','hic']
-
+ST = 'store_true'
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      METAVARS
 ## Set metavars
@@ -102,6 +102,7 @@ F_help = "The approximate number of reads per split made by fastp on input fastq
 T_help = "The number of threads used across all applications of the run (fastp, bwa, dask.dataframes). Default is: %s."%threads 
 f_help = "The number of threads used in fastp to split input fastq files. Default is: %s. Note: must be an even multiple of the number of splits."%fastpthreads
 b_help = "The number of threads used per bwa alignment on split input fastq files. Default is: %s."%bwathreads
+B_help = "A comma seperated list (no spaces) of options (and their values) for the bwa mem algorithm (for example -t,2,-k,10,-y,5,-S). See bwa mem for help and a list of options."
 n_help = "Run name used to name output files. Default behavior is to take the common name from the input read pairs."
 M_help = "Name of the mitochondrial contig. Default is: %s."%mito
 X_help = "List of chromosomes/contigs to exclude from analysis. Default behavior is to process all within the passed .fasta or .fa file."

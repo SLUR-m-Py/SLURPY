@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## List command for canceling all
 """
-squeue -u croth | grep 'croth' | grep 'Dependency' | awk '{print $1}' | xargs -n 1 scancel
+squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 
@@ -145,10 +145,11 @@ if __name__ == "__main__":
     parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
 
     ## Set number of threads 
+    parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel    )
     parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
-    parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
     parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
-    parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel)
+    parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
+    parser.add_argument("-B", "--bwa-options",    dest="B",       type=str,  required=False, help = B_help, metavar = hic_options,            default = hic_options  )
 
     ## Set values for Hi-C analysis 
     parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
@@ -164,25 +165,25 @@ if __name__ == "__main__":
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
 
     ## Set boolean flags 
-    parser.add_argument("--toshort",              dest="toshort",   help = short_help,    action = 'store_true')
-    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,    action = 'store_true')
-    parser.add_argument("--restart",              dest="restart",   help = restart_help,  action = 'store_true')
-    parser.add_argument("--force",                dest="force",     help = force_help,    action = 'store_true')
-    parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = 'store_true')
-    parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,     action = 'store_true')
-    parser.add_argument("--clean",                dest="clean",     help = clean_help,    action = 'store_true')
-    parser.add_argument("--count",                dest="count",     help = count_help,    action = 'store_true')
-    parser.add_argument("--merge",                dest="merge",     help = merge_help,    action = 'store_true')
-    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,    action = 'store_true')
-    parser.add_argument("--inter-only",           dest="inter",     help = inter_help,    action = 'store_true')
+    parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
+    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,     action = ST)
+    parser.add_argument("--restart",              dest="restart",   help = restart_help,   action = ST)
+    parser.add_argument("--force",                dest="force",     help = force_help,     action = ST)
+    parser.add_argument("--debug",                dest="debug",     help = debug_help,     action = ST)
+    parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,      action = ST)
+    parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
+    parser.add_argument("--count",                dest="count",     help = count_help,     action = ST)
+    parser.add_argument("--merge",                dest="merge",     help = merge_help,     action = ST)
+    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,     action = ST)
+    parser.add_argument("--inter-only",           dest="inter",     help = inter_help,     action = ST)
     
     ## Set ATAC-seq specifict
-    parser.add_argument("--atac-seq",             dest="atac",       help = atac_help,     action = 'store_true')
-    parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = 'store_true')
-    parser.add_argument("--broad",                dest="broad",      help = broad_help,    action = 'store_true')
-    parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = 'store_true')
-    parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = 'store_true')
-    parser.add_argument("--hicexplorer",          dest="hicexp",     help = hicex_help,    action = 'store_true')
+    parser.add_argument("--atac-seq",             dest="atac",       help = atac_help,     action = ST)
+    parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
+    parser.add_argument("--broad",                dest="broad",      help = broad_help,    action = ST)
+    parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = ST)
+    parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
+    parser.add_argument("--hicexplorer",          dest="hicexp",     help = hicex_help,    action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -206,10 +207,11 @@ if __name__ == "__main__":
     nice            = inputs.N            ##     Sets the nice parameter 
 
     ## Set threads                           
-    fastp_threads   = inputs.f            ##     Number of fastp threads
-    bwa_threads     = inputs.b            ##     Number of threads in bwa alignments
-    daskthreads     = inputs.t            ##     Number of threads in dask
     nparallel       = inputs.j            ##     Number of parallel jobs to run at once acorss bwa and filter 
+    fastp_threads   = inputs.f            ##     Number of fastp threads
+    daskthreads     = inputs.t            ##     Number of threads in dask
+    bwa_threads     = inputs.b            ##     Number of threads in bwa alignments
+    bwa_opts        = inputs.B
 
     ## Set variables for Hi-C                
     run_name        = inputs.n            ##     The name of the samples 
@@ -331,13 +333,14 @@ if __name__ == "__main__":
 
     ##      PRESET ATAC and ChIP-seq mode
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## Check if we are in atac seq mode    
+    ## Check if we are in atac seq mode    
     if atac_seq or chip_control:
         keep_dovetail = True
         inhic         = False
         enzymelib     = 'none'
         max_dist      = 1000
         count_mod     = '--atac-seq'
+        bwa_opts      = '-M' if (bwa_opts == hic_options) else bwa_opts
     
         ## Load in macs3 ftns
         from pymacs3 import peakattack
@@ -503,7 +506,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,inhic=inhic,forced=force,nodelist=nodes)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,forced=force,nodelist=nodes,bwaopts=bwa_opts)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
         ## Append to command fil

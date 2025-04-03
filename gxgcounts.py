@@ -7,7 +7,12 @@
 #SBATCH --cpus-per-task=8               ## Number of tasks to be launched
 #SBATCH --partition=tb                  ## Set the partition
 ## Load in mods 
-import pandas as pd, dask.dataframe as dd
+import pandas as pd, sys, dask.dataframe as dd
+
+## Load in current wd 
+from os import getcwd
+## append path path
+sys.path.append(getcwd()) 
 
 ## Set variables used in loading and parsting 
 poscols     = ['Rname1','Rname2','Pos1','Pos2']

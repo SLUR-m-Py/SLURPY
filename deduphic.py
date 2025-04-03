@@ -20,7 +20,7 @@ desc = "Concats, sorts, and removes duplicates from input bedpe files representi
 ## Bring in pandas
 import dask.dataframe as dd, numpy as np 
 ## Bring in params
-from parameters import hicsep
+from parameters import ST, hicsep
 ## Bring in ftn from defaults
 from directories import bedtmpdir
 
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     parser.add_argument("-b",      dest="B",     type=str,  required=True,    help=B_help ) 
     parser.add_argument("-o",      dest="O",     type=str,  required=True,    help=O_help )
     parser.add_argument("-d",      dest="D",     type=str,  required=False,   help=D_help )
-    parser.add_argument("--sort",  dest="sort",   help = sort_help,  action = 'store_true')
-    parser.add_argument("--dedup", dest="dup",    help = dup_help,   action = 'store_true')
+    parser.add_argument("--sort",  dest="sort",   help = sort_help,  action = ST)
+    parser.add_argument("--dedup", dest="dup",    help = dup_help,   action = ST)
    
     ## Set the paresed values as inputs
     inputs = parser.parse_args()

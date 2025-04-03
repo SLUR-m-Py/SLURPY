@@ -13,7 +13,7 @@ from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
 ## Lod in chunk size
-from parameters import chunksize, pairs_help, inter_help
+from parameters import ST, chunksize, pairs_help, inter_help
 """
 Juicer short format:
 
@@ -62,9 +62,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
     parser.add_argument("-i",           dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
-    parser.add_argument('--macs3',      dest="M", help=M_help,      action = 'store_true')
-    parser.add_argument('--pairs',      dest="P", help=pairs_help,  action = 'store_true')
-    parser.add_argument('--inter-only', dest="O", help=inter_help,  action= 'store_true')
+    parser.add_argument('--macs3',      dest="M", help=M_help,      action = ST)
+    parser.add_argument('--pairs',      dest="P", help=pairs_help,  action = ST)
+    parser.add_argument('--inter-only', dest="O", help=inter_help,  action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()

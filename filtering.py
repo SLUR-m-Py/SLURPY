@@ -18,7 +18,7 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
-import pandas as pd, dask.dataframe as dd, subprocess
+import pandas as pd, dask.dataframe as dd
 ## Load in params
 from parameters import chunksize, map_q_thres, hicsep, error_dist
 ## Bring in ftns from slurpy 
@@ -122,7 +122,7 @@ B_help     = "Path to an input bed paired-end file (bedpe)."
 I_help     = "List of chormosomes/contigs to only include in analysis"
 
 ## Import help messages
-from parameters import L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help, hicex_help, dove_help
+from parameters import ST, L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help, hicex_help, dove_help
 
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1','Distance']
@@ -149,11 +149,11 @@ if __name__ == "__main__":
     parser.add_argument("-x", dest="x", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
     parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
     parser.add_argument("-Z", dest="Z", type=int,  required=False,  help=Z_help, metavar='rown',      default=chunksize    )
-    parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar='n (bp)',    default=0)
+    parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar='n (bp)',    default=0            )
     ## Add boolean 
-    parser.add_argument("--dedovetail",     dest="D",  help = dove_help,    action = 'store_true')
-    parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = 'store_true')
-    parser.add_argument("--hicexplorer",    dest="E",  help = hicex_help,   action = 'store_ture')
+    parser.add_argument("--dedovetail",     dest="D",  help = dove_help,    action = ST)
+    parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = ST) 
+    parser.add_argument("--hicexplorer",    dest="E",  help = hicex_help,   action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
