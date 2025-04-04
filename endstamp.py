@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## ----------------------------------------- LOAD IN MODULES ------------------------------------------ ## 
 ## Load time and sys mods 
-import time, sys
+import time, sys, pandas as pd 
 ## Load in os path getctime
 from os.path import getctime
 ## Load in date and time
@@ -31,7 +31,7 @@ from pysamtools import writetofile
 ## Load in sort glbo 
 from defaults import sortglob
 ## load in log dir
-from directories import debugdir
+from directories import debugdir, diagdir
 
 ## ------------------------------------------ Input Variables ------------------------------------------ ##
 ## Gather the file name, the start time stamp from input and calculate the end time stamp 
@@ -54,6 +54,59 @@ runtime = dt2 - dt1 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strfti
 
 ## Write the timestamp to file 
 writetofile(filename,['SUBMIT TIME: %s\n'%dt0, 'START TIME: %s\n'%dt1, 'END TIME: %s\n'%dt2, 'RUN TIME: %s\n'%runtime],False)
+
+## Gather filtering and duplicate logs
+filter_logs = sortglob(f'./{debugdir}/*.filter.bedpe.*.log')
+duplit_logs = sortglob(f'./{debugdir}/*.dedup.*.log')
+
+## Gather counts across logs 
+mappings = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in filter_logs]).groupby('Mapping').sum()
+duplicat = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in duplit_logs]).groupby('Mapping').sum()
+
+## Copy new map
+newmap = pd.concat([mappings,duplicat],axis=0)
+## Adjust for duplicates
+newmap.loc['INFO: Interhic','Counts'] = newmap.loc['INFO: Interhic','Counts'] - duplicat.loc['INFO: Interdups','Counts']
+newmap.loc['INFO: Intrahic','Counts'] = newmap.loc['INFO: Intrahic','Counts'] - duplicat.loc['INFO: Intradups','Counts']
+## Reset the index
+newmap.reset_index(inplace=True)
+## Reet column name
+newmap['Mapping'] = [v.split('INFO: ')[-1] for v in newmap.Mapping.tolist()]
+
+## Calc number of total pairs from mapped
+thecount = newmap[(newmap.Mapping!='Valid')].Counts.sum()
+
+## Bring in total read counts if the exist
+counts_paths = [p for p in sortglob(f'./{diagdir}/*.counts.csv') if 'valid' not in p]  
+## If we found any paths
+if len(counts_paths):
+    total_counts = pd.concat([pd.read_csv(p,header=None,names=['Name','Pairs','Total']) for p in counts_paths],axis=0)
+    total_counts = total_counts.Total.sum()
+    fastp_lost = total_counts - thecount
+else:
+    print("WARNING: Unable to find fastp log(s)!")
+    fastp_lost = 0
+    total_counts = thecount
+
+## Transpose and add fastp counts
+newmap = newmap.T
+newmap['fastp'] = ['fastp',fastp_lost]
+
+## Retranspose newmap
+newmap = newmap.T
+newmap.reset_index(drop=True,inplace=True)
+## Calc new sum 
+newsum = newmap[(newmap.Mapping!='Valid')].Counts.sum()
+
+## Check our work 
+if abs(newsum  - total_counts):
+    print("WARNING: The total number of counts did not match after accounting for those removed by fastp: %s - %s"%(newsum,total_counts))
+
+## Set outfile name
+outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
+
+## Save out new map
+newmap.to_csv(outfilename,index=False)
 
 ## Print to log
 print("Finished our SLUR(M)-py!")
