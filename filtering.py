@@ -183,6 +183,18 @@ if __name__ == "__main__":
     too_check_paths = []
     hic_valid_paths = []
 
+    ## Set counts
+    unmapped_counts = 0
+    dovetail_counts = 0
+    excluded_counts = 0
+    lowquals_counts = 0
+    interchr_counts = 0
+    largefrg_counts = 0
+    errorfrg_counts = 0
+    validhic_counts = 0
+    interhic_counts = 0
+    intrahic_counts = 0
+
     ## Load in the bedpe file using chunks 
     with pd.read_csv(bedpe_path,sep=hicsep,chunksize=chunksize) as chunks:
         ## Iteraet over the chunks 
@@ -200,11 +212,18 @@ if __name__ == "__main__":
 
             ## Gather the unmapped reads if any 
             unmapped = bedpe[(bedpe.Rname1=='*') | (bedpe.Rname2=='*') | (bedpe.Cigar1=='*') | (bedpe.Cigar2=='*') | (bedpe.Orientation=='Unmapped')].copy()
-            unmapped['Error'] = 'unmapped'
-            ## Append to not_used
-            not_used.append(unmapped) if unmapped.shape[0] else None 
-            ## Drop the unmapped 
-            bedpe.drop(unmapped.index,axis=0,inplace=True)
+            ## Count the unmapped
+            unmapped_count = unmapped.Rname1.count()
+            ## If we have any unmapped
+            if unmapped_count:
+                ## Add to the overall count
+                unmapped_counts += unmapped_count
+                ## Set the error 
+                unmapped['Error'] = 'unmapped'
+                ## Append to not_used
+                not_used.append(unmapped) 
+                ## Drop the unmapped 
+                bedpe.drop(unmapped.index,axis=0,inplace=True)
 
             ## Set dangling ends, those that we know have dangling ends, and set error 
             #dang_ends = bedpe[(bedpe.Dangend1>0) | (bedpe.Dangend2>0)].copy()
@@ -218,11 +237,18 @@ if __name__ == "__main__":
             if dovetail:
                 ## Gather dovetailed reads, set error message 
                 dovetailed = bedpe[(bedpe.End1>=bedpe.Pos2) & (bedpe.Inter==0)].copy()
-                dovetailed['Error'] = 'dovetailed'
-                ## append to the not used
-                not_used.append(dovetailed) if dovetailed.shape[0] else None 
-                ## Drop from bedpe chunk
-                bedpe.drop(dovetailed.index,axis=0,inplace=True)
+                ## Set the dovetail count
+                dovetail_count = dovetailed.End1.count()
+                ## If we have counts 
+                if dovetail_count:
+                    ## Add to the count of dove tail rads
+                    dovetail_counts += dovetail_count
+                    ## Set the error 
+                    dovetailed['Error'] = 'dovetailed'
+                    ## append to the not used
+                    not_used.append(dovetailed)
+                    ## Drop from bedpe chunk
+                    bedpe.drop(dovetailed.index,axis=0,inplace=True)
             else:
                 pass 
             
@@ -230,11 +256,18 @@ if __name__ == "__main__":
             if len(excludes):
                 ## Gather reads mapping to exclude list of chromosomes
                 toexclude = bedpe[(bedpe.Rname1.isin(excludes) | bedpe.Rname2.isin(excludes))].copy()
-                toexclude['Error'] = 'excluded'
-                ## Appedn to the not used lsit
-                not_used.append(toexclude) if toexclude.shape[0] else None 
-                ## Drop out the unused apirs
-                bedpe.drop(toexclude.index,axis=0,inplace=True)
+                ## Set the count 
+                exclude_count = toexclude.Rname1.count()
+                ## If we have counts
+                if exclude_count:
+                    ## Update the count
+                    excluded_counts += exclude_count
+                    ## Set the error message 
+                    toexclude['Error'] = 'excluded'
+                    ## Appedn to the not used lsit
+                    not_used.append(toexclude) 
+                    ## Drop out the unused apirs
+                    bedpe.drop(toexclude.index,axis=0,inplace=True)
             else:
                 pass 
 
@@ -242,54 +275,71 @@ if __name__ == "__main__":
             if len(includos):
                 ## Gather read pairs that we are not include
                 toexclude = bedpe[~(bedpe.Rname1.isin(includos) & bedpe.Rname2.isin(includos))].copy()
-                toexclude['Error'] = 'excluded'
-                ## Appedn to the not used lsit
-                not_used.append(toexclude) if toexclude.shape[0] else None 
-                ## Drop out the unused apirs
-                bedpe.drop(toexclude.index,axis=0,inplace=True)
+                ## Calc rows 
+                exclude_count = toexclude.Rname1.count()
+                ## if we have chroms to not exclude
+                if exclude_count:
+                    ## update the count
+                    excluded_counts += exclude_count
+                    ## Add the error 
+                    toexclude['Error'] = 'excluded'
+                    ## Appedn to the not used lsit
+                    not_used.append(toexclude) 
+                    ## Drop out the unused apirs
+                    bedpe.drop(toexclude.index,axis=0,inplace=True)
             else:
                 pass 
 
             ## Remove low quality mapping, set error to low qual
             lowqual = bedpe[(bedpe.Minmapq<minmapq)].copy()
-            lowqual['Error'] = 'lowqual'
-            ## Append to the not used list
-            not_used.append(lowqual) if lowqual.shape[0] else None 
-            ## Drop from bedpe chunk
-            bedpe.drop(lowqual.index,axis=0,inplace=True)
+            ## Count the low qual
+            lowqual_count = lowqual.Minmapq.count()
+            ## If we have low quality reads
+            if lowqual_count:
+                ## Update counts
+                lowquals_counts += lowqual_count
+                ## Set error 
+                lowqual['Error'] = 'lowqual'
+                ## Append to the not used list
+                not_used.append(lowqual)
+                ## Drop from bedpe chunk
+                bedpe.drop(lowqual.index,axis=0,inplace=True)
 
             ## Remove inter chromosome reads
             if intraonly:
+                ## Gather inter
                 interc = bedpe[(bedpe.Orientation=='Inter')].copy()
-                interc['Error'] = 'inter'
-                ## Append to not used list
-                not_used.append(interc) if interc.shape[0] else None 
-                ## Drop from bedpe chunk
-                bedpe.drop(interc.index,axis=0,inplace=True)
+                ## Count 
+                inter_count = interc.Rname1.count()
+                ## If we have counts
+                if inter_count:
+                    ## Add to the count 
+                    interchr_counts += inter_count
+                    ## Add error 
+                    interc['Error'] = 'inter'
+                    ## Append to not used list
+                    not_used.append(interc) 
+                    ## Drop from bedpe chunk
+                    bedpe.drop(interc.index,axis=0,inplace=True)
             else:
                 pass 
 
             ## Filter those contacts larger distacen
             if max_dist:
+                ## Gather those fragments to far away from eachother 
                 tolarge = bedpe[(bedpe.Distance>max_dist) & (bedpe.Orientation!='Inter')].copy()
-                tolarge['Error'] = 'largefrag'
-                ## Append to no not used list
-                not_used.append(tolarge) if tolarge.shape[0] else None
-                ## Drop from bedpe chunk
-                bedpe.drop(tolarge.index,axis=0,inplace=True)
-            else:
-                pass 
-
-            ## If restriction sites were passed 
-            if restriciton_sites: 
-                ## Append to list 
-                too_check_paths.append(too_check_path)
-                ## Gather the read pairs we plan to check for intra fragments
-                tocheck = bedpe[(bedpe.Distance<=error_dist) & (bedpe.Orientation.isin(['Outward','Inward'])) & (bedpe.Inter==0)].copy()
-                ## SAve out the reads to check for intra fragments
-                tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) if tocheck.shape[0] else None 
-                ## Drop these from bedpe
-                bedpe.drop(tocheck.index,axis=0,inplace=True)
+                ## Count the fragments
+                tolarge_count = tolarge.Rname1.count()
+                ## If we ahve counts 
+                if tolarge_count:
+                    ## Count the to large frags
+                    largefrg_counts += tolarge_count
+                    ## ADd the error 
+                    tolarge['Error'] = 'largefrag'
+                    ## Append to no not used list
+                    not_used.append(tolarge) 
+                    ## Drop from bedpe chunk
+                    bedpe.drop(tolarge.index,axis=0,inplace=True)
             else:
                 pass 
 
@@ -300,12 +350,39 @@ if __name__ == "__main__":
                 ## save the output 
                 pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) 
             
-            ## IF we have reads to concat 
-            if bedpe.shape[0]:
+            ## If restriction sites were passed 
+            if restriciton_sites: 
+                ## Gather the read pairs we plan to check for intra fragments
+                tocheck = bedpe[(bedpe.Distance<=error_dist) & (bedpe.Orientation.isin(['Outward','Inward'])) & (bedpe.Inter==0)].copy()
+                ## Count the checks
+                tocheck_count = tocheck.Rname1.count()
+                ## If we have counts
+                if tocheck_count:
+                    ## Append to list 
+                    too_check_paths.append(too_check_path)
+                    ## Save out the reads to check for intra fragments
+                    tocheck.drop('Error',axis=1).to_csv(too_check_path,sep=hicsep,header=True,index=False) 
+                    ## Drop these from bedpe
+                    bedpe.drop(tocheck.index,axis=0,inplace=True)
+            else:
+                pass 
+
+            ## count the valid
+            valid_count = bedpe.Rname1.count()
+            ## If we have valid count
+            if valid_count:
+                ## Add to the total valid counts
+                validhic_counts += valid_count
                 ## append to path 
                 hic_valid_paths.append(hic_valid_path)
                 ## Save out the not used reads and the to check names 
                 bedpe.drop('Error',axis=1).to_csv(hic_valid_path,sep=hicsep,header=True,index=False) 
+                ## Count the inter
+                interhic_count = bedpe.Inter.sum()
+                interhic_counts += interhic_count
+                ## Calc the intra hic 
+                intrahic_count = valid_count - interhic_count
+                intrahic_counts += intrahic_count
 
     ## Delet the last chunks, we don't need these
     del bedpe, not_used
@@ -339,9 +416,6 @@ if __name__ == "__main__":
                 if hicexplorer: ## Perform our hic exploer filtering                 
                     ## Initiate the fragment sites
                     tocheck['Left1'], tocheck['Right1'], tocheck['Left2'], tocheck['Right2'] = -1, -1, -1, -1
-
-                    ## Set the chrom sequence
-                    chrseq = ref.seq
         
                     ## Iterate thru the tupels 
                     for (a,b,c) in value_tuple:
@@ -350,6 +424,7 @@ if __name__ == "__main__":
                     ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
                     intra_frags = tocheck[(tocheck.Left1==tocheck.Left2) | (tocheck.Right1 == tocheck.Right2) | (tocheck.Right1>=tocheck.Left2)]
                     intra_count = intra_frags.Left1.count()
+
                     ## Gather qnames if intrafrags has hsape
                     if intra_count:
                         ## Gather qnames and update the list of qnames
@@ -376,37 +451,55 @@ if __name__ == "__main__":
 
                     ## Gather the intra fragment read pairs, those with fragmetns / rest sites bounds that are equal or overlapping 5' to 3'
                     intra_frags = tocheck[(tocheck.Distance<0) | (tocheck.Rcount<1)]
-                    intra_count = intra_frags.shape[0]
+                    intra_count = intra_frags.Pos1.count()
 
                     ## Gather qnames if intrafrags has hsape
                     if intra_count:
-                        ## Gather qnames and update the list of qnames
-                        #print(ref.id,intra_count)
+                        ## udpate intra qnames 
                         intra_all_qnames.update(intra_frags.Qname1.tolist())                    
-            else:
+            else: ## otherwise we didn't find the chromosmoe 
                 pass 
-        #print('Do we have intra fragments')
+            
         ## IF we have qnames that are errors
         if len(intra_all_qnames):
             #print('Yes we do!')
             ## Set the qnames 
             errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
-            errors['Error'] = 'intrafrag'
-            ## Set path to save out the errors 
-            out_error_path = makeoutpath(bedpe_path,f'errors.{0}')
-            ## append to path
-            not_usede_paths.append(out_error_path)
-            ## SAve out the errors
-            errors.to_csv(out_error_path,sep=hicsep,single_file=True,index=False)
+            ## count errors
+            error_count = errors.Qname1.count()
+            ## add to the error count
+            if error_count:
+                errorfrg_counts += error_count
+                errors['Error'] = 'intrafrag'
+                ## Set path to save out the errors 
+                out_error_path = makeoutpath(bedpe_path,f'errors.{0}')
+                ## append to path
+                not_usede_paths.append(out_error_path)
+                ## SAve out the errors
+                errors.to_csv(out_error_path,sep=hicsep,single_file=True,index=False)
 
         ## Gather the valid
         valid = allcheck[(~allcheck.Qname1.isin(intra_all_qnames))]
-        ## SEt the output path to save the valid contacts
-        out_valid_path = makeoutpath(bedpe_path,f'tohic.{0}')
-        ## Append to list of paths of valid
-        hic_valid_paths.append(out_valid_path)
-        ## Save out the valid contacts
-        valid.to_csv(out_valid_path,sep=hicsep,single_file=True,index=False)
+        ## Count the valid
+        valid_count = valid.Rname1.count()
+        ## If we have valid counts
+        if valid_count:
+            ## If we have valid counts 
+            validhic_counts += valid_count
+            ## SEt the output path to save the valid contacts
+            out_valid_path = makeoutpath(bedpe_path,f'tohic.{0}')
+            ## Append to list of paths of valid
+            hic_valid_paths.append(out_valid_path)
+            ## Save out the valid contacts
+            valid.to_csv(out_valid_path,sep=hicsep,single_file=True,index=False)
+            ## Count the inter chromosomes
+            interhic_count = valid.Inter.sum()
+            ## Aadd to the inter count 
+            interhic_counts += interhic_count
+            ## Calculate the intra
+            intrahic_count = valid_count - interhic_count
+            ## Add the intra
+            intrahic_counts += intrahic_count
     else:
         pass 
 
@@ -421,6 +514,12 @@ if __name__ == "__main__":
     ## Iterate thur and seperat on chromosomes, and saveout the contact. NOTE: We have to do this (rather than groupby) b/c dask dataframes can't precompute groups
     [bedpe[(bedpe.Rname1==chrom)].to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     
+    ## Write out the counts
+    new_names = [   'Unmapped',    'Dovetails',    'Excluded',    'Lowquality',   'Inter',     'Largefragment',  'Samefragment',    'Valid',       'Interhic',      'Intrahic']
+    new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
+
+    ## Iterate thru and print the counts to log 
+    [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## print to log
     print("Finished filtering and splitting bedpe file: %s"%bedpe_path)
 ## End of file 
