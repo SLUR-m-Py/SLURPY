@@ -107,11 +107,11 @@ if __name__ == "__main__":
         ## Gather duplicate hits by read names 
         duplicates = pos_dups[~(pos_dups.Qname1.isin(pos_uniq.Qname1))] 
         ## Count the duplicates
-        duplicate_count = duplicates.Pos1.count().compute()
+        duplicate_count = duplicates.Pos1.count()
         ## If we have duplicates
         if duplicate_count:
             ## Calculate the inter duplicates
-            interdup_count = duplicates.Inter.sum().compute()
+            interdup_count = duplicates.Inter.sum()
             ## Calc the intra dup count
             intradup_count = duplicate_count - interdup_count
             ## Update counts
