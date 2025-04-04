@@ -97,7 +97,7 @@ newmap['total'] = ['Total',total_counts]
 newmap = newmap.T
 newmap.reset_index(drop=True,inplace=True)
 ## Calc new sum 
-newsum = newmap[(newmap.Mapping!='Valid')].Counts.sum()
+newsum = newmap[(~newmap.Mapping.isin(['Valid','Total']))].Counts.sum()
 
 ## Check our work 
 if abs(newsum  - total_counts):
@@ -106,6 +106,8 @@ if abs(newsum  - total_counts):
 ## Set outfile name
 outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
 
+## Format counts column into integers
+newmap['Counts'] = newmap.Counts.apply(int)
 ## Save out new map
 newmap.to_csv(outfilename,index=False)
 
