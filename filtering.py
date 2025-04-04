@@ -517,7 +517,6 @@ if __name__ == "__main__":
     ## Write out the counts
     new_names = [   'Unmapped',    'Dovetails',    'Excluded',    'Lowquality',   'Inter',     'Largefragment',  'Samefragment',    'Valid',       'Interhic',      'Intrahic']
     new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
-
     ## Iterate thru and print the counts to log 
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## print to log

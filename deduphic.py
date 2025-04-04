@@ -61,6 +61,8 @@ if __name__ == "__main__":
     parser.add_argument("-b",      dest="B",     type=str,  required=True,    help=B_help ) 
     parser.add_argument("-o",      dest="O",     type=str,  required=True,    help=O_help )
     parser.add_argument("-d",      dest="D",     type=str,  required=False,   help=D_help )
+
+    ## Add boolean vars 
     parser.add_argument("--sort",  dest="sort",   help = sort_help,  action = ST)
     parser.add_argument("--dedup", dest="dup",    help = dup_help,   action = ST)
    
@@ -83,6 +85,10 @@ if __name__ == "__main__":
     ## Load in bedpe file
     bedpe = dd.read_csv(input_paths,sep=hicsep)
 
+    ## Preset duplicate counts
+    interdup_counts = 0
+    intradup_counts = 0
+
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
     if sorting and deduplicate:
         ## Gather the counts and number of uniq pos1 and 2
@@ -100,8 +106,19 @@ if __name__ == "__main__":
         pos_uniq   = pos_dups.drop_duplicates(drop_by)
         ## Gather duplicate hits by read names 
         duplicates = pos_dups[~(pos_dups.Qname1.isin(pos_uniq.Qname1))] 
-        ## Save the duplicates to csv 
-        duplicates.to_csv(dedupe_path,header=True,index=False,sep=hicsep) if duplicates.shape[0] else None 
+        ## Count the duplicates
+        duplicate_count = duplicates.Pos1.count().compute()
+        ## If we have duplicates
+        if duplicate_count:
+            ## Calculate the inter duplicates
+            interdup_count = duplicates.Inter.sum().compute()
+            ## Calc the intra dup count
+            intradup_count = duplicate_count - interdup_count
+            ## Update counts
+            interdup_counts += interdup_count
+            intradup_counts += intradup_count
+            ## Save the duplicates to csv 
+            duplicates.to_csv(dedupe_path,header=True,index=False,sep=hicsep) 
 
         ## Drop duplicates,sort values, and save out a csv file 
         bedpe[~(bedpe.Qname1.isin(duplicates.Qname1))].sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
@@ -112,6 +129,12 @@ if __name__ == "__main__":
     ## Otherwise just concat inputs 
     else: ## Do nothing
         print("WARNING: A combination of arguments left us doing nothing for this call of deduphic.py.")
+    
+    ## Format new names and print counts
+    new_names = [  'Interdups',     'Intradups']
+    new_count = [interdup_counts, intradup_counts]
+    ## Iterate thru and print the counts to log 
+    [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## Print to log
     print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s"%filebackend)
 ## End of file 
