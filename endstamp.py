@@ -108,6 +108,8 @@ outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
 
 ## Format counts column into integers
 newmap['Counts'] = newmap.Counts.apply(int)
+## ADd the percent to the new map
+newmap['Percent'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Total')].Counts.max()]
 ## Save out new map
 newmap.to_csv(outfilename,index=False)
 
