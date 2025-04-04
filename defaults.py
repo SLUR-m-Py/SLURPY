@@ -20,8 +20,6 @@ croth@lanl.gov
 """
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      MODULE LOADING 
-## Load in directories
-from directories import *
 ## Load in glob
 from glob import glob 
 ## Bring in sub-process mod
@@ -31,45 +29,50 @@ from os.path import basename, exists as pathexists, getsize as getfilesize
 ## Bring in make dirs
 from os import makedirs, remove 
 ## Bring in our costum ftns from pysamtools 
-from pysamtools import ifprint, splitbam, splitsam, makelist, dictzip, getprimary
+from pysamtools import ifprint, splitbam, makelist, dictzip, samblaster, getprimary
 ## Load in pandas
 import pandas as pd 
-## Load in date and time
-from datetime import datetime
 ## Load in rm tree
 from shutil import rmtree
-## Bring in vars from prep run
-from parameters import fakejobid, runlocal
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      VARIABLE SETTING
+## Set the run local var
+runlocal = False 
+## Fake job id used for debugging only 
+fakejobid = 400000             
+## Path to human t2t ref on canopus 
+t2t_refpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCA_009914755.4_T2T-CHM13v2.0_genomic.named.fasta' 
+
+## Set Juicer columns and data types 
+juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
+juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,     str,    str,    int,    str,    str,    str  ]
+
+## Format datatypes into dict
+juicer_type_dict = dictzip(juicer_cols,juicer_types)
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      DIRECTORY NAMES 
+## Set directory names 
+debugdir   = 'debug'         ##      Hold logs for debug 
+fastqdir   = 'fastqs'        ##      The directory holding fastq files 
+aligndir   = 'aligned'       ##      Holds final aligments 
+splitsdir  = 'splits'        ##      Temporary dir for split fastq 
+comsdir    = 'commands'      ##      Folder for holding all command files 
+macs2dir   = 'macs2'         ##      Has results from macs2 
+hicdir     = 'hic'           ##      Has hic resluts 
+diagdir    = 'diagnostics'   ##      Plots for diagnostics are held here 
+bamtmpdir  = 'bamtmp'        ##      A temporary dir for hodling bam files from split fastq aligments 
+scriptsdir = './SLURPY'      ##      The script directory holding this file
+
+## Group the dirs 
+grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bamtmpdir]
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      SLURPY FUNCTIONS 
-## Ftn for submitting que checks
-def submitter(command:str) -> list:
-    ## Sub process check output 
-    return subprocess.check_output(command, shell=True).decode("utf-8").split('\n')   
-
-## Ftn for cehcking queue 
-def checkqueue(step:str) -> int:
-    ## Sum the setps in l 
-    return sum([step in l for l in submitter('squeue')]) 
-
-## Ftn for sorting fastq files by size
-def sortfastq(infastq:list,splitsizes:list):
-    ## Format input fastq zipped list into df
-    tmp = pd.DataFrame(infastq,columns=['Read1','Read2'])
-    ## Gather sizes of fast
-    tmp['Size1'] = [getfilesize(f1) for (f1,f2) in infastq]
-    ## Sort values by size and reset index 
-    tmp = tmp.sort_values('Size1').reset_index(drop=True)
-    ## Modify split sizzes 
-    splitsizes = [splitsizes[0] for s in range(tmp.shape[0])] if (len(splitsizes) < tmp.shape[0]) else splitsizes
-    ## Add a sorted list to splitsize to match size of fastqs 
-    tmp['Splitsize'] = sorted([int(s)*4 for s in splitsizes])
-    ## Return tmp
-    return tmp 
-
 ## Ftn for returning a sorted glob
 def sortglob(wildcard:str) -> list:
     """Retuns the sorted glob of input wild card."""
@@ -94,12 +97,6 @@ def basenobam(inbam:str) -> str:
     ## Return the split basename
     return basename(splitbam(inbam))
 
-## Ftn for returning just the bam file name without the .bam
-def basenosam(inbam:str) -> str:
-    """Returns the basename of an input bam file without the .bam file extension."""
-    ## Return the split basename
-    return basename(splitsam(inbam))
-
 ## Ftn for takeing basename 
 def basenoext(inpath:str) -> str:
     """Returns the basename of an input file with no extension."""
@@ -117,6 +114,12 @@ def fileexists(filepath:str) -> bool:
     """Checks the existance and size of an input file (foodstuffs)."""
     ## Via os, check if the path to "food" exists and meets our size threshold
     return pathexists(filepath) and checkfilesize(filepath)
+
+## Write ftn if path is gzipped
+def isgzip(inpath:str) -> bool:
+    """Checks if the input file is g-zipped (i.e. ends with a gz)."""
+    ## Return the check 
+    return (inpath.split('.')[-1] == 'gz')
 
 ## Ftn to adds forward slash
 def addfslash(inpath:str) -> str:
@@ -149,7 +152,7 @@ def checkfastp(fsplits:int,fthreads:int) -> tuple:
     if (fsplits%fthreads != 0):
         print(f'WARNING: The number of splits set for fastp ({fsplits}) is not an even multiple of the thread count ({fthreads}).')
         ## Reset the thread count to half the split number
-        fsplits = fthreads
+        fsplits = fsplits + (fsplits%fthreads)
         ## Print we are resetting
         print(f'WARNING: The number fastp threads to conduct {fsplits} splits was reset to {fthreads}.')
     ## Return the number of splits and threads for fastp 
@@ -203,15 +206,8 @@ def getfastqs(fpath:str) -> list:
     """Lists fastq files in pair from input, wildcard path."""
     ## Gather all read fastq.gz files
     reads = sortglob(fpath)
-    ## parse r1 and r2 
-    r1,r2 = reads[::2], reads[1::2]
-    ## Check r1 and r2, for proper naming convention
-    for r in r1:
-        assert '_R1_' in r, "ERROR: the first in pair needs to have the name _R1_ in the read name."
-    for r in r2:
-        assert '_R2_' in r, "ERROR: the second in pair needs to have the name _R2_ in the read name."
     ## Gather the pairs
-    return listzip(r1,r2)
+    return listzip(reads[::2],reads[1::2])
 
 ## Ftn for calling sub-process
 def submitsbatch(pathtoscript:str) -> int:
@@ -239,23 +235,11 @@ def isbwaix(inref:str, indexends = ['amb', 'ann', 'bwt', 'pac', 'sa']) -> int:
     ## Check if each of these files exist: amb, ann, bwt, pac and sa
     return sum([pathexists(inref+'.'+fe) for fe in indexends]) == len(indexends)
 
-## Ftn for readin an ann file from bwa index
-def readann(inpath:str) -> list:
-    """Parses an input reference .ann file from bwa index to generate chromosome dataframe of contig names and lengths."""
-    ## open and read in the lines
-    with open(inpath,'r') as inhandle:
-        ## Take up to the third column of each line
-        newlines = [l.split(' ')[:3] for l in inhandle]
-        inhandle.close()
-    ## Gather chromosomes
-    contigs = [l[1] for l in newlines[1::2]]
-    lengths = [int(l[1]) for l in newlines[2::2]]
-    ## Format and return a dataframe
-    return pd.DataFrame(list(zip(contigs,lengths)))
-    
 ## Ftn for formating an sbatch text
-def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7, nodelist=None) -> list:
+def sbatch(nameojob:str, cpus:int, cwd:str, errordir=None, partition=None, nodes=1, tasks=1, runtime='200:00:00') -> list:
     """Generates the sbatch settings for a script with a give input jobname, cpu count, working directory, and others."""
+    ## Set the error and out dir
+    errordir = errordir if errordir else debugdir
     ## Gather the extension
     jobext = nameojob.split('.')[-1] if nameojob else 'sh'
     ## Set the runner
@@ -263,31 +247,24 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
     ## return the formated sbatch txt
     settings = [f'#!/usr/bin/env {runner}\n',                                                 ##      The shebang
                  '#SBATCH --job-name=%s\n'%basenoext(nameojob) if nameojob else '\n',         ##      Name of job 
-                 '#SBATCH -o %s\n'%report,                                                    ##      Set the debug dir and report anme 
+                f'#SBATCH --output={errordir}/%x.%j.out' +'\n',                               ##      Output log 
+                f'#SBATCH --error={errordir}/%x.%j.err' + '\n',                               ##      Error log
                  '#SBATCH --nodes=%s\n'%str(nodes),                                           ##      Number of nodes
                  '#SBATCH --ntasks-per-node=%s\n'%str(tasks),                                 ##      Tasks per node
                  '#SBATCH --cpus-per-task=%s\n'%str(cpus),                                    ##      Number of cpus
-                 '#SBATCH --time=%s\n'%runtime,                                               ##      Set nice parameter
-                 '#SBATCH --nice=%s\n'%str(nice)]                                             ##      The allowed run time of the job 
+                 '#SBATCH --time=%s\n'%runtime]                                               ##      The allowed run time of the job 
     ## Add the current working dir                                                            ##  
     settings = settings + ['#SBATCH --chdir=%s\n'%cwd] if cwd else settings                   ##      Set the current workign dir
     ## Add the partition                                                                      ##      
     settings = settings + ['#SBATCH --partition=%s\n'%partition] if partition else settings   ##      The partitions
-    ## Add nodes if they were passed
-    settings = settings + ['#SBATCH --nodelist=%s\n'%','.join(nodelist)] if nodelist else settings ## List of nodes to run on
     ## return settings 
     return settings
-
-"""
- f'#SBATCH --output={errordir}/%x.%j.out' +'\n',                               ##      Output log 
- f'#SBATCH --error={errordir}/%x.%j.err' + '\n',                               ##      Error log
-"""
 
 ## Ftn for the begining of a call to fastp
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:
     """Formats the start of a call to fastp given inputs (i,I), outputs (o,O), and the report name (r)."""
     ## Format the fall and return
-    return f'{slurpydir}/fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
+    return f'fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
 
 ## Ftn for returning a boolean if in hic
 def inhic(inexp:str) -> bool:
@@ -299,15 +276,15 @@ def inhic(inexp:str) -> bool:
 def fastdry(r1:str, r2:str, report:str) -> str:
     """Formats an echo command for logging the completion of a fastp split."""
     ## reformat the report 
-    #report = report if report.split('.')[-1] == 'txt' else report + '.txt'
+    report = report if report.split('.')[-1] == 'txt' else report + '.txt'
     ## Format and return the echo command
-    return f'{slurpydir}/myecho.py Finished filtering and splitting on: {r1} {r2} {report}\n'
+    return f'echo Finished filtering and splitting on: {r1} {r2} >> {report}' + '\n'
 
 ## Ftn for formating report
-def reportname(inbam:str, script:str, i=0) -> str:
+def reportname(inbam:str, script:str) -> str:
     """Formats the report name given the input bam file name and type of script (str)."""
     ## Return the report name
-    return f'{debugdir}/{i}.{script}.{basenobam(inbam)}.log'
+    return f'{debugdir}/{basenobam(inbam)}.{script}.log.txt'
 
 ## Ftn for loading in script
 def loadscript(inpath:str) -> list:
@@ -321,25 +298,13 @@ def loadscript(inpath:str) -> list:
     ## Return all but the first line 
     return scriptlines[1:] + ['\n']
 
-## Ftn for callign samblaster
-def samblaster(inbam,outbam,report,threads) -> str:
-    """Formats a call to samtools and samblaster given inputs."""
-    ## Return the samtools and samblaster command 
-    return f'samtools view -@ {threads} -h {inbam} | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
-
-"""
-## Remove sort command from above
-    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
-
-"""
-
 ## Ftn for formating samblaster command
-def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
+def markduplicates(inbam:str, threads:int, script='mark') -> tuple:
     """Formats and submits a samtools and samblaster command to mark duplicates on input bam file (i) and saves to output (o)."""
     ## Format the output bams and the report name 
-    outbam, report = f'{aligndir}/{basenobam(inbam)}.marked.bam', reportname(inbam,script,i=pix) 
+    outbam, report = f'{aligndir}/{basenobam(inbam)}.marked.bam', reportname(inbam,script) 
     ## Format the sam-blaster and echo command
-    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'{slurpydir}/myecho.py Finished marking duplicates in {outbam} {report}\n'
+    blast_command, echo_command = samblaster(inbam,outbam,report,threads), f'echo Finished marking duplicates in {outbam} >> {report}\n'
     ## Return the samblaster command and ecco chommand 
     return outbam, [blast_command, echo_command], report
 
@@ -347,7 +312,7 @@ def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
 def splitecho(inbam:str, report: str, script:str) -> str:
     """Formats an echo statment for the split command."""
     ## Return the formated command 
-    return f'{slurpydir}/myecho.py Finished splitting {inbam} using {script} {report}\n'
+    return f'echo Finished splitting {inbam} using {script} >> {report}\n'
 
 ## Write ftn for making a directory
 def dirmaker(dirpath:str):
@@ -371,7 +336,7 @@ def headpath(inpath:str) -> str:
 def bwaindex(refpath:str,script='index') -> tuple:
     """Formats command to index a reference via bwa."""
     ## return the index commands
-    return [f'bwa index {refpath}\n', f'{slurpydir}/myecho.py Finished indexing reference on path {refpath} {reportname(refpath,script)}\n'], reportname(refpath,script)
+    return [f'bwa index {refpath}\n', f'echo Finished indexing reference on path {refpath} > {reportname(refpath,script)}\n'], reportname(refpath,script)
 
 ## Ftn for formating job ids
 def formatids(cdf:pd.DataFrame, op:list, joinon=',') -> str:
@@ -392,10 +357,10 @@ def jobname(args:list) -> str:
     return '--job-name=%s'%'.'.join(map(str,args))
 
 ## Ftn for submission of jobs with dependencies 
-def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestamp:str, clusterpart:str, bylast=False, group='Sample', debug=False) -> list:
+def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestamp:str, clusterpart:str, bylast=False,group='Sample',debug=False) -> list:
     """Formats and submits sbatch jobs from command dataframe based on operations and dependents"""
     ## Initilzse cap and lists
-    subsbatchs, dependent = [], makelist(dependent) + ['bwaix']
+    subsbatchs, dependent = [], makelist(dependent)
     ## group the 
     for sample_ix, sample_df in command_df[(command_df.Torun==0)].groupby(group):
         ## Gather the operaiton and dependent ix
@@ -411,7 +376,7 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestam
             ## Set the row
             row = command_df.loc[m,:]
             ## Format the bwa ids
-            djobids, jobparts = formatids(command_df[(command_df.index.isin(dependent_ix)) | (command_df.Operation=='bwaix')],dependent), jobname([operation,m,clusterpart,timestamp])
+            djobids, jobparts = formatids(command_df[(command_df.index.isin(dependent_ix))],dependent), jobname([operation,m,clusterpart,timestamp])
             ## Set the sbatch text
             intext = f'sbatch{formatdepends(djobids)}--partition={clusterpart} {jobparts} {row.Jobfile}'
             ## print the comamnd
@@ -424,42 +389,66 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestam
     return subsbatchs
 
 ## Ftn for formating merging of bam files
-#def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tuple:
-#    """Formats a samtools merge command."""
-#    ## Format path of out put bam file
-#    outbam = f'{aligndir}/{bam}'
-#    ## Format report name and the merge-bam command
-#    report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
-#    ## Format the echo command and count command 
-#    echo_merge_command = f'{slurpydir}/myecho.py Finished merging bam files into {outbam} {report}\n'
-#    ## Return the formated merge command
-#    return [merge_bam_command,echo_merge_command], report
-
-"""
+def mergebam(bam:str, wildcard:str, threads:int, script='merge') -> tuple:
+    """Formats a samtools merge command."""
+    ## Format path of out put bam file
+    outbam = f'{aligndir}/{bam}'
+    ## Format report name and the merge-bam command
     report, merge_bam_command = reportname(outbam,script), f'samtools merge -f -@ {threads} -o {outbam} --write-index {bamtmpdir}/{wildcard}\n'
+    ## Format the echo command and count command 
+    echo_merge_command = f'echo Finished merging bam files into {outbam} >> {report}\n'
+    ## Return the formated merge command
+    return [merge_bam_command,echo_merge_command], report
 
-"""
+## Ftn for concatonating
+def pandacat(infiles:str, outfile:str, rmheader=False, script='concat') -> tuple:
+    """Formats a command to merge hic file from pandas dataframe."""
+    ## format the report
+    report = reportname(outfile,script)
+    ## Set the skip head ftn
+    skiphead = '--skipheader' if rmheader else ''
+    ## Return the formated commands
+    return [f'{scriptsdir}/pandacat.py -i {infiles} -o {outfile} {skiphead}\n',f'echo Finished concatenating files into file: {outfile} >> {report}\n'], report 
 
 ## Ftn for filtering bam fie 
-def filterbam(inbam:str, M:str, threads:int, chrlist:list, pix:int) -> tuple:
+def filterbam(inbam:str, M:str, threads:int, chrlist:list, script='filter') -> tuple:
     """Formats a command to filter an input bam file seperating aligments on quality."""
     ## Format the report name and out bam name 
-    report, outbam = reportname(inbam,'filter',i=pix), splitbam(inbam) + f'.primary.q{M}.bam'
+    report, outbam = reportname(inbam,script), splitbam(inbam) + f'.primary.q{M}.bam'
     ## Format filter command and the echo command 
-    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'{slurpydir}/myecho.py Finished filtering {inbam} at mapping quality of {M} {report}\n'
+    bam_filter_command, echo_command = getprimary(inbam,M,threads,outbam,chroms=chrlist), f'echo Finished filtering {inbam} at mapping quality of {M} >> {report}\n'
     ## Format and return commands
     return outbam, [bam_filter_command, echo_command], report
 
+## Ftn for setting genomesize
+def genomesize(inputsize, referencepath:str, mtDNA:str, sep='\t', header=None) -> int:
+    """Calculate the genome size given an input size or path to reference genome .fai file."""
+    ## set the genome size, load in the ref fai file and gahter the chromsome lengths 
+    if inputsize: ## If the input size is not none 
+        genome_size = inputsize
+    else: ## Load in the size dataframe 
+        size_df = pd.read_csv(referencepath+'.fai',sep=sep,header=header)
+        ## Calculate genome size
+        genome_size = size_df[~(size_df[0].isin(makelist(mtDNA)))][1].sum()
+    ## Return the size
+    return genome_size
+
 ## Ftn for formating command control dataframe and restarting
-def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:str, cols=['Jobfile','Sample','Experiment','Operation','Report','Torun','JobID']) -> tuple:
+def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:str, bwaid:int, cols=['Jobfile','Dependency','Sample','Experiment','Operation','AfterID','Report']) -> tuple:
     """Generates a command and control dataframe for running pipeline."""
     ## Make into a dataframe
     commanddf = pd.DataFrame(commands,columns = cols)
+    ## We dont need the dependency column or after id (remove these in next version )
+    commanddf.drop(['Dependency','AfterID'],axis=1,inplace=True)
+    ## Add to run column and job id 
+    commanddf['Torun'], commanddf['JobID'] = 0, ''
     ## If a hard reset was called, remove the previous file reports 
     if_hard_reset = [(remove(fr) if fileexists(fr) else None) for fr in commanddf.Report.tolist()] if toreset else None 
     ## Check if the reports exist, iterate of the rows of command df
     for rix,row in commanddf.iterrows():
         commanddf.loc[rix,'Torun'] = 1 if fileexists(row.Report) else 0
+    ## For completeness, set the bwa index to run to one 
+    commanddf.loc[(commanddf.Operation=='bwaix'),'Torun'], commanddf.loc[(commanddf.Operation=='bwaix'),'JobID'] = 1, bwaid 
     ## If we are re running any part of the pipeline we will re code from here
     if rerunfrom: ## Set the dict 
         rerun_dict = dictzip(pipelinesteps,[pipelinesteps[i:] for i in range(len(pipelinesteps))])
@@ -467,8 +456,6 @@ def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:st
         ## Recode the command dataframe to run 
         for r in rerun_dict[rerunfrom]:
             commanddf.loc[(commanddf.Operation==r),'Torun'] = 0
-    ## Reformat job id as a str 
-    commanddf['JobID'] = commanddf.JobID.apply(str)
     ## Return the command dataframe and hard reset 
     return commanddf, if_hard_reset
 
@@ -480,17 +467,12 @@ def submitfastp(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, tim
     """Submits fastp command(s) to SLURM via sbatch."""
     ## Check theinput sub sbatchs is a list
     assert type(subsbatchs) == list, sublist_err
-    ## See if we have a master job id
-    master = command_df[(command_df.Operation=='bwaix')].JobID.min() if ('bwaix' in command_df.Operation.tolist()) else 0
     ## Iterate thru the fastp opperations 
     for rix,row in command_df[(command_df.Operation=='fastp') & (command_df.Torun==0)].iterrows():
         ## Format the jobparts
         jobparts = jobname(['fastp',rix,nodepartition,timestamp])
-        ## Format the sbatch  
-        if master:
-            intext = f'sbatch --dependency=afterok:{master} --partition={nodepartition} {row.Jobfile}'
-        else:  
-            intext = f'sbatch --dependency=singleton {jobparts} --partition={nodepartition} {row.Jobfile}'
+        ## Format the sbatch   
+        intext = f'sbatch --dependency=singleton {jobparts} --partition={nodepartition} {row.Jobfile}'
         ## Append to sub list
         subsbatchs.append(intext)
         ## Append the fastp job id 
@@ -530,29 +512,110 @@ def submitbwa(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, times
                 ifprint(intext,debugmode)
     ## Return command df and subsbatchs 
     return command_df, subsbatchs 
-
-## Ftn for writing command output logs
-def writeparams(script:str,runname:str,sstamp,inputs):
-    ## Format the start time stamp 
-    dt1 = datetime.fromtimestamp(sstamp)
-    ## Set the output path
-    outpath = f'{debugdir}/run.parameters.{script}.{runname}.{sstamp}.txt'
-    ## Open and writeout 
-    with open(outpath,'w') as fout:
-        fout.write(f'{script} run on {dt1}\n')
-        fout.write('\n'.join([str(i[0]) + "=" + str(i[1]) for i in (vars(inputs)).items()]))
-    ## Close output path
-    fout.close()
-    pass 
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## 
-## JUICER PARAMETERS
-## Set Juicer columns and data types 
-juicer_cols  = [ 'Str1','Chr1','Pos1','Frag1','Str2','Chr2','Pos2','Frag2','Mapq1','Cigar1','Seq1','Mapq2','Cigar2','Seq2','Qname1']
-juicer_types = [   int,  str,   int,    int,   int,    str,  int,   int,    int,     str,    str,    int,    str,    str,    str  ]
+##      Hi-C and ATAC-seq DEFAULT VARIABLE SETTING  
+splitsize    = 64            ##     The number of splits made by fastp 
+bwathreads   = 4             ##     Number of threads used by calls to bwa 
+samthreads   = 4             ##     Number of threads used by calls to samtools 
+daskthreads  = 4             ##     Number of threads used by calls to dask df 
+parallelbwa  = splitsize     ##     Number of parallel runs of bwa 
+fastpthreads = 8             ##     Number of threads in fastp 
+part         = 'tb'          ##     Defalut partition 
+map_q_thres  = 30            ##     Minimum mapping quality threhosld 
+error_dist   = 10000         ##     The idstance to check for erros 
+circle_dist  = 30000         ##     The distance to check for self circles 
+lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
+chunks       = 50000         ##     Chunks size for parsing with pandas
+set_distance = 0             ##     Minimum distance of Hi-C contacts 
+hicsep       = ' '           ##     Text deliminator 
+line_count   = 10**7         ##     Number of lines 
+fends        = '.fastq.gz'   ##     End of fastq fiels 
+mito         = 'chrM'        ##     The name of the mitocondrial contig (in humns)
+xmemory      = 49152
+binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
+                1000000,
+                 500000,
+                 250000,
+                 100000,
+                  50000,
+                  25000,
+                  10000]
 
-## Format datatypes into dict
-juicer_type_dict = dictzip(juicer_cols,juicer_types)
+## Set file ends used in this script and other filtering stages 
+hicfileends_tmp = ['unmapped','oddling','lowqual','distance','dangling','errors','selfcircle','tohic'] 
+
+## Set protocols and pipe lien steps
+basic_pipeline  = ['fastp', 'bwa', 'split', 'concat', 'count', 'clean']
+pipeline_steps  = ['fastp', 'bwa', 'split', 'concat', 'mark', 'filter', 'macs2', 'count', 'clean']
+hic_pipeline    = ['fastp', 'bwa', 'pre', 'post', 'filter', 'concat', 'split', 'sort', 'juicerpre', 'count', 'clean']
+
+## Define options for fastpeel ftn
+fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      HELP MESSAGES 
+## Set help messages for input and default variables 
+#e_help = "The experiment type (default: wgs). Valid options include: %s."%joined_protocols
+r_help = "Path to input reference bwa index used in analysis." 
+F_help = "The number of splits to make for each pair of input fastq files (default: %s). Controls the total number of splits across the run."%splitsize
+f_help = "The number of threads used in fastp to split input fastq files (default: %s). Note: must be an even multiple of the number of splits."%fastpthreads
+b_help = "The number of threads used per bwa alignment on split input fastq files (default: %s)."%bwathreads
+n_help = "Run name used to name output files. Default behavior is to use the current parent directory."
+M_help = "Name of the mitochondrial contig (default: %s)."%mito
+X_help = "List of chromosomes/contigs to exclude from analysis (default: none)."
+B_help = "Number of parallel bwa alignments to run (default: %s). Controls the number of bwa jobs submitted at once to slurm."%parallelbwa
+P_help = "The type of partition jobs formatted by slurpy run on (default: %s)."%part
+Q_help = "Mapping quality threshold to filter alignments (default: %s)."%map_q_thres
+c_help = "Path to control or input bam files used in ChIP-seq experiments."
+G_help = "Path to list of chromosomes (by name) to include in final Hi-C analysis. Must be a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
+g_help = "Size of the genome being analyzed, used as parameter for macs2. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
+C_help = "Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Passing zero (0) will skip this check (default: %s bp)."%circle_dist 
+E_help = "Linear genomic distance to parse left and right oriented, intra-chromosomal Hi-C pairs for missing restriciton site(s). Passing zero (0) will skip this check (default: %s bp)."%error_dist
+L_help = "The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Options include Arima, MboI, DpnII, Sau3AI, and HindIII (default: %s). Passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped."%lib_default
+D_help = "A filter on the minimum allowed distance (in bp) between reads (within a pair) that make up an intra-chromosomal Hi-C contact. Default behaviour is none (i.e. default: %s)."%set_distance
+Z_help = "Number of rows (default: %s) loaded into pandas at a time. WARNING: while increasing could speed up pipeline it could also cause memeory issues."%chunks
+q_help = "The file extension of input fastq files (default: %s)"%fends
+t_help = "The number of threads used in calls to functions and calculations with pandas and dask dataframe(s) (default: %s)."%daskthreads
+s_help = "The number of threads used in calls to samtools (default: %s)."%samthreads
+J_help = "Path to juicer jar file for juicer pre command. Required for .hic file creation."
+S_help = "Chromosome resolution (i.e. bin sizes) for .hic files. Default: %s"%', '.join(map(str,binsizes))
+x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command (Default: %s)."%xmemory
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      BOOLEAN HELP MESSAGES
+## Set help messages for bollean vars
+restart_help  = "Flag to force the pipeline to reset and run from start."
+runlocal_help = "Disables sbatch submission and submits the script via bash to a local os."
+debug_help    = "A flag to run in verbose mode, printing sbatch commands. Default behavior is false."
+mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
+broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs2. See macs2 callpeak --help for more details."
+clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
+skipq_help    = "Flag to skip initial quality control and filtering with fastp (i.e. only split reads)."
+merge_help    = "Passing this flag will merge across all pairs of fastqs for final output."
+peaks_help    = "A boolean flag to skip peak calling via macs2."
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      METAVARS
+## Set metavars
+c_metavar = './path/to/control.bam'
+g_metavar = 'bp'
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      INFO MESSAGES
+## Set messages printed to user 
+directormaking  = 'INFO: Making local directories.'
+chromgathering  = 'INFO: Gathering chromosomes for processing.' 
+formatingfastq  = 'INFO: Formatting jobs.'
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      ERROR MESSAGES
+## Write error message
+not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

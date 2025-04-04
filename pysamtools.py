@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -21,16 +22,19 @@ croth@lanl.gov
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in subprocess, pysam 
 import subprocess, pysam 
+
 ## Load in is file ftn 
 from os.path import isfile
+
 ## Load in SeqIO
 from Bio import SeqIO
+
 ## Bring in pandas 
 import pandas as pd 
 
 ## ----------------------------------- GENERAL FUNCTIONS --------------------------------- ##
 ## Ftn for making a dicitonary for zipped lists
-def dictzip(a,b) -> dict:
+def dictzip(a,b):
     """Makes a dictionary from zipped items in lists a and b."""
     ## Return the zipped dicts
     return dict(zip(a,b))
@@ -42,30 +46,29 @@ samtypes = [  str,   int,   str,    int,  int,    str,    str,    int,   int,   
 ## Make a dict of the sam names and tpes
 samdict = dictzip(samnames,samtypes)
 
+## Define ftn for loading sam file
+def loadsam(inpath:str,chunks:int):
+    """Given input path to .sam file and chunk size, returns an iterable of blocks."""
+    ## Return the iterable 
+    return pd.read_csv(inpath, sep='\t', comment='@', names=samnames, usecols=samnames, chunksize=chunks, dtype=samdict)
+
 ## Ftn for checking if input file is a sam 
 def issam(inpath:str) -> bool:
     """Returns boolean on test that file extension is sam."""
     ## Checks if a fucntion is a sam file 
     return inpath.split('.')[-1] == 'sam'
 
-## Define ftn for loading sam file
-def loadsam(inpath:str,chunksize:int):
-    """Given input path to .sam file and chunk size, returns an iterable of blocks."""
-    assert issam(inpath), "ERROR: Passed path was not to a .sam file!"
-    ## Return the iterable 
-    return pd.read_csv(inpath, sep='\t', comment='@', names=samnames, usecols=samnames, chunksize=chunksize, dtype=samdict)
-
 ## Ftn for loading in reference in fasta file format 
-def loadref(inpath:str,format='fasta') -> list:
+def loadref(inpath:str) -> list:
     """Returns a list of sequences from within input fasta file."""
     ## Return the records in the loaded reference 
-    return [r for r in SeqIO.parse(inpath,format=format)]
+    return [r for r in SeqIO.parse(inpath,format='fasta')]
 
 ## Ftn for getting list of chromosomes
-def getchrlist(inpath,format='fasta') -> list:
+def getchrlist(inpath:str) -> list:
     """Returns a list of sequences ids from within input fasta file."""
     ## Return the records in the loaded reference 
-    return [r.id for r in SeqIO.parse(inpath,format=format)] if (type(inpath) == str) else [r.id for r in inpath]
+    return [r.id for r in SeqIO.parse(inpath,format='fasta')]
 
 ## Ftn for returing chrom
 def chromdf(inpath:str) -> list:
@@ -100,23 +103,19 @@ def ifprint(message,bool):
     return bool 
 
 ## Ftn for comparing the lengths of two arrays
-def lencomp(a,b) -> bool: 
+def lencomp(a,b):
     """Checks if the lengths of lists a and b are equal."""
     ## Check that a and b have the same length
     return (len(a) - len(b)) == 0
 
 ## Cuts on the bam extension
-def splitbam(inbam) -> str:
+def splitbam(inbam):
     """Splits an input text on the string .bam."""
     ## Return the split on the sting
     return inbam.split('.bam')[0]
 
-## Cuts of the sam extension
-def splitsam(insam) -> str:
-    return insam.split('.sam')[0]
-
 ## Set ftn for making bam file names
-def outnames(inbam,mito) -> tuple: 
+def outnames(inbam,mito):
     """Format and return the name of output txt, bam, and bedpe files."""
     ## Format the name of output files 
     name_out_txt     = splitbam(inbam) + '.mapped.txt'    ## The output bam name
@@ -128,13 +127,38 @@ def outnames(inbam,mito) -> tuple:
     return name_out_txt, name_placed_txt, name_mito_txt, name_unmap_txt, name_out_bedpe
 
 ## Ftn for returning split sub names
-def splitsubnames(mito) -> list: 
+def splitsubnames(mito):
     """Returns a formated list of middle names of split bam file."""
     ## return the list of sub names
     return ['mapped','placed','unmapped',mito,'collisions'] 
 
 ## Ftn for commenting out command lines for debuging
-def debuglines(intxt) -> list: 
+#def debuglines(intxt):
+#    ## Initilizse new lines and counter
+#    newlines, c = [], 0
+#    ## Iterate thru the input txt lines 
+#    for i,l in enumerate(intxt):
+#        ## If this is the first line, ie the shebang
+#        if (i ==0) and (l[0] == '#'):
+#            newlines.append('#!/usr/bin/env bash\n')
+#        ## If the first chracter is already a comment like #SBATCH
+#        elif (l[0] == '#') and (l[1] != '!'):
+#            newlines.append(l)
+#        ## If it is an echo statment, leave it as is 
+#        elif l.split(' ')[0]=='echo':
+#            newlines.append('sleep 10\n'+l)
+#            c = c + 1
+#        else: ## Othewise, comment out the lines 
+#            newlines.append('##'+l)
+#    ## If no sleep command was added
+#    if c == 0:
+#        ## Adppend the sleep command and the last line un-commented
+#        newlines.append('sleep 10\n' + l.split('#')[-1])
+#    ## Return the commented out lines 
+#    return newlines 
+
+## Ftn for commenting out command lines for debuging
+def debuglines(intxt):
     ## Initilizse new lines and counter
     newlines = []
     ## Iterate thru the input txt lines 
@@ -143,9 +167,7 @@ def debuglines(intxt) -> list:
         if (l[0] == '#'): 
             newlines.append(l)
         ## If it is an echo statment, leave it as is 
-        elif (l.split(' ')[0]=='echo'):
-            newlines.append('sleep 10\n'+l)
-        elif (l.split(' ')[0]=='myecho.py'):
+        elif l.split(' ')[0]=='echo':
             newlines.append('sleep 10\n'+l)
         else: ## Othewise, comment out the lines 
             newlines.append('##'+l)
@@ -164,13 +186,13 @@ def writetofile(inpath,intxt,debug,mode='w'):
     return inpath
 
 ## Write a ftn for formating lines for printing
-def display(inlines,sep='\n') -> str:
+def display(inlines,sep='\n'):
     """Formats input lines for printing to screen."""
     ## Joins the lines in limes
     return sep.join(inlines)
 
 ## Ftn for writing a set of read names
-def writeset(outfile,inset,mode='w'): 
+def writeset(outfile,inset,mode='w'):
     """Writes a file of a give set of read names."""
     ## Open a file for writing, we add a return carage to the display of the set to make sure the counts match
     return writetofile(outfile, display(list(inset))+'\n', False, mode=mode)
@@ -217,7 +239,7 @@ def hasix(inbam):
     return isfile(inbam+'.bai') or isfile(inbam+'.csi')
 
 ## Write ftns used in analysis ftn for loading a bam
-def loadbam(inpath,bool=True): 
+def loadbam(inpath,bool=True):
     """Reads in bam file in binary format."""
     ## Return the alignment file
     return pysam.AlignmentFile(inpath,'rb',check_sq=bool)
@@ -287,7 +309,7 @@ def txttobam(intxt):
     return intxt.split('.txt')[0] + '.bam'
 
 ## Ftn for counting 
-def bamcount(inbam,countfile,threads) -> str:
+def bamcount(inbam,countfile,threads):
     """Formats the view commadn to count primary aligments within a bam file."""
     ## Format the view command to count 
     return f'samtools view -c -F 256 -f 64 -@ {threads} {inbam} > {countfile}\n'
@@ -298,21 +320,22 @@ def bambyreadname(inbam,readfile,threads,opts='-b'):
     ## format outbam
     outbam = txttobam(readfile)
     ## Formats the call to samtools for makign a bam file from list of read names and index said file
-    return f'samtools view {opts} -N {readfile} -@ {threads} {inbam} -o {outbam}\n', outbam 
-
-"""
     return f'samtools view {opts} -N {readfile} -@ {threads} {inbam} | samtools sort -@ {threads} -o {outbam} -O BAM --write-index\n', outbam 
 
-"""
+## Ftn for callign samblaster
+def samblaster(inbam,outbam,report,threads):
+    """Formats a call to samtools and samblaster given inputs."""
+    ## Return the samtools and samblaster command 
+    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
 
 ## Ftn for formating flag
-def dupflag(bool) -> str: 
+def dupflag(bool):
     """returns a lower or upper case F for samtools view commands given boolean."""
     ## Format the samtool flag
     return '-f' if bool else '-F'
 
 ## Ftn for formating sort command removing duplicates
-def dupsort(bamin,bamout,threads,keep=False,dupint=1024) -> str:
+def dupsort(bamin,bamout,threads,keep=False,dupint=1024):
     """Formats samtoosl view and sort command to keep or remove duplicates given flags in opts."""
     ## Return the formated txt 
     return f'samtools view -@ {threads} {dupflag(keep)} {dupint} -Shb {bamin} | samtools sort -@ {threads} - -o {bamout} -O BAM --write-index\n'
@@ -324,7 +347,7 @@ def formatchroms(chromosomes: list) -> str:
     return ' '.join(chromosomes) if chromosomes else ''
 
 ## Ftn for filtering primary
-def getprimary(inbam,mapq,threads,outbam,chroms=None) -> str:
+def getprimary(inbam,mapq,threads,outbam,chroms=None):
     """Formats a samtools view command with the -e flag to return primary aligments from an input bam file (inbam) at a given mapping quality (mapq) and returns aligments within an output bam file (outbam)."""
     ## Return the samtools commands 
     return f'samtools view -@ {threads} -f 3 -F 1024 -b {inbam} -e "!([XA] || [SA]) && mapq>={mapq}" {formatchroms(chroms)} | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
