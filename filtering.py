@@ -466,7 +466,7 @@ if __name__ == "__main__":
             ## Set the qnames 
             errors = allcheck[(allcheck.Qname1.isin(intra_all_qnames))]
             ## count errors
-            error_count = errors.Qname1.count()
+            error_count = errors.Inter.count().compute()
             ## add to the error count
             if error_count:
                 errorfrg_counts += error_count
@@ -481,7 +481,7 @@ if __name__ == "__main__":
         ## Gather the valid
         valid = allcheck[(~allcheck.Qname1.isin(intra_all_qnames))]
         ## Count the valid
-        valid_count = valid.Rname1.count()
+        valid_count = valid.Inter.count().compute()
         ## If we have valid counts
         if valid_count:
             ## If we have valid counts 
