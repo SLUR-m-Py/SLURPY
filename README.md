@@ -67,35 +67,8 @@ chmod a+x ./fastp
 
 ```
 
-#### samblaster 
-For marking (and removing) duplicates we utilize the fast software [samblaster](https://github.com/GregoryFaust/samblaster).
-A gzipped, taf file with the latest verion of samblaster can be found here.
-We use version v.0.1.26. 
-Download the tar file, move it into the SLURPY directory, unzip it and then use 'make' as shwon below:
-
-```
-## Move or copy the tar file into the slurpy directory, unzip it
-mv samblaster-v.0.1.26.tar.gz ./SLURPY/
-gunzip ./SLUPY/samblaster-v.0.1.26.tar.gz
-
-## Expand the tar file 
-tar -xvf samblaster-v.0.1.26.tar
-
-## Change directories and run the make command
-cd samblaster-v.0.1.26
-make 
-
-## Navigate a directy up, and link samblaster
-cd ../
-ln -s ./samblaster-v.0.1.26/samblaster
-
-## Check that samblaster works
-./samblaster -h 
-
-```
-
 #### juicer tools (optional)
-Here we currently use Juicer tools (specifically the juicer pre command) to process and format penultimate forms of Hi-C data (.txt) into a final .hic file. 
+Here we currently use Juicer tools (specifically the juicer pre command) to process and format penultimate forms of Hi-C data (.bedpe) into a final .hic file. 
 The juicer jar files are hosted on the downloads page of the [juicer github](https://github.com/aidenlab/juicer/wiki/Download). 
 Downloading a jar file into the SLURPY directory makes calls to format .hic data easier (shown later). 
 
@@ -142,69 +115,93 @@ The help menu (-h) of protocols within slurpy lists all the available arguments 
 conda activate bioenv 
 
 ## Call the help menu for hic.py 
-./SLURPY/hic.py -h
-usage: hic.py [-h] -r ./path/to/reference.bwaix [-F 64] [-B 64] [-P tb] [-M chrM] [-Q 30] [-R step] [-q .fastq.gz] [-f 8] [-b 4] [-t 4] [-n name] [-E bp] [-C bp] [-L MboI] [-D n] [-Z n] [-G ./path/to/list.tsv] [-J ./path/to/juicer.jar]
-              [-S 25000, 10000, ... [25000, 10000, ... ...]] [--restart] [--debug] [--skip-dedup] [--clean] [--merge]
+./SLURPY/slurm.py -h
+$ ./SLURPY/slurm.py -h
+usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] 
+                [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] 
+                [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup] [--clean] [--count] [--merge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer]
 
-Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments.
+A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  -r ./path/to/reference.bwaix, --refix ./path/to/reference.bwaix
-                        Path to input reference bwa index used in analysis.
-  -F 64, --fastp-splits 64
-                        The number of splits to make for each pair of input fastq files (default: 64). Controls the total number of splits across the run.
-  -B 64, --parallel-bwa 64
-                        Number of parallel bwa alignments to run (default: 64). Controls the number of bwa jobs submitted at once to slurm.
-  -P tb, --partition tb
-                        The type of partition jobs formatted by slurpy run on (default: tb).
+  -r ./path/to/reference.fasta, --refix ./path/to/reference.fasta
+                        Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment.
+  -F 10000000 [10000000 ...], --fastp-splits 10000000 [10000000 ...]
+                        The approximate number of reads per split made by fastp on input fastq files. Default is: 10000000.
+  -T n, --threads n     The number of threads used across all applications of the run (fastp, bwa, dask.dataframes). Default is: 8.
+  -P tb gpu fast [tb gpu fast ...], --partition tb gpu fast [tb gpu fast ...]
+                        The type of partition jobs formatted by slurpy run on. Default is tb.
   -M chrM, --mtDNA chrM
-                        Name of the mitochondrial contig (default: chrM).
+                        Name of the mitochondrial contig. Default is: chrM.
+  -X chrX, chrY ... [chrX, chrY ... ...], --exclude chrX, chrY ... [chrX, chrY ... ...]
+                        List of chromosomes/contigs to exclude from analysis. Default behavior is to process all within the passed .fasta or .fa file.
   -Q 30, --map-threshold 30
-                        Mapping quality threshold to filter alignments (default: 30).
+                        Mapping quality threshold to filter alignments. Default is: 30.
   -R step, --rerun-from step
-                        Step within the pipeline to re-run from. Options for Hi-C analysis include: fastp, bwa, pre, post, filter, concat, split, sort, count, clean
-  -q .fastq.gz, --fastq .fastq.gz
-                        The file extension of input fastq files (default: .fastq.gz)
+                        Step within the pipeline to re-run from. Options include: fastp, bwa, filter, dedup, concat, gxg, toshort, hic, macs3, count, clean
+  -a 666666, --afterok 666666
+                        A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination.
+  -N n, --nice n        The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: 100000000
+  -j n, --n-parallel n  Number of bwa and filtering jobs allowed to run in parallel. Default: 33
   -f 8, --fastp-threads 8
-                        The number of threads used in fastp to split input fastq files (default: 8). Note: must be an even multiple of the number of splits.
-  -b 4, --bwa-threads 4
-                        The number of threads used per bwa alignment on split input fastq files (default: 4).
-  -t 4, --dask-threads 4
-                        The number of threads used in calls to functions and calculations with pandas and dask dataframe(s) (default: 4).
+                        The number of threads used in fastp to split input fastq files. Default is: 8. Note: must be an even multiple of the number of splits.
+  -t 8, --dask-threads 8
+                        The number of threads used in calls to functions and calculations with pandas and dask dataframes. Default is: 8.
+  -b 8, --bwa-threads 8
+                        The number of threads used per bwa alignment on split input fastq files. Default is: 8.
+  -B ,-5SMP, --bwa-options ,-5SMP
+                        A comma starting and seperated list (no spaces) of options (and their values) for the bwa mem algorithm (for example ,-t,2,-k,10,-y,5,-S). See bwa mem for help and a list of options.
   -n name, --run-name name
-                        Run name used to name output files. Default behavior is to use the current parent directory.
+                        Run name used to name output files. Default behavior is to take the common name from the input read pairs.
   -E bp, --error-distance bp
-                        Linear genomic distance to parse left and right oriented, intra-chromosomal Hi-C pairs for missing restriciton site(s). Passing zero (0) will skip this check (default: 10000 bp).
-  -C bp, --self-circle bp
-                        Linear genomic distance to check outward facing, intra-chromosomal Hi-C contacts for self-circle artifacts. Passing zero (0) will skip this check (default: 30000 bp).
+                        Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is 25000. These pairs are also marked for dangling ends and self-circles.
   -L MboI, --library MboI
-                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Options include Arima, MboI, DpnII, Sau3AI, and HindIII (default: Arima). Passing none (i.e. Dovetail) is also allowed, but checks for
-                        restriction sites and dangling ends will be skipped.
-  -D n, --mindist n     A filter on the minimum allowed distance (in bp) between reads (within a pair) that make up an intra-chromosomal Hi-C contact. Default behaviour is none (i.e. default: 0).
-  -Z n, --chunksize n   Number of rows (default: 50000) loaded into pandas at a time. WARNING: while increasing could speed up pipeline it could also cause memeory issues.
+                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is Arima. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped.
+  -Z n, --chunksize n   Number of rows loaded into pandas at a time. Default is: 950000. WARNING: while increasing could speed up pipeline it could also cause memeory issues.
   -G ./path/to/list.tsv, --genomelist ./path/to/list.tsv
-                        Path to list of chromosomes (by name) to include in final Hi-C analysis. Must be a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header.
+                        Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header.
+  -c ./path/to/control.bam [./path/to/control.bam ...], --controls ./path/to/control.bam [./path/to/control.bam ...]
+                        Path to control or input bam/bedpe files used in ChIP-seq experiments.
   -J ./path/to/juicer.jar, --jar-path ./path/to/juicer.jar
-                        Path to juicer jar file for juicer pre command. Required for .hic file creation.
+                        Path to a juicer jar file with the juicer pre command. Required for .hic file creation.
+  -x 49152, --Xmemory 49152
+                        Amount of Xmx and Xms memory passed to juicer's pre command. Default is: 49152.
   -S 25000, 10000, ... [25000, 10000, ... ...], --bin-sizes 25000, 10000, ... [25000, 10000, ... ...]
-                        Chromosome resolution (i.e. bin sizes) for .hic files. Default: 2500000, 1000000, 500000, 250000, 100000, 50000, 25000, 10000
+                        Space seperated list of chromosome resolutions (i.e. bin sizes) for .hic files. Default: 2500000 2000000 1000000 750000 500000 250000 200000 100000 75000 50000 25000 10000 5000
+  -gxg ./path/to/my.gff, --features ./path/to/my.gff
+                        The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes.
+  --nodelist NODES [NODES ...]
+                        Space seperated list of nodes to run jobs on.
+  --toshort             A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed.
+  --pairs               Convert final output to pairs format defined by the 4DNucleome consortium.
   --restart             Flag to force the pipeline to reset and run from start.
+  --force               Flag to force the overwrite of output files generated from bwa.
   --debug               A flag to run in verbose mode, printing sbatch commands. Default behavior is false.
-  --skip-dedup          Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
+  --skipdedup           Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
   --clean               If included will run clean up script at end of run. The default behavior is false, can be run after pipeline.
+  --count               Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples.
   --merge               Passing this flag will merge across all pairs of fastqs for final output.
+  --mcool               Flag to make an mcool file with cooler.
+  --inter-only          Flag to return only inter-chromosomal contacts
+  --atac-seq            Preset mode to run in ATAC-seq analysis mode.
+  --skipfastp           Flag to skip initial quality control and filtering with fastp (i.e. only split reads).
+  --broad               Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details.
+  --skipmacs3           A boolean flag to skip peak calling via macs3.
+  --dedovetail          Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these).
+  --hicexplorer         Flag to run stricter intra-fragment filtering.
+
 ```
 ### For ATAC-seq experiments
 To call the peaks.py script within the slurpy pipeline to analyze an ATAC-seq experiment run:
 
 ```
-./SLURPY/peaks.py -r /path/to/reference/file.fasta
+./SLURPY/slurm.py -r /path/to/reference/file.fasta --atac-seq
 ```
 
 ### For ChIP-seq experiments 
 To run slurpy to analyze a ChIP-seq experiment run:
 
 ```
-./SLURPY/peaks.py -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam
+./SLURPY/slurm.py -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam --atac-seq
 ```
