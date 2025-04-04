@@ -90,7 +90,8 @@ else:
 
 ## Transpose and add fastp counts
 newmap = newmap.T
-newmap['fastp'] = ['fastp',fastp_lost]
+newmap['fastp'] = ['Fastp',fastp_lost]
+newmap['total'] = ['Total',total_counts]
 
 ## Retranspose newmap
 newmap = newmap.T
