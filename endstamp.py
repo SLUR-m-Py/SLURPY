@@ -68,6 +68,7 @@ newmap = pd.concat([mappings,duplicat],axis=0)
 ## Adjust for duplicates
 newmap.loc['INFO: Interhic','Counts'] = newmap.loc['INFO: Interhic','Counts'] - duplicat.loc['INFO: Interdups','Counts']
 newmap.loc['INFO: Intrahic','Counts'] = newmap.loc['INFO: Intrahic','Counts'] - duplicat.loc['INFO: Intradups','Counts']
+newmap.loc['INFO: Valid',   'Counts'] = newmap.loc['INFO: Valid',   'Counts'] - (duplicat.loc['INFO: Interdups','Counts'] + duplicat.loc['INFO: Intradups','Counts'])
 ## Reset the index
 newmap.reset_index(inplace=True)
 ## Reet column name
@@ -109,7 +110,9 @@ outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
 ## Format counts column into integers
 newmap['Counts'] = newmap.Counts.apply(int)
 ## ADd the percent to the new map
-newmap['Percent'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Total')].Counts.max()]
+newmap['Percent (Total)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Total')].Counts.max()]
+newmap['Percent (Valid)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Valid')].Counts.max()]
+
 ## Save out new map
 newmap.to_csv(outfilename,index=False)
 
