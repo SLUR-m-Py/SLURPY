@@ -238,13 +238,13 @@ def endcheck(read:str,strand:int,dangends:list) -> int:
     return sum([read.upper().endswith(d) for d in dangends] if strand else [read.upper().startswith(d) for d in dangends])
 
 ## Ftn for appending to df
-def appenddf(df,outpath,thesep=hicsep):
+def appenddf(df:pd.DataFrame,outpath:str,toappend:bool,thesep=hicsep) -> None:
     ## Append the df
-    df.to_csv(outpath,mode='a' if pathexists(outpath) else 'w',index=False,header= not pathexists(outpath),sep=thesep)
+    df.to_csv(outpath,mode='a' if toappend else 'w',index=False,header= not toappend,sep=thesep)
     pass 
 
 ## Ftn for post filtering recroeds 
-def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,filename=None):  #,enzymelib:str,error_dist:int,frag_size:int,refseqio:str):
+def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):  #,enzymelib:str,error_dist:int,frag_size:int,refseqio:str):
     ## add mapped flags
     mmapped = makeflagdf(inmapping)
     ## Check our work
@@ -322,7 +322,7 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,danglingends,fi
     #    long['File'] = filename
 
     ## Save out the pairs and pass back to main
-    appenddf(long,outdfpath) if long.shape[0] else None
+    appenddf(long,outdfpath,toappend) if long.shape[0] else None
     pass 
 
 ## ------------------------ MAIN SCRIPT ------------------------------ ## 
@@ -341,6 +341,7 @@ if __name__ == "__main__":
     filt_lines = []
     lastc      = []
     i          = 0
+    c          = 0 
 
     ## Format the chromosome dictionary from ref object
     chromdict = makechromdict(ref_path)
@@ -372,9 +373,10 @@ if __name__ == "__main__":
             ## Cut off the end if this chunk is the smallest and their for the last
             tomap = inmap[(inmap.Qname!=lastq)]
             ## Call our filtering ftn
-            postfilter(tomap,outfile,chromdict,dangling_ends,filename=samname) #,enzyme_lib,errorsize,min_frag_s,refpath)
+            postfilter(tomap,outfile,chromdict,toappend=bool(c)) #dangling_ends,,enzyme_lib,errorsize,min_frag_s,refpath)
             ## Rest filt lines 
             filt_lines = []
+            c += 1
 
     ## If any are left from filt lines, append them and last chunk (if it has length too)
     if len(filt_lines):
@@ -382,12 +384,12 @@ if __name__ == "__main__":
         ## If this is the start of our second time or more thru this loop
         tomap = pd.concat([lastc,inmap],axis=0).reset_index(drop=True) if len(lastc) else inmap
         ## Call our filtering ftn
-        postfilter(tomap,outfile,chromdict,dangling_ends,filename=samname) #,enzyme_lib,errorsize,min_frag_s,refpath)
+        postfilter(tomap,outfile,chromdict,toappend=bool(c)) #,enzyme_lib,errorsize,min_frag_s,refpath)
         lastc = []
 
     ## If the last chunk still exsits and has alignments 
     if len(lastc):
-        postfilter(lastc,outfile,chromdict,dangling_ends,filename=samname) 
+        postfilter(tomap,outfile,chromdict,toappend=bool(c)) #,enzyme_lib,errorsize,min_frag_s,refpath)
     ## PRint to log 
     print("Finished parsing %s inputs from %s to %s"%(i,samname,outfile))
 ## EOF
