@@ -174,7 +174,7 @@ if __name__ == "__main__":
     parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,      action = ST)
     parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
     parser.add_argument("--count",                dest="count",     help = count_help,     action = ST)
-    parser.add_argument("--merge",                dest="merge",     help = merge_help,     action = ST)
+    parser.add_argument("--nomerge",              dest="merge",     help = merge_help,     action = ST)
     parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,     action = ST)
     parser.add_argument("--inter-only",           dest="inter",     help = inter_help,     action = ST)
     
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates 
     ifclean         = inputs.clean        ##     Flag to run clean up script 
     counting        = inputs.count        ##     Flag to count the read pairs
-    postmerging     = inputs.merge        ##     Forces premerge of outputs 
+    postmerging     = not inputs.merge    ##     Forces premerge of outputs 
     atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
     sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
     ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 

@@ -151,7 +151,7 @@ broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting i
 clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
 count_help    = "Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples."
 skipq_help    = "Flag to skip initial quality control and filtering with fastp (i.e. only split reads)."
-merge_help    = "Passing this flag will merge across all pairs of fastqs for final output."
+merge_help    = "Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output."
 peaks_help    = "A boolean flag to skip peak calling via macs3."
 short_help    = "A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed."
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
