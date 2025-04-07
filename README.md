@@ -108,6 +108,19 @@ Within the project directory ensure the paired fastqs are listed or linked withi
 ```
 ls -l ./fastqs/*.fastq.gz
 ```
+
+The pairs fastq files must be gzipped (.gz) and the file must end with the extension ".fastq.gz". 
+The fastq files with in the fastq directory must have the first and second reads in pair marked with "R1" and "R2" surronded by underlines (see below.)
+The first in pair must also be first when listed within the directory.
+
+```
+ls -l ./fastqs/*.gz
+
+example_sample_1_R1_0001.fastq.gz
+example_sample_2_R2_0001.fastq.gz
+
+```
+
 ### Envoking slurpy for Hi-C processing
 The help menu (-h) of protocols within slurpy lists all the available arguments and default settings. Be sure to activate the conda environment "bioenv". 
 ```
@@ -115,11 +128,9 @@ The help menu (-h) of protocols within slurpy lists all the available arguments 
 conda activate bioenv 
 
 ## Call the help menu for hic.py 
-./SLURPY/slurm.py -h
 $ ./SLURPY/slurm.py -h
-usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] 
-                [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] 
-                [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup] [--clean] [--count] [--merge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer]
+usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152]
+                [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup] [--clean] [--count] [--nomerge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer]
 
 A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.
 
@@ -181,7 +192,7 @@ options:
   --skipdedup           Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
   --clean               If included will run clean up script at end of run. The default behavior is false, can be run after pipeline.
   --count               Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples.
-  --merge               Passing this flag will merge across all pairs of fastqs for final output.
+  --nomerge             Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output.
   --mcool               Flag to make an mcool file with cooler.
   --inter-only          Flag to return only inter-chromosomal contacts
   --atac-seq            Preset mode to run in ATAC-seq analysis mode.
