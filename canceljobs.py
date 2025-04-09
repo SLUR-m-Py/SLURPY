@@ -19,10 +19,16 @@ jobs = pd.read_csv(job_file)
 ## Gather job ids
 jobids = jobs[(jobs.Operation!='bwaix')].JobID.tolist()
 
+## Make iterater
+i = 0
 ## Iterate thrut he job ids and canclse them
 for job in jobids:
     try:
         submitter(f'scancel {job}')
+        i += 1
     except Exception as error:
         print(error)
+
+## Print the nubmer of jobs canned
+print("INFO: Cancelled %s jobs assoiated with this directory."%i)
 ## End of file 
