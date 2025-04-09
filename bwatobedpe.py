@@ -4,15 +4,17 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
+
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove, checkqueue
+from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove
+## Load in directories
 from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile, listzip, ifprint
-## load in sleep
-from time import sleep
 ## Load input vars from params
 from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel
+## load in sleep
+from time import sleep
 ## Bring in tile and arange 
 from numpy import tile, arange
 
@@ -65,18 +67,7 @@ def sizecheck(read1,read2) -> list:
 
 ## Ftn for tiling jobs
 def vectortile(k,n):
-    return tile(arange(k),n)
-
-## Set description
-bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
-
-## Load in help messages from parameters 
-from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help
-
-## Set help messages 
-c_help     = 'The current working directory'
-l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
-hic_flag   = 'Flag to run in Hi-C mode.'
+    return tile(arange(k)+1,n)
 
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None,bwaopts='') -> tuple[list[str], str]:
@@ -86,6 +77,15 @@ def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     ## Return the command and report 
     return [command], report 
+
+## Load in help messages from parameters 
+from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help
+
+## Set description and help messages 
+bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
+c_help     = 'The current working directory'
+l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
+hic_flag   = 'Flag to run in Hi-C mode.'
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -159,8 +159,8 @@ if __name__ == "__main__":
     ## Iniate list of bwa files
     bwa_files   = []
 
-     ## gather job numbers 
-    job_numbers = vectortile(nparallel,len(read_pairs))
+     ## gather job numbers / names
+    job_numbers = vectortile(nparallel,nreads)
     job_names   = [f'{job_numbers[i]}.bwa.sh' for i in range(nreads)]
 
     ## Iterate thru the read pairs 

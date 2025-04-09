@@ -1,32 +1,32 @@
 #!/usr/bin/env python
-#SBATCH --job-name=bwa.master           ## Name of job
+#SBATCH --job-name=filter.master        ## Name of job
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
 
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, remove, checkqueue
-## Load in params
-from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
+from defaults import sortglob, sbatch, submitsbatch, fileexists, remove
+## Load in directories
+from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
+## Load in params
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
 ## load in sleep
 from time import sleep
 ## Load in report check 
 from bwatobedpe import reportcheck, vectortile, hic_flag
-## Load in directories
-from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 
 ## Set stage in piepline
 pix = 2
 
 ## Ftn for formating / joinign a list 
-def formatinput(inlist):
+def formatinput(inlist) -> str:
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False):
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False) -> tuple[list[str], str]:
     command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}' + (' --dedovetail' if dovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' --hicexplorer' if hicexplorer else '')
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     return [command+'\n'], report 

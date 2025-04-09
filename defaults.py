@@ -51,9 +51,9 @@ def submitter(command:str) -> list:
     return subprocess.check_output(command, shell=True).decode("utf-8").split('\n')   
 
 ## Ftn for cehcking queue 
-def checkqueue(step:str) -> int:
-    ## Sum the setps in l 
-    return sum([step in l for l in submitter('squeue')]) 
+#def checkqueue(step:str) -> int:
+#    ## Sum the setps in l 
+#    return sum([step in l for l in submitter('squeue')]) 
 
 ## Ftn for sorting fastq files by size
 def sortfastq(infastq:list,splitsizes:list):
