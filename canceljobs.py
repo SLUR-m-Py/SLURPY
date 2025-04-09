@@ -17,7 +17,7 @@ job_file = f'./{debugdir}/command.file.csv'
 ## Load in job file 
 jobs = pd.read_csv(job_file)
 ## Gather job ids
-jobids = jobs.JobID.tolist()
+jobids = jobs[(jobs.Operation!='bwaix')].JobID.tolist()
 
 ## Iterate thrut he job ids and canclse them
 for job in jobids:
