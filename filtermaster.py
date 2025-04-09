@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     ## gather job numbers / names
     job_numbers = vectortile(nparallel,nbedpe)
-    job_names   = [f'{job_numbers[i]}.bwa.sh' for i in range(nbedpe)]
+    job_names   = [f'{job_numbers[i]}.filter.sh' for i in range(nbedpe)]
 
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
@@ -155,7 +155,7 @@ if __name__ == "__main__":
             sleep(waittime)
         except Exception as error:
             print(error)
-            
+
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):
         ## Wait a minitue 
