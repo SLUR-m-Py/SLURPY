@@ -22,7 +22,7 @@ croth@lanl.gov
 ## List command for canceling all
 """
 squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
-./SLURPY/slurm.py -r vero -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed --merge --restart -F 2000000 -P tb fast gpu -j 20
+./SLURPY/slurm.py -r vero -G ../Chlorocebus_sabeus_mva.genome.sizes.autosome.filtered.bed -F 2000000 -P fast gpu -j 20
 squeue -u croth | grep mpi | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
 """ 

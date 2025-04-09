@@ -13,6 +13,8 @@ from pysamtools import writetofile, listzip, ifprint
 from time import sleep
 ## Load input vars from params
 from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel
+## Bring in tile and arange 
+from numpy import tile, arange
 
 ## Set opttions 
 line_count  = 5000
@@ -61,6 +63,10 @@ def sizecheck(read1,read2) -> list:
     ## Return the read pairs 
     return read_pairs
 
+## Ftn for tiling jobs
+def vectortile(k,n):
+    return tile(arange(k),n)
+
 ## Set description
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 
@@ -78,6 +84,7 @@ def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool
     command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' -B %s'%bwaopts if len(bwaopts) else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
+    ## Return the command and report 
     return [command], report 
 
 ##      MAIN SCRIPT & ARGUMENT PARSING 
@@ -125,7 +132,7 @@ if __name__ == "__main__":
     bwa_opts     = inputs.bwa       ## String of options to also feed into bwa 
 
     ## Format the options for bwa mem
-    options = f'-v 1 -t {thread_count-1} ' + ' '.join(bwa_opts.split(','))
+    options = f'-v 1 -t {thread_count} ' + ' '.join(bwa_opts.split(','))
 
     ## Gather the first reads 
     read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')
@@ -149,9 +156,12 @@ if __name__ == "__main__":
     ## Remove the previous checks if any
     [remove(bwa_check) for bwa_check in bwa_checkers if fileexists(bwa_check)]
 
-    ## Iniate list 
-    bwa_reports = []
+    ## Iniate list of bwa files
     bwa_files   = []
+
+     ## gather job numbers 
+    job_numbers = vectortile(nparallel,len(read_pairs))
+    job_names   = [f'{job_numbers[i]}.bwa.sh' for i in range(nreads)]
 
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
@@ -166,28 +176,32 @@ if __name__ == "__main__":
                     f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
-        ## If the report exists and has alredy been run, just skip
-        if fileexists(outfile) and fileexists(bwa_repo) and reportcheck(bwa_repo):
-            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo} and {bwa_check}.\nINFO: Skipping.\n')
-            ## REformat coms so its just the check 
-            bwa_coms = [bwa_coms[-1]]
+        ## If we are not forcing the run, then check if it exists
+        if not forced:
+            ## If the report exists and has alredy been run, just skip
+            if fileexists(outfile) and fileexists(bwa_repo) and reportcheck(bwa_repo):
+                print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
+                ## REformat coms so its just the check 
+                bwa_coms = [bwa_coms[-1]]
         
         ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(None,thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
+        writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
         ## append the report and files
         bwa_files.append(bwa_file)
 
-    ## iterate thru the bwa files to submit
-    for bwa_file in bwa_files:
-        ## Wiat a few seconds
-        sleep(waittime)
-        ## Submit the command to SLURM
-        submitsbatch(f'sbatch --partition={partitions} {bwa_file}')
-        ## Gather the counts
-        job_counts = checkqueue(f'{pix}.bwa')
-        while job_counts >= nparallel:
+    ## Iniate submitted 
+    submitted = 0
+    ## While sub miiting 
+    while submitted < nreads:
+        ## Try to Submit the command to SLURM
+        try:
+            submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {bwa_files[submitted]}')
+            ## Add to sub
+            submitted += 1
+            ## Wiat a few seconds
             sleep(waittime)
-            job_counts = checkqueue(f'{pix}.bwa')
+        except Exception as error:
+            print(error)
 
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bwa_checkers]) == nreads):

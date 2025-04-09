@@ -14,7 +14,7 @@ from pysamtools import writetofile
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwatobedpe import reportcheck, hic_flag
+from bwatobedpe import reportcheck, vectortile, hic_flag
 ## Load in directories
 from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 
@@ -111,9 +111,12 @@ if __name__ == "__main__":
     ## Remove the previous checks if any
     [remove(bed_check) for bed_check in bed_checkers if fileexists(bed_check)]
 
-    ## INiate filter repos, commands, and files
-    filter_reports  = []
+    ## Initiate filter files (.sh)
     filter_files    = []
+
+    ## gather job numbers / names
+    job_numbers = vectortile(nparallel,nbedpe)
+    job_names   = [f'{job_numbers[i]}.bwa.sh' for i in range(nbedpe)]
 
     ## Iterate thru the paths
     for i,bedpe in enumerate(bedpe_paths):
@@ -126,29 +129,33 @@ if __name__ == "__main__":
         filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n',
                          f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
 
-        ## If the report exists and has alredy been run, just skip
-        if fileexists(filter_repo) and fileexists(filter_file) and reportcheck(filter_repo):
-            print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
-            ## Reformat the commands
-            filter_coms = [filter_coms[-1]]
+        ## If we are not forcing the run, then check if it exists
+        if not forced:
+            ## If the report exists and has alredy been run, just skip
+            if fileexists(filter_repo) and fileexists(filter_file) and reportcheck(filter_repo):
+                print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
+                ## Reformat the commands
+                filter_coms = [filter_coms[-1]]
 
         ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(None,threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + filter_coms, debug)
+        writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + filter_coms, debug)
         ## append the report and files 
         filter_files.append(filter_file)
 
-    ## Iterate thru the files to submit
-    for filter_file in filter_files:
-        ## Sleep a second
-        sleep(waittime)
-        ## Submit the command to SLURM
-        submitsbatch(f'sbatch --partition={partitions} {filter_file}')
-        ## Gather the counts
-        job_counts = checkqueue(f'{pix}.filt')
-        while job_counts >= nparallel:
+    ## Iniate submitted 
+    submitted = 0
+    ## While sub miiting 
+    while submitted < nbedpe:
+        ## Try to Submit the command to SLURM
+        try:
+            submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {filter_files[submitted]}')
+            ## Add to sub
+            submitted += 1
+            ## Wiat a few seconds
             sleep(waittime)
-            job_counts = checkqueue(f'{pix}.filt')
-
+        except Exception as error:
+            print(error)
+            
     ## While thekicker is true 
     while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):
         ## Wait a minitue 
