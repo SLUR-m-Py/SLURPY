@@ -40,7 +40,7 @@ def isgzip(inpath:str) -> bool:
 def isgff(inpath:str) -> bool: 
     """Check if the file extension is a gff file."""
     ## Reutun boolean on iff this is a gff file 
-    return (inpath.split('.')[-1] == 'gff')
+    return (inpath.split('.')[-1] in ['gff','gtf'])
 
 ## Write ftn for laoding in gff file via dask df
 def daskgff(inpath:str,coi:str,feature_space:list,gffsep='\t'):
@@ -49,12 +49,6 @@ def daskgff(inpath:str,coi:str,feature_space:list,gffsep='\t'):
     gff = dd.read_csv(inpath,sep=gffsep,comment='#',names=gffnames,header=None)
     ## Return a subset of the gff for this chromosome 
     return gff[(gff.Chrom==coi) & (gff.Feature.isin(feature_space))].compute()
-
-## Ftn for loading a three column bed file 
-#def loadbed(inpath) -> pd.DataFrame:
-#    """Loads in a bed file from path."""
-#    ## Return the tab seperated file
-#    return pd.read_csv(inpath,sep='\t',names=['Chrom','Left','Right'],header=None)
 
 ## Ftn for loading a three column bed file with dask df
 def loadbed(inpath:str,coi:str) -> pd.DataFrame:
@@ -126,8 +120,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description =desc)
     ## Add the required arguments
     parser.add_argument("-i", dest="I", type=str,  required=True,   help=I_help, metavar='./path/to/input.bedpe') 
-    parser.add_argument("-c", dest="C", type=str,  required=True,   help=C_help, metavar='chrX')
-    parser.add_argument("-f", dest="F", type=str,  required=True,   help=F_help, metavar='./path/to/t2t.gff')
+    parser.add_argument("-c", dest="C", type=str,  required=True,   help=C_help, metavar='chrX'                 )
+    parser.add_argument("-f", dest="F", type=str,  required=True,   help=F_help, metavar='./path/to/t2t.gff'    )
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=T_help, metavar=24, default=chrom_count)
     ## Add boolean for back version compatibilty
     parser.add_argument("--short", dest="short",  help = short_help,    action = 'store_true')
