@@ -4,8 +4,8 @@
 #SBATCH --error=%x.%j.err               ## Name stderr
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
-#SBATCH --cpus-per-task=8               ## Number of tasks to be launched
-#SBATCH --partition=tb                  ## Set the partition
+#SBATCH --cpus-per-task=12              ## Number of tasks to be launched
+#SBATCH --partition=mpi                 ## Set the partition
 ## Load in mods 
 import pandas as pd, sys, dask.dataframe as dd
 
@@ -43,7 +43,7 @@ def isgff(inpath:str) -> bool:
     return (inpath.split('.')[-1] in ['gff','gtf'])
 
 ## Write ftn for laoding in gff file via dask df
-def daskgff(inpath:str,coi:str,feature_space:list,gffsep='\t'):
+def daskgff(inpath:str,coi:str,feature_space:list,gffsep='\t') -> pd.DataFrame:
     """Loads in a gff file with column names using dask dataframes."""
     ## Return the dask obj 
     gff = dd.read_csv(inpath,sep=gffsep,comment='#',names=gffnames,header=None)
@@ -102,7 +102,7 @@ def daskload(inpath:str,coi:str) -> pd.DataFrame:
 feature_list = ['gene']
 
 ## Set dsecritpion
-desc = "Processes and counts Hi-C contacts between features like genes from a GFF file or rows taken from a .bed file."
+desc = "Processes and counts Hi-C contacts between features like genes from a GFF, GTF, or rows taken from a .bed file."
 
 ## Set help messages
 I_help = "Input path to a bedpe file from SLURPY HI-C pipeline."
