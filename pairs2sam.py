@@ -91,9 +91,9 @@ B_help = "Boolean flag to convert sam to bam."
 T_help = "Thread count for sam to bam conversion."
 
 ## Ftn for calling this scrpt
-def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=6) -> str:
+def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=6) -> tuple:
     ## Return the formmatted commdn
-    return f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam' if tobam else ''), f'{debugdir}/{pix}E.to.sam.{sname}.log'
+    return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam' if tobam else '')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
 
 ## If the script is envoked 
 if __name__ == "__main__":
