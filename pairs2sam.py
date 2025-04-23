@@ -93,7 +93,7 @@ T_help = "Thread count for sam to bam conversion."
 ## Ftn for calling this scrpt
 def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=5) -> tuple:
     ## Return the formmatted commdn
-    return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam' if tobam else '')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
+    return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam\n' if tobam else '\n')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
 
 ## If the script is envoked 
 if __name__ == "__main__":
@@ -151,10 +151,16 @@ if __name__ == "__main__":
         ## Format path to bam file
         bam_path = outpt_path.replace('.sam','.bam')
         ## Format bam command 
-        bamcommand = f'samtools view -@ {threads} -b {outpt_path} | samtools sort - -@ {threads} --write-index -o {bam_path};echo Finished bedpe to bam conversion.'
+        bamcommand = f'samtools view -@ {threads} -b {outpt_path} | samtools sort - -@ {threads} --write-index -o {bam_path}'
         ## Submit to os 
         submitter(bamcommand)
 
         ## If the bam path exisits, remove the sam file
         remove(outpt_path)  if fileexists(bam_path) else None 
+
+    ## Format out file to print
+    ins_file_name = input_path.split('/')[0]
+    out_file_name = bam_path.split('/')[0] if tobam else outpt_path.split('/')[0]
+    ## Print to log we are finished
+    print(f'Finished bedpe pairs file conversion ({ins_file_name}) to {out_file_name}')
 ## End file 
