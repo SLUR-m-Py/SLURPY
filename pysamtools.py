@@ -128,13 +128,13 @@ def outnames(inbam,mito) -> tuple:
     return name_out_txt, name_placed_txt, name_mito_txt, name_unmap_txt, name_out_bedpe
 
 ## Ftn for returning split sub names
-def splitsubnames(mito) -> list: 
+def splitsubnames(mito:str) -> list: 
     """Returns a formated list of middle names of split bam file."""
     ## return the list of sub names
     return ['mapped','placed','unmapped',mito,'collisions'] 
 
 ## Ftn for commenting out command lines for debuging
-def debuglines(intxt) -> list: 
+def debuglines(intxt:list) -> list: 
     ## Initilizse new lines and counter
     newlines = []
     ## Iterate thru the input txt lines 
@@ -153,7 +153,7 @@ def debuglines(intxt) -> list:
     return newlines 
 
 ## Ftn to write to file
-def writetofile(inpath,intxt,debug,mode='w'):
+def writetofile(inpath:str,intxt:list,debug:bool,mode='w') -> str:
     """Opens a file to write lines to file."""
     ## Modify the input text lines if in debug mode
     intxt = debuglines(intxt) if debug else intxt

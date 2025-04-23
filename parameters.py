@@ -154,6 +154,9 @@ skipq_help    = "Flag to skip initial quality control and filtering with fastp (
 merge_help    = "Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output."
 peaks_help    = "A boolean flag to skip peak calling via macs3."
 short_help    = "A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed."
+tosam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools."
+tobam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools."
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 

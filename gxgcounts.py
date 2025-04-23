@@ -20,6 +20,7 @@ chunksize   = 1000000
 chrom_count = 24
 file_end    = '.bedpe'
 hicsep      = ' '
+ST          = 'store_true'
 
 ## Set gff column names
 gffnames = ['Chrom','Source','Feature','Left','Right','Score','Strand','Frame','Attribute']
@@ -124,8 +125,8 @@ if __name__ == "__main__":
     parser.add_argument("-f", dest="F", type=str,  required=True,   help=F_help, metavar='./path/to/t2t.gff'    )
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=T_help, metavar=24, default=chrom_count)
     ## Add boolean for back version compatibilty
-    parser.add_argument("--short", dest="short",  help = short_help,    action = 'store_true')
-    parser.add_argument("--merge", dest="merge",  help = merge_help,    action = 'store_true')
+    parser.add_argument("--short", dest="short",  help = short_help,    action = ST)
+    parser.add_argument("--merge", dest="merge",  help = merge_help,    action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()

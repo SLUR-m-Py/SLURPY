@@ -36,8 +36,8 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ## 
 ## HIC
 ## Set pipeline of hic analysis ## NOTE defined after defaults import 
-hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic','macs3','count','clean']
-##                  0        1      2        3       4      5a      5b      5c     5d       6B      6C
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic' ,'macs3','sam','count','clean']
+##                  0        1      2        3       4      5a      5b      5c      5d      5e     6B      6C
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
@@ -58,6 +58,8 @@ from pandacat import pandacat
 from bwatobedpe import bwamaster
 ## Load in filter master
 from filtermaster import filtermaster
+## Load in bedpe to sam
+from pairs2sam import bedpetosam
 
 ## Set the ftn descritption
 hiclite_descr = "Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments."
@@ -185,6 +187,8 @@ if __name__ == "__main__":
     parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = ST)
     parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
     parser.add_argument("--hicexplorer",          dest="hicexp",     help = hicex_help,    action = ST)
+    parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
+    parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args() 
@@ -245,6 +249,9 @@ if __name__ == "__main__":
     sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
     ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
     skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
+    tosam           = inputs.tosam        ##     Boolean flag to convert .bedpe file to sam format
+    tobam           = inputs.tobam        ##     Boolean flag to convert .bedpe file to bam format
+
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
     ##      CORRECT SPLIT / Chunksize
@@ -712,7 +719,6 @@ if __name__ == "__main__":
                 command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
         ##      PEAK CALLING WITH MACS3
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
@@ -725,8 +731,22 @@ if __name__ == "__main__":
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 
             command_files.append((macs3_filename,sample_name,experi_mode,'macs3',macs3_report,0,''))
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+        ##      SAM or BAM CONVERSION
+        ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+        ## 5E. If we are converting bedpe to sam or bam
+        if tosam or tobam:
+            ## Format the sam file name
+            sam_filename = f'{comsdir}/{pix}E.sam.{sample_name}.sh'
+            ## format the commadn to pairs2sam
+            sam_commands, sam_report = bedpetosam(newcatfile,pathtochrom,samthreads,tobam,sample_name)
+            ## Wriet the mac
+            writetofile(sam_filename, sbatch(sam_filename,samthreads,the_cwd,sam_report) + sam_commands, debug)
+            ## Append the sam command to command file list
+            command_files.append((sam_filename,sample_name,experi_mode,'sam',sam_report,0,''))
+
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## <- 
     
     ##      SUBMITTING TIME-STAMP   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -821,6 +841,10 @@ if __name__ == "__main__":
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if peakcalling else [])
+    ##
+    ##      5E) SAM or BAM CONVERSION
+    ## Call the sam conversion script 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
     ##
     ## Set the last step
     #if feature_space:
