@@ -91,7 +91,7 @@ B_help = "Boolean flag to convert sam to bam."
 T_help = "Thread count for sam to bam conversion."
 
 ## Ftn for calling this scrpt
-def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=6) -> tuple:
+def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=5) -> tuple:
     ## Return the formmatted commdn
     return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam' if tobam else '')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         ## Format path to bam file
         bam_path = outpt_path.replace('.sam','.bam')
         ## Format bam command 
-        bamcommand = f'samtools view -@ {threads} -b {outpt_path} | samtools sort - -@ {threads} --write-index -o {bam_path}'
+        bamcommand = f'samtools view -@ {threads} -b {outpt_path} | samtools sort - -@ {threads} --write-index -o {bam_path};echo Finished bedpe to bam conversion.'
         ## Submit to os 
         submitter(bamcommand)
 
