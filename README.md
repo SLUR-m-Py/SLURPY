@@ -129,8 +129,8 @@ conda activate bioenv
 
 ## Call the help menu for hic.py 
 $ ./SLURPY/slurm.py -h
-usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152]
-                [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup] [--clean] [--count] [--nomerge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer]
+usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup]
+                [--clean] [--count] [--nomerge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer] [--sam] [--bam]
 
 A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.
 
@@ -150,7 +150,7 @@ options:
   -Q 30, --map-threshold 30
                         Mapping quality threshold to filter alignments. Default is: 30.
   -R step, --rerun-from step
-                        Step within the pipeline to re-run from. Options include: fastp, bwa, filter, dedup, concat, gxg, toshort, hic, macs3, count, clean
+                        Step within the pipeline to re-run from. Options include: fastp, bwa, filter, dedup, concat, gxg, toshort, hic, macs3, sam, count, clean
   -a 666666, --afterok 666666
                         A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination.
   -N n, --nice n        The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: 100000000
@@ -201,13 +201,15 @@ options:
   --skipmacs3           A boolean flag to skip peak calling via macs3.
   --dedovetail          Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these).
   --hicexplorer         Flag to run stricter intra-fragment filtering.
+  --sam                 Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools.
+  --bam                 Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools.
 
 ```
 ### For ATAC-seq experiments
-To call the peaks.py script within the slurpy pipeline to analyze an ATAC-seq experiment run:
+To call the peaks.py script within the slurpy pipeline to analyze an ATAC-seq experiment and save output to .bam format:
 
 ```
-./SLURPY/slurm.py -r /path/to/reference/file.fasta --atac-seq
+./SLURPY/slurm.py -r /path/to/reference/file.fasta --atac-seq --bam
 ```
 
 ### For ChIP-seq experiments 
