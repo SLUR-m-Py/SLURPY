@@ -81,10 +81,9 @@ def shortload(inpath:str,coi:str) -> pd.DataFrame:
     ## Iterate over chunks 
     tmp = []
     ## With the csv open in pandas 
-    with pd.read_csv(inpath,sep=hicsep,header=None,chunksize=chunksize) as chunks:
+    with pd.read_csv(inpath,sep=hicsep,header=None,chunksize=chunksize,names=short_columns) as chunks:
         ## Iteraet over chuns 
         for df in chunks:
-            df.columns = short_columns
             ## Gather by chromosom 
             cdf = df[(df.Rname1==coi)][poscols]
             ## append if we have data 
@@ -93,11 +92,30 @@ def shortload(inpath:str,coi:str) -> pd.DataFrame:
     return pd.concat(tmp)
 
 ## Ftn for load ing wht dask df 
-def daskload(inpath:str,coi:str) -> pd.DataFrame:
+def daskload(inpath:str,coi:str,short=False) -> pd.DataFrame:
     ## Make a dask df obj 
-    df = dd.read_csv(inpath,sep=hicsep)
+    df = dd.read_csv(inpath,sep=hicsep,header=None,names=short_columns) if short else dd.read_csv(inpath,sep=hicsep)
     ## Return only the chromosomes hits of interest, and onlty the positoin columsn 
     return df[(df.Rname1==coi)][poscols].compute()
+
+def chromloader(inpath:str,coi:str,ishort:bool) -> pd.DataFrame:
+    ## Check if file is gzipped
+    gzbool = isgzip(inpath)
+    ## if the dataframe is in short form and gzipped
+    if ishort and gzbool:
+        cdf = shortload(inpath,coi)
+    ## If the df is gzipped but not short 
+    elif gzbool and not ishort:
+        cdf = loadgzip(inpath,coi)
+    ## IF the data is in short form but not gzipped 
+    elif ishort and not gzbool:
+        cdf = daskload(inpath,coi,short=ishort)
+    ## Otherwise load in in dax
+    else: ## Check work 
+        assert (not ishort) and (not gzbool), "ERROR: File format not recognized!"
+        cdf = daskload(inpath,coi)
+    ## Return cdf 
+    return cdf
 
 ## Set the feature list
 feature_list = ['gene']
@@ -161,13 +179,8 @@ if __name__ == "__main__":
         ## Set the name for the fetures 
         cgenes['Name'] = ['feat%s'%i for i in cgenes.index.tolist()]
 
-    ## Load in the hic data
-    if short:
-        chrhic = shortload(txt_path,coi)
-    elif isgzip(txt_path) and (not short):
-        chrhic = loadgzip(txt_path,coi)
-    else:
-        chrhic = daskload(txt_path,coi)
+    ## Load in chromosome data
+    chrhic = chromloader(txt_path,coi,short)
 
     ## Iniate the test 
     test = []
