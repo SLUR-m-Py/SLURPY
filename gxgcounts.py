@@ -117,6 +117,14 @@ def chromloader(inpath:str,coi:str,ishort:bool) -> pd.DataFrame:
     ## Return cdf 
     return cdf
 
+## Define ftn to get gene id 
+def geneid(a:str) -> str:
+    return [g for g in a.split(';') if ('gene_id' in g)][0].split('"')[-2]
+
+## Define ftn for getting a gene name 
+def genename(a:str) -> str:
+    return a.split('Name=')[-1].split(';')[0]
+
 ## Set the feature list
 feature_list = ['gene']
 
@@ -170,11 +178,17 @@ if __name__ == "__main__":
     if isgff(feat_path):
         ## Load in gff 
         cgenes = daskgff(feat_path,coi,feature_list)
-        ## Set the name 
-        cgenes['Name'] = [row.split('Name=')[-1].split(';')[0] for row in cgenes.Attribute.tolist()]
-    ## Otherwise load a already made list of features 
-    else: 
-        ## Load in feature path 
+        ## Gather extension
+        feat_end = feat_path.split('.')[-1]
+        ## Check if we are a gff or gtf
+        if (feat_end == 'gff'):
+            ## Set names if a gff was given 
+            cgenes['Name'] = cgenes.Attribute.apply(genename)
+        else: ## Other wise it is a gtf 
+            assert (feat_end == 'gtf'), "ERROR: We expected a gtf file and got this instead: %s"%feat_path
+            cgenes['Name'] =  cgenes.Attribute.apply(geneid)
+
+    else: ## Otherwise load a already made list of features 
         cgenes  = loadbed(feat_path,coi)
         ## Set the name for the fetures 
         cgenes['Name'] = ['feat%s'%i for i in cgenes.index.tolist()]
