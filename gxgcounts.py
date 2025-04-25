@@ -6,6 +6,17 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=mpi                 ## Set the partition
+"""
+Written by:
+
+    Sasha Bacot (sbacot@lanl.gov)
+
+Edits by: 
+
+    Cullen Roth (croth@lanl.gov)
+
+Genomics and Bioanalytics (B-GEN), Los Alamos National Laboratory, Los Alamos, NM 87545
+"""
 ## Load in mods 
 import pandas as pd, sys, dask.dataframe as dd
 
@@ -58,64 +69,56 @@ def loadbed(inpath:str,coi:str) -> pd.DataFrame:
     tmp = dd.read_csv(inpath,sep='\t',names=['Chrom','Left','Right'],header=None)
     return tmp[(tmp.Chrom==coi)].compute()
 
-## Ftn for loading gzipped hic data
-def loadgzip(inpath:str,coi:str) -> pd.DataFrame:
-    ## Iterate over chunks 
-    tmp = []
-    ## With the csv open in pandas 
-    with pd.read_csv(inpath,sep=hicsep,chunksize=chunksize) as chunks:
-        ## Iteraet over chuns 
-        for df in chunks:
-            ## Gather by chromosom 
-            cdf = df[(df.Rname1==coi)][poscols]
-            ## append if we have data 
-            tmp.append(cdf) if cdf.shape[0] else None
-    ## Concat the hic data and return 
-    return pd.concat(tmp)
-
 ## Set the short columns
 short_columns = ['Str1','Rname1','Pos1','Frag1','Str2','Rname2','Pos2','Frag2']
 
 ## Ftn for loading gzipped hic data
-def shortload(inpath:str,coi:str) -> pd.DataFrame: 
+def chunkload(inpath:str,coi:str,short:bool) -> pd.DataFrame:
+    ## Initiate vars
+    kicked = 0
+    goal = 0
     ## Iterate over chunks 
     tmp = []
     ## With the csv open in pandas 
-    with pd.read_csv(inpath,sep=hicsep,header=None,chunksize=chunksize,names=short_columns) as chunks:
+    with (pd.read_csv(inpath,sep=hicsep,chunksize=chunksize,header=None,names=short_columns) if short else pd.read_csv(inpath,sep=hicsep,chunksize=chunksize)) as chunks:
         ## Iteraet over chuns 
         for df in chunks:
             ## Gather by chromosom 
             cdf = df[(df.Rname1==coi)][poscols]
-            ## append if we have data 
-            tmp.append(cdf) if cdf.shape[0] else None
+
+            ## If we have hic counts
+            if cdf.shape[0]:
+                ## If we have data for this chromosome append if we have data 
+                tmp.append(cdf)
+                ## Then, set the kicked to 1, to mark that we have started the data import 
+                kicked = 1
+
+            else: ## Otherwise we found no data
+                if kicked: ## But if we had foudn some, we can start to turn this loop off 
+                    goal = 1 ## Set goal to 1, b/c we reached it
+                else: ## IF we had not found data ie kicked == 1,then we keep looking 
+                    pass 
+
+            ## If we have found data and, appened chunks and then found an empty chunk again, stop 
+            if goal and kicked:
+                break 
+
+        ## CLose the chunks
+        chunks.close()
     ## Concat the hic data and return 
     return pd.concat(tmp)
 
 ## Ftn for load ing wht dask df 
-def daskload(inpath:str,coi:str,short=False) -> pd.DataFrame:
+def daskload(inpath:str,coi:str,short:bool) -> pd.DataFrame:
     ## Make a dask df obj 
     df = dd.read_csv(inpath,sep=hicsep,header=None,names=short_columns) if short else dd.read_csv(inpath,sep=hicsep)
     ## Return only the chromosomes hits of interest, and onlty the positoin columsn 
     return df[(df.Rname1==coi)][poscols].compute()
 
+## Ftn for loading in any expected data type 
 def chromloader(inpath:str,coi:str,ishort:bool) -> pd.DataFrame:
-    ## Check if file is gzipped
-    gzbool = isgzip(inpath)
-    ## if the dataframe is in short form and gzipped
-    if ishort and gzbool:
-        cdf = shortload(inpath,coi)
-    ## If the df is gzipped but not short 
-    elif gzbool and not ishort:
-        cdf = loadgzip(inpath,coi)
-    ## IF the data is in short form but not gzipped 
-    elif ishort and not gzbool:
-        cdf = daskload(inpath,coi,short=ishort)
-    ## Otherwise load in in dax
-    else: ## Check work 
-        assert (not ishort) and (not gzbool), "ERROR: File format not recognized!"
-        cdf = daskload(inpath,coi)
-    ## Return cdf 
-    return cdf
+    ## Load in a gzipped (or not) file in short format (or not)
+    return chunkload(inpath,coi,ishort) #if isgzip(inpath) else daskload(inpath,coi,ishort)
 
 ## Define ftn to get gene id 
 def geneid(a:str) -> str:
@@ -158,12 +161,12 @@ if __name__ == "__main__":
     inputs = parser.parse_args()
 
     ## Set the input text and gff path
-    txt_path    = inputs.I     ## Set input text file path
-    feat_path   = inputs.F     ## Set input feature file path 
-    coi         = inputs.C     ## Set the chormosome of interest
-    chrom_count = inputs.T     ## Set the number of chromosomes we are processing in total and other runs 
-    short       = inputs.short ## Flag to work from short input file 
-    merge       = inputs.merge ## Flag to merge outputs acorss genes from other runs 
+    txt_path    = inputs.I      ## Set input text file path
+    feat_path   = inputs.F      ## Set input feature file path 
+    coi         = inputs.C      ## Set the chormosome of interest
+    chrom_count = inputs.T      ## Set the number of chromosomes we are processing in total and other runs 
+    short       = inputs.short  ## Flag to work from short input file 
+    merge       = inputs.merge  ## Flag to merge outputs acorss genes from other runs 
 
     ## Check our ends
     if not short:
@@ -232,6 +235,7 @@ if __name__ == "__main__":
                 for g in k.Name:
                     #gbyg.append((cgenes.loc[i,'Name'],g))
                     l = sorted([i+'_%s'%coi,g+'_%s'%chrm]) + [j]
+                    #l = [i,coi,g,chrm,j]
                     ## Append to list 
                     gbyg.append(l)
 
