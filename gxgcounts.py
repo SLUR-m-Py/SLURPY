@@ -194,7 +194,7 @@ if __name__ == "__main__":
     else: ## Otherwise load a already made list of features 
         cgenes  = loadbed(feat_path,coi)
         ## Set the name for the fetures 
-        cgenes['Name'] = ['feat%s'%i for i in cgenes.index.tolist()]
+        cgenes['Name'] = ['feat_%s_%s'%(coi,i) for i in cgenes.index.tolist()]
 
     ## Load in chromosome data
     chrhic = chromloader(txt_path,coi,short)
