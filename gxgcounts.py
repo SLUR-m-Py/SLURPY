@@ -201,7 +201,7 @@ if __name__ == "__main__":
     else: ## Otherwise load a already made list of features 
         cgenes  = loadbed(feat_path,coi)
         ## Set the name for the fetures 
-        cgenes['Name'] = ['feat_%s_%s'%(coi,i) for i in cgenes.index.tolist()]
+        cgenes['Name'] = ['feat_%s'%i for i in cgenes.index.tolist()]
         
         ## Set the output, and other var names, for later
         out_ext = 'fxf'
