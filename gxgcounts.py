@@ -137,7 +137,7 @@ desc = "Processes and counts Hi-C contacts between features like genes from a GF
 ## Set help messages
 I_help = "Input path to a bedpe file from SLURPY HI-C pipeline."
 C_help = "The chromosome to limit analysis to. Used in parallel processing."
-F_help = "Path to an input .gff or .bed file."
+F_help = "Path to an input .gff, .gtf, or .bed file."
 T_help = "Number of chromosomes expected and used to concatonate final results."
 short_help = 'A boolean flag indicating that input Hi-C data is in juicer short format.'
 merge_help = 'A boolean flag to activate the final merge protocal, collapsing across all genes.'
@@ -179,6 +179,8 @@ if __name__ == "__main__":
 
     ## If this is a gff file
     if isgff(feat_path):
+        ## Set the output name for later
+        out_ext = 'gxg'
         ## Load in gff 
         cgenes = daskgff(feat_path,coi,feature_list)
         ## Gather extension
@@ -195,6 +197,8 @@ if __name__ == "__main__":
         cgenes  = loadbed(feat_path,coi)
         ## Set the name for the fetures 
         cgenes['Name'] = ['feat_%s_%s'%(coi,i) for i in cgenes.index.tolist()]
+        ## Set the output name for later
+        out_ext = 'fxf'
 
     ## Load in chromosome data
     chrhic = chromloader(txt_path,coi,short)
@@ -271,7 +275,7 @@ if __name__ == "__main__":
             time.sleep(5)
 
         ## set the outpath
-        fin_out_path = head_path + '.gxg.%s.csv'%chrom_count
+        fin_out_path = head_path + '.%s.%s.csv'%(out_ext,chrom_count)
         ## Concat the files and saveout via dask dataframes 
         dd.read_csv(out_path%'*').to_csv(fin_out_path,index=False,single_file=True)
         
