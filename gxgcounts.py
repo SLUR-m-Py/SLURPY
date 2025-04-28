@@ -130,6 +130,8 @@ def genename(a:str) -> str:
 
 ## Set the feature list
 feature_list = ['gene']
+## SEt the extension of input file 
+feat_ends = ['.bed','.gtf','.gff']
 
 ## Set dsecritpion
 desc = "Processes and counts Hi-C contacts between features like genes from a GFF, GTF, or rows taken from a .bed file."
@@ -172,15 +174,18 @@ if __name__ == "__main__":
     if not short:
         assert file_end in txt_path, "ERROR: The file type was not recognized! Expected a .bedpe file representing hic counts."
 
+    ## check the file ends ofthe inptu features
+    assert sum([(fend in feat_path) for fend in feat_ends]), "ERROR: The extension of the input feature file was not recognized. Must be .bed, .gtf, or .gff."
+
     ## Gather head path from input txt file 
     head_path = txt_path.split(file_end)[0]
-    ## Set the output path
-    out_path = head_path + '.%s.gene.counts.csv'
-
     ## If this is a gff file
     if isgff(feat_path):
-        ## Set the output name for later
+        ## Set the output extension, name for later, the output paht, and print statement
         out_ext = 'gxg'
+        out_path = head_path + '.%s.gene.counts.csv'
+        out_print = 'gene X gene'
+
         ## Load in gff 
         cgenes = daskgff(feat_path,coi,feature_list)
         ## Gather extension
@@ -197,8 +202,11 @@ if __name__ == "__main__":
         cgenes  = loadbed(feat_path,coi)
         ## Set the name for the fetures 
         cgenes['Name'] = ['feat_%s_%s'%(coi,i) for i in cgenes.index.tolist()]
-        ## Set the output name for later
+        
+        ## Set the output, and other var names, for later
         out_ext = 'fxf'
+        out_path = head_path + '.%s.feat.counts.csv'
+        out_print = 'feature X feature'
 
     ## Load in chromosome data
     chrhic = chromloader(txt_path,coi,short)
@@ -286,5 +294,5 @@ if __name__ == "__main__":
         [remove(p) for p in allfiles] if exists(fin_out_path) else None 
 
     ## print to log
-    print("Finished calculating featrue X feature counts for %s."%coi)
+    print("Finished calculating %s counts for %s."%(out_print,coi))
 ## EOF 
