@@ -127,6 +127,9 @@ The help menu (-h) of protocols within slurpy lists all the available arguments 
 ## Activate our computing environment
 conda activate bioenv 
 
+## Start a run of the slurpy pipeline, providing a fasta file of a reference genome
+./SLURPY/slurm.py -r /path/to/reference/file.fasta
+
 ## Call the help menu for hic.py 
 $ ./SLURPY/slurm.py -h
 usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup]
