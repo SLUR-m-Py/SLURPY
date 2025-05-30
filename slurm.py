@@ -41,7 +41,6 @@ hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic'
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
-max_dist = 0
 count_mod = ''
 ## 
 ##      MODULE LOADING and VARIABLE SETTING 
@@ -164,6 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
     parser.add_argument("-x", "--Xmemory",        dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
+    parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
     parser.add_argument("-gxg","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
 
@@ -228,6 +228,7 @@ if __name__ == "__main__":
     jarpath         = inputs.J            ##     Path to juicer jar file 
     xmemory         = inputs.x            ##     Amount of memory passed to juicer pre command 
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
+    max_dist        = inputs.m            ##     Maximum distance of paired end reads
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
     dedovetail      = inputs.tails        ##     Boolean for dove tailing 
@@ -348,7 +349,7 @@ if __name__ == "__main__":
         keep_dovetail = True
         inhic         = False
         enzymelib     = 'none'
-        max_dist      = 1000
+        max_dist      = max_dist if max_dist else 1000
         count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
     

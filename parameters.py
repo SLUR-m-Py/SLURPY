@@ -64,6 +64,7 @@ mito         = 'chrM'        ##     The name of the mitocondrial contig (in humn
 xmemory      = 49152         ##     Sets the memory used by juicer pre command 
 nice         = 10**8         ##     Set the nice parameter 
 nparallel    = 33            ##     Number of jobs to run in parallele 
+max_dist     = 0             ##     Maximum distance allowed for paired end mapping
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
                 2000000,
                 1000000,
