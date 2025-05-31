@@ -131,6 +131,7 @@ j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: 
 node_help = "Space seperated list of nodes to run jobs on."
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these)."
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."
+rnas_help  = "Preset mode to run in RNA-seq analysis mode."
 intra_help = "Boolean flag to remove read pairs spanning multiple chromosomes."
 mcool_help = "Flag to make an mcool file with cooler."
 pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."

@@ -182,6 +182,7 @@ if __name__ == "__main__":
     
     ## Set ATAC-seq specifict
     parser.add_argument("--atac-seq",             dest="atac",       help = atac_help,     action = ST)
+    parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
     parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
     parser.add_argument("--broad",                dest="broad",      help = broad_help,    action = ST)
     parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = ST)
@@ -216,7 +217,7 @@ if __name__ == "__main__":
     fastp_threads   = inputs.f            ##     Number of fastp threads
     daskthreads     = inputs.t            ##     Number of threads in dask
     bwa_threads     = inputs.b            ##     Number of threads in bwa alignments
-    bwa_opts        = inputs.B
+    bwa_opts        = inputs.B            ##     Set options for bwa 
 
     ## Set variables for Hi-C                
     run_name        = inputs.n            ##     The name of the samples 
@@ -247,6 +248,7 @@ if __name__ == "__main__":
     counting        = inputs.count        ##     Flag to count the read pairs
     postmerging     = not inputs.merge    ##     Forces premerge of outputs 
     atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
+    rna_seq         = inputs.rnas         ##     Boolean flag to run in rna-seq mode 
     sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
     ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
     skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
@@ -344,6 +346,16 @@ if __name__ == "__main__":
 
     ##      PRESET ATAC and ChIP-seq mode
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Check if we are mapping RNA-seq reads
+    if rna_seq:
+        keep_dovetail = True
+        inhic         = False
+        enzymelib     = 'none'
+        max_dist      = 0
+        count_mod     = '--atac-seq'
+        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
+        skippeaks     = True 
+    
     ## Check if we are in atac seq mode    
     if atac_seq or chip_control:
         keep_dovetail = True
@@ -369,6 +381,8 @@ if __name__ == "__main__":
     ## Reset experiment mode 
     if atac_seq:
         experi_mode = 'atac'
+    if rna_seq:
+        experi_mode = 'rnas'
     elif chip_control:
         experi_mode = 'chip'
     else: ## Set the hardset hic mode 
