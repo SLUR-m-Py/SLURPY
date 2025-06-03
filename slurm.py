@@ -725,7 +725,7 @@ if __name__ == "__main__":
                 coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
                 ## Set cooler commands 
                 cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
-                            f'cooler zoomify {outcool} -r {','.join(map(str,binsizes))} -o {outmcool}\n'
+                            f'cooler zoomify {outcool} -r {",".join(map(str,binsizes))} -o {outmcool}\n'
                             f'rm {outcool}\n',
                             f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
                 ## Write the concat command to file

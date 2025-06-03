@@ -26,6 +26,9 @@ import pandas as pd
 ## Load in scripts dir 
 from directories import slurpydir, macs3dir 
 
+## Set extension dict 
+exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
+
 ## Ftn for formating length parameter
 def formatlen(minlen):
     """Formats and returns the max length flag and parameter for a call to macs3."""
@@ -174,8 +177,11 @@ if __name__ == "__main__":
     ## Calc total
     total = bedpe.Chrom.count().compute()
 
+    ## Gather the extenstion of the input file
+    extension = peak_path.split('.')[-1]
+
     ## Load in narrow peak path, initate read count, and drop ducpliates to unique peaks 
-    narrow          = loadnarrowpeak(peak_path)
+    narrow          = loadnarrowpeak(peak_path,sep=exten_dict[extension])
     narrow['Reads'] = 0
     peaks           = narrow[['Chrom','Start','End','Reads']].drop_duplicates()
 
