@@ -178,7 +178,7 @@ if __name__ == "__main__":
     bedpe_path, peak_path, save_path, genomesize,  dplace = args.b, args.p, args.s, args.g, args.d, 
 
     ## Load in dask 
-    bedpe = dd.read_csv(bedpe_path,sep='\t',names=['Chrom','Left','Right','Strand'],header=None)
+    bedpe = dd.read_csv(bedpe_path,sep='\t',names=['Chrom','Left','Right'],header=None)
 
     ## Calc total
     total = bedpe.Chrom.count().compute()
