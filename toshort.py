@@ -55,7 +55,7 @@ def maxrow(row):
 ## Set position col
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
 
-rpos1 = ['Rname1','Pos1','End2']
+rpos1 = ['Rname1','Pos1','End1']
 rpos2 = ['Rname2','Pos2','End2']
 new_cols = ['Chrom','Left','Right','Strand']
 
