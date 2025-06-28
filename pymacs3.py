@@ -68,7 +68,8 @@ def formatinput(inputs):
     return f'-t {sjoin(inputs)}' if inputs else ''
 
 ## Set options for atac-seq opts
-atacopts = '--keep-dup all --nomodel --shift -75 --extsize 150 --call-summits -B --SPMR --nolambda'
+#atacopts = '--keep-dup all --nomodel --shift -75 --extsize 150 --call-summits -B --SPMR --nolambda'
+atacopts = '--keep-dup all --call-summits -B --SPMR --nolambda'
 
 ## Set options for chip-seq opts
 narrow_chip = '--keep-dup all --call-summits -B --SPMR'
@@ -92,7 +93,7 @@ def peakattack(bedpe:str,n,report,broad=False,gsize='hs',mg=None,ml=None,extraop
         mode = 'BEDPE'
     else: ## otherwise this is an atac exp 
         opts = atacopts
-        mode = 'BED'
+        mode = 'BEDPE'
     
     ## Add the additional optsions 
     opts = opts + (' ' + extraoptions if extraoptions else '')

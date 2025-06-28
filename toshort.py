@@ -44,13 +44,13 @@ I_help = "Input path to a bedpe file from SLURPY Hi-C pipeline."
 B_help = "Format paired end bedpe into a single end bed file for ATAC-seq."
 M_help = "Format input bedpe pairs file into macs3 compatible version."
 
-## Def ftn for taking min of row
-def minrow(row):
-    return row.min()
+## Def ftn for taking left size of the fragment 
+def rowleft(row) -> int:
+    return sorted(row)[1]
 
-## Def ftn for taking max of row 
-def maxrow(row):
-    return row.max()
+## Def ftn for taking right size of the fragment 
+def rowright(row) -> int:
+    return sorted(row)[2]
 
 ## Set position col
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
@@ -97,6 +97,18 @@ if __name__ == "__main__":
         ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
         ## Open with chunking 
+        with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
+            ## Iterate thru chunks 
+            for i,chunk in enumerate(chunks):
+
+                ## Assign the left and right chunk 
+                chunk['Left']  = chunk[pos_cols[1:]].apply(rowleft, axis=1)
+                chunk['Right'] = chunk[pos_cols[1:]].apply(rowright,axis=1)
+                ## Save out the chunk
+                chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+
+        """
+        ## Open with chunking 
         with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
             ## Iterate thru chunks 
             for i,chunk in enumerate(chunks):
@@ -104,7 +116,7 @@ if __name__ == "__main__":
                 new_chunk = pd.concat([makechunk(chunk,rpos1),makechunk(chunk,rpos2,strand='-')],axis=0).sort_values(by=new_cols)
                 ## Save out the new chunk
                 new_chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
-
+        """
     ## If in macs 3 mode 
     elif formacs3:
         ## Forma the output path 
@@ -117,11 +129,10 @@ if __name__ == "__main__":
                 ## ADd min and max of position columns 
                 chunk['Min'] = chunk[pos_cols[1:]].min(axis=1)
                 chunk['Max'] = chunk[pos_cols[1:]].max(axis=1)
-
-                ## Append the min and max of each fragment to tsv (bedpe)
+               
+                ## Save out the csv 
                 chunk[['Rname1','Min','Max']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
-        ## Save out the csv 
-        #bedpe = dd.read_csv(input_path,sep=hicsep,usecols=pos_cols).to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
+    ## Otherwise make pairs if make pairs is past
     elif makepairs:
         ## SEt output path
         output_path = input_path.split(file_end)[0] + '.pairs' 
