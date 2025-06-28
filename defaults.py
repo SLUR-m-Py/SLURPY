@@ -151,7 +151,7 @@ def checkfastp(fsplits:int,fthreads:int) -> tuple:
         ## Reset the thread count to half the split number
         fsplits = fthreads
         ## Print we are resetting
-        print(f'WARNING: The number fastp threads to conduct {fsplits} splits was reset to {fthreads}.')
+        print(f'INFO: The number fastp threads to conduct {fsplits} splits was reset to {fthreads}.')
     ## Return the number of splits and threads for fastp 
     return fsplits,fthreads
 
@@ -167,7 +167,7 @@ def confirmreset(indirs:list) -> None:
     ## While we are waiting for input 
     while True:
         ## Send a query to the user 
-        query = input("WARNING: A hard restart was detected!\n\tDo you wish to delete ALL previous files, directories, and runs?\n") 
+        query = input("INFO: A hard restart was detected!\n\tDo you wish to delete ALL previous files, directories, and runs?\n") 
         ## Gather the answere 
         anser = query[0].lower() 
         ## Make sure the queary and answer are defined 

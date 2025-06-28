@@ -263,7 +263,7 @@ if __name__ == "__main__":
     if chunksize > max_splitsize:
         ## Reset chunksize
         chunksize = int(round(max_splitsize/3,0))
-        print("WARNING: Reseting chunksize (Z) to: %s"%chunksize)
+        print("INFO: Reseting chunksize (Z) to: %s"%chunksize)
 
     ##      PRESET Thread counts
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
