@@ -371,7 +371,7 @@ if __name__ == "__main__":
 
     ## Check our control files if they were passed 
     if chip_control:
-        assert (type(chip_control) == list) and (type(chip_control[0]) == str), f'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
+        assert (type(chip_control) == list) and (type(chip_control[0]) == str), 'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
         ## Iterate over the controls inputs 
         for chip_con in chip_control:
             ## Check they exist 
@@ -615,7 +615,7 @@ if __name__ == "__main__":
         ## Iterate thru the zipped concat files 
         for (con_ins,con_out,con_rep,con_fil) in zip(concat_inputs,concat_outputs,concat_reports,concat_files):
             ## Format the commands 
-            concat_coms = pandacat(con_ins,con_out,report=con_rep,rmheader=True)
+            concat_coms = pandacat(con_ins,con_out,rmheader=True)
             ## Write commands to file 
             writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes) + concat_coms, debug)
             ## append command to command file list
@@ -896,7 +896,7 @@ if __name__ == "__main__":
     ## Calc number of jobs submitted
     njobstosub, njobssubbed = command_files[(command_files.Torun==0)].shape[0], len(sub_sbatchs)
     ## Check our work
-    ifprint(f'WARNING: The number of expected jobs to run ({njobstosub}) and number of jobs submitted {njobssubbed} does not match!' ,not (njobstosub == njobssubbed))
+    ifprint(f'WARNING: The number of expected jobs to run ({njobstosub}) and number of jobs submitted {njobssubbed} do not match!' ,not (njobstosub == njobssubbed))
     ## Print the number of commands being submitted
     print(f'INFO: A total of {njobssubbed} jobs were submitted with this run' + (f' and will start after {bwaix_jobid}.' if bwaix_jobid else '.')  )
     ## If zero jobs were submitted

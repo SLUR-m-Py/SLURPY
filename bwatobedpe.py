@@ -132,7 +132,7 @@ if __name__ == "__main__":
     bwa_opts     = inputs.bwa       ## String of options to also feed into bwa 
 
     ## Format the options for bwa mem
-    options = f'-v 1 -t {thread_count} ' + ' '.join(bwa_opts.split(','))
+    options = f'-v 1 -t {thread_count} ' + ' '.join(bwa_opts.split(","))
 
     ## Gather the first reads 
     read_ones  = getread1(f'{splitsdir}/*.{sample_name}_R1_*.fastq.gz')

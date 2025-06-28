@@ -28,13 +28,13 @@ from defaults import reset, slurpydir
 import shutil
 
 ## Ftn for calling pandacat for concatonating
-def pandacat(infiles:list, outfile:str, report:str, rmheader=False, sortpaths=False) -> tuple:
+def pandacat(infiles:list, outfile:str, rmheader=False, sortpaths=False) -> tuple:
     """Formats a command to merge hic file from pandas dataframe."""
     ## Set the skip head and soritng flags
     skiphead = ' --skipheader ' if rmheader else ''
     sorting  = ' --sort ' if sortpaths else ''
     ## Return the formated commands
-    return [f'{slurpydir}/pandacat.py -i {' '.join(infiles)} -o {outfile}{skiphead}{sorting}\n']#, f'{scriptsdir}/myecho.py Finished concatenating files into file: {outfile} {report}\n']
+    return [f'{slurpydir}/pandacat.py -i {" ".join(infiles)} -o {outfile}{skiphead}{sorting}\n']#, f'{scriptsdir}/myecho.py Finished concatenating files into file: {outfile} {report}\n']
 
 ## Set the script sescription
 pandadesc = "Concatonates a series of input pandas dataframes as text files (ingnoring header on all but first)."
