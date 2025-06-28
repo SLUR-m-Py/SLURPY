@@ -60,9 +60,9 @@ rpos2 = ['Rname2','Pos2','End2']
 new_cols = ['Chrom','Left','Right','Strand']
 
 ## Fnt to make new chunk
-def makechunk(df,poscols) -> pd.DataFrame:
-    ndf           = df[poscols]
-    ndf['Strand'] = '+'
+def makechunk(df,poscols,strand='+') -> pd.DataFrame:
+    ndf           = df[poscols].copy()
+    ndf['Strand'] = strand
     ndf.columns   = new_cols
     return ndf 
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             ## Iterate thru chunks 
             for i,chunk in enumerate(chunks):
                 ## Gather the positions
-                new_chunk = pd.concat([makechunk(chunk,rpos1),makechunk(chunk,rpos2)],axis=0).sort_values(by=new_cols)
+                new_chunk = pd.concat([makechunk(chunk,rpos1),makechunk(chunk,rpos2,strand='-')],axis=0).sort_values(by=new_cols)
                 ## Save out the new chunk
                 new_chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 

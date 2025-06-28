@@ -280,7 +280,7 @@ if __name__ == "__main__":
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
-    ist2t = (reference_path.lower() == 't2t')
+    ist2t  = (reference_path.lower() == 't2t')
     isvero = (reference_path.lower() == 'vero')
 
     ## If human reference 
