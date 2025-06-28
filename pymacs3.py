@@ -68,7 +68,7 @@ def formatinput(inputs):
     return f'-t {sjoin(inputs)}' if inputs else ''
 
 ## Set options for atac-seq opts
-atacopts = '--keep-dup all --call-summits -B --SPMR --nolambda'
+atacopts = '--keep-dup all --nomodel --shift -75 --extsize 150 --call-summits -B --SPMR --nolambda'
 
 ## Set options for chip-seq opts
 narrow_chip = '--keep-dup all --call-summits -B --SPMR'
@@ -80,20 +80,25 @@ def threebedpe(inbedpe:list) -> list:
     return f'{macs3dir}/{inbedpe.split('/')[-1]}' 
 
 ## Write ftn for calling macs3 with atac seq data
-def peakattack(bedpe:str,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptions=None,incontrols=None,outdir=f'./{macs3dir}',mode='BEDPE'):
+def peakattack(bedpe:str,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptions=None,incontrols=None,outdir=f'./{macs3dir}'):
     """Envokes macs3 callpeak function on for a run of the slurpy pipeline (n) on input bam file in bampe mode using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
     ## Format the input options, if the options are set explicitly, and if the input control is set for chip experiment 
     if incontrols and broad:
         opts = broad_chip
+        mode = 'BEDPE'
+    ## A chip or cut-and-tag seq exp 
     elif incontrols and not broad:
         opts = narrow_chip
+        mode = 'BEDPE'
     else: ## otherwise this is an atac exp 
         opts = atacopts
+        mode = 'BED'
+    
     ## Add the additional optsions 
     opts = opts + (' ' + extraoptions if extraoptions else '')
     
     ## Forma tthe conversion commands
-    con_coms = [f'{slurpydir}/toshort.py --macs3 -i {bedpe}\n']
+    con_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe}\n']
     ## Format the macs3 callpeak command
     macs_coms = [f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
     return con_coms + macs_coms

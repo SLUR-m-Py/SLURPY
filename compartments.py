@@ -74,7 +74,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ## Print we are starting
-    print('INFO: Starting A/B compartment correction and analysis.')
+    print('INFO: Starting A/B compartment analysis.')
 
     ## Set needed input arguments 
     hic_path = args.i

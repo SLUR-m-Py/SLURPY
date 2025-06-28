@@ -41,7 +41,8 @@ pairs_cols = ['Qname1','Rname1','Pos1','Rname2','Pos2','Seqrev1','Seqrev2']
 desc = "Converts an input bedpe file (representing Hi-C contacts from SLURPY) to a short formated text file for juicer pre command."
 ## Set help message
 I_help = "Input path to a bedpe file from SLURPY Hi-C pipeline."
-M_help = "Format input bedpe to macs3 compatible version."
+B_help = "Format paired end bedpe into a single end bed file for ATAC-seq."
+M_help = "Format input bedpe pairs file into macs3 compatible version."
 
 ## Def ftn for taking min of row
 def minrow(row):
@@ -54,6 +55,17 @@ def maxrow(row):
 ## Set position col
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
 
+rpos1 = ['Rname1','Pos1','End2']
+rpos2 = ['Rname2','Pos2','End2']
+new_cols = ['Chrom','Left','Right','Strand']
+
+## Fnt to make new chunk
+def makechunk(df,poscols) -> pd.DataFrame:
+    ndf           = df[poscols]
+    ndf['Strand'] = '+'
+    ndf.columns   = new_cols
+    return ndf 
+
 ## If the script is envoked 
 if __name__ == "__main__":
     ## Bring in argparse and set parser
@@ -62,7 +74,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
     parser.add_argument("-i",           dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
-    parser.add_argument('--macs3',      dest="M", help=M_help,      action = ST)
+    parser.add_argument('--bed',        dest="B", help=B_help,      action = ST)
+    parser.add_argument('--bedpe',      dest="M", help=M_help,      action = ST)
     parser.add_argument('--pairs',      dest="P", help=pairs_help,  action = ST)
     parser.add_argument('--inter-only', dest="O", help=inter_help,  action = ST)
 
@@ -71,6 +84,7 @@ if __name__ == "__main__":
 
     ## Set input
     input_path  = inputs.I 
+    atacbed     = inputs.B 
     formacs3    = inputs.M
     makepairs   = inputs.P
     getinter    = inputs.O
@@ -78,9 +92,22 @@ if __name__ == "__main__":
     ## Check path
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
 
+    ## IF this is an atac-seq sample 
+    if atacbed:
+        ## Forma the output path 
+        output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
+        ## Open with chunking 
+        with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
+            ## Iterate thru chunks 
+            for i,chunk in enumerate(chunks):
+                ## Gather the positions
+                new_chunk = pd.concat([makechunk(chunk,rpos1),makechunk(chunk,rpos2)],axis=0).sort_values(by=new_cols)
+                ## Save out the new chunk
+                new_chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+
     ## If in macs 3 mode 
-    if formacs3:
-        ## Forma tthe output path 
+    elif formacs3:
+        ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
 
         ## Open with chunking 

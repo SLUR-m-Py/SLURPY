@@ -319,7 +319,6 @@ if __name__ == "__main__":
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
     ## Check library if it was pased
     assert enzymelib.lower() in ['mboi', 'dpnii','sau3ai','hindiii','arima','none'], lib_error
-    print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
 
     ## Check if we have a jarpath
     if jarpath:
@@ -390,6 +389,9 @@ if __name__ == "__main__":
 
     ## Set peakcalling boolean 
     peakcalling = atac_seq and (not skippeaks)
+
+    ## Moved to trigger if statment correctly
+    print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
