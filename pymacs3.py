@@ -50,15 +50,15 @@ def formatcontrol(incontrols):
     return f'-c {sjoin(incontrols)}' if incontrols else ''
 
 ## Ftn for formatting inputs
-def formatinput(inputs):
-    """Formats the input bam files for a call to macs3."""    
-    ## Return the joined inputs for macs3
-    return f'-t {sjoin(inputs)}' if inputs else ''
+#def formatinput(inputs):
+#    """Formats the input bam files for a call to macs3."""    
+#    ## Return the joined inputs for macs3
+#    return f'-t {sjoin(inputs)}' if inputs else ''
 
 ## reformat the input bed names 
-def threebedpe(inbedpe:list) -> list: 
+def formatin(inbedpe:str,mode:str) -> list: 
     ## Inaite list, return the new file locations 
-    return f'{macs3dir}/{inbedpe.split('/')[-1]}' 
+    return f'{macs3dir}/{inbedpe.split("/")[-1].split(".bed")[0]}.{mode.lower()}' 
 
 def formatval(valname,val) -> str:
     """Formats and returns the named parameter and its value for a call to macs3."""
@@ -76,8 +76,8 @@ def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=None,sh
     call_sums = ' --call-summits ' if summits else ' '
     ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
     macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
-                 f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
-                 f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
+                 f'macs3 callpeak -t {formatin(bedpe,mode)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
+                 f'{slurpydir}/myecho.py Finished calling peaks in {formatin(bedpe,mode)} with macs3 {report}\n']
     ## Return the macs coms 
     return macs_coms
 
