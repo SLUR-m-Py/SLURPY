@@ -144,7 +144,6 @@ if __name__ == "__main__":
     ## Add optional arguments
     parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                       )
     parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                       )
-    parser.add_argument("-m",   dest="m",   required=True,    type=str,   help=macs_help)
     parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None      )  
     parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False     )
     parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
@@ -153,10 +152,13 @@ if __name__ == "__main__":
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 
-    bedpe_path, peak_path, macs_mode, save_path, genomesize,  dplace = args.b, args.p, args.m, args.s, args.g, args.d, 
+    bedpe_path, peak_path, save_path, genomesize,  dplace = args.b, args.p, args.s, args.g, args.d, 
 
+    ## Gather the file extension
+    file_end = bedpe_path.split('.')[-1]
+    ## Set column names 
     col_names = ['Chrom','Left','Right']
-    col_names = col_names if (macs_mode.lower() == 'bedpe') else (col_names + ['Strand'])
+    col_names = col_names if (file_end == 'bedpe') else (col_names + ['Strand'])
 
     ## Load in dask 
     bedpe = dd.read_csv(bedpe_path,sep='\t',names=col_names,header=None)
