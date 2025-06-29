@@ -46,11 +46,11 @@ M_help = "Format input bedpe pairs file into macs3 compatible version."
 
 ## Def ftn for taking left size of the fragment 
 def rowleft(row) -> int:
-    return sorted(row)[1]
+    return int(sorted(row)[1])
 
 ## Def ftn for taking right size of the fragment 
 def rowright(row) -> int:
-    return sorted(row)[2]
+    return int(sorted(row)[2])
 
 ## Set position col
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 chunk['Right'] = chunk[pos_cols[1:]].apply(rowright,axis=1)
                 ## Save out the chunk
                 chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
-                
+
     ## If in macs 3 mode 
     elif formacs3:
          ## Forma the output path 
