@@ -12,6 +12,8 @@ import dask.dataframe as dd, pandas as pd
 from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
+## Load in exists
+from defaults import fileexists
 ## Lod in chunk size
 from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help
 """
@@ -65,7 +67,7 @@ new_cols = ['Chrom','Left','Right','Strand']
 
 def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.DataFrame:
     ## Gather the chromosome, left, and right position of read one or 2
-    bed = df[old]
+    bed = df[old].copy()
     ## Set the strand and then rename columns 
     bed[old[-1]] = strand ## TO DO: Remap the given value
     bed.columns  = new_cols
@@ -121,34 +123,38 @@ if __name__ == "__main__":
         assert extendsize,  "ERROR: Extension size must be non-zero!"
 
         ## Forma the output path 
-        output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
-        ## Open with chunking 
-        with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
-            ## Iterate thru chunks 
-            for i,chunk in enumerate(chunks):
-                ## Format chunks 
-                chunk1 = formatbed(chunk,rpos1,shift_size,extendsize)
-                chunk2 = formatbed(chunk,rpos1,shift_size,extendsize,strand='-')
+        output_path = f'{macs3dir}/{input_path.split('/')[-1].split(".bed")[0]}.bed' 
+        ## if the output path has been made, pass this section
+        if not fileexists(output_path):
+            ## Open with chunking 
+            with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
+                ## Iterate thru chunks 
+                for i,chunk in enumerate(chunks):
+                    ## Format chunks 
+                    chunk1 = formatbed(chunk,rpos1,shift_size,extendsize)
+                    chunk2 = formatbed(chunk,rpos1,shift_size,extendsize,strand='-')
 
-                ## Concat new chunks and sort values 
-                chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
-                ## Save out the chunk
-                chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+                    ## Concat new chunks and sort values 
+                    chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
+                    ## Save out the chunk
+                    chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## If in macs 3 mode 
     elif to_bedpe:
          ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
-        ## Open with chunking 
-        with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
-            ## Iterate thru chunks 
-            for i,chunk in enumerate(chunks):
+        ## if the output path has been made, pass this section
+        if not fileexists(output_path):
+            ## Open with chunking 
+            with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
+                ## Iterate thru chunks 
+                for i,chunk in enumerate(chunks):
 
-                ## Assign the left and right chunk 
-                chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
-                chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
-                ## Save out the chunk
-                chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+                    ## Assign the left and right chunk 
+                    chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
+                    chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
+                    ## Save out the chunk
+                    chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## Otherwise make pairs if make pairs is past
     elif makepairs:

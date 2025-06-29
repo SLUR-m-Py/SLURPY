@@ -69,13 +69,14 @@ def formatval(valname,val) -> str:
 def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=None,shiftsize=0,extendsize=0,maxgap=0,minlen=0,keepdups='all',nolambda=False,broad=False,summits=False,outdir=f'./{macs3dir}') -> list[str]: 
     """Formats a call to the macs3 callpeak function for a run of the slurpy pipeline (n) on input bedpe file, using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
     ## Format the no model paramater
-    nomodel   = ' --nomodel ' if extendsize or shiftsize else ' '
+    nomodel   = ' --nomodel '  if extendsize or shiftsize else ' '
+    nolambda  = ' --nolambda ' if nolambda else ' '
     ## Format the borad option and call sumits opt
     isborad   = ' --broad ' if broad else ' '
     call_sums = ' --call-summits ' if summits else ' '
     ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
     macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
-                 f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{formatval('nolambda',nolambda)}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
+                 f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
                  f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
     ## Return the macs coms 
     return macs_coms
