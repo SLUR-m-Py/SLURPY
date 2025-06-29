@@ -84,8 +84,8 @@ if __name__ == "__main__":
 
     ## Set input
     input_path  = inputs.I 
-    atacbed     = inputs.B 
-    formacs3    = inputs.M
+    to_bed      = inputs.B 
+    to_bedpe    = inputs.M
     makepairs   = inputs.P
     getinter    = inputs.O
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
 
     ## IF this is an atac-seq sample 
-    if atacbed:
+    if to_bed:
         ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
         ## Open with chunking 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## If in macs 3 mode 
-    elif formacs3:
+    elif to_bedpe:
          ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
         ## Open with chunking 
@@ -117,8 +117,8 @@ if __name__ == "__main__":
             for i,chunk in enumerate(chunks):
 
                 ## Assign the left and right chunk 
-                chunk['Left']  = chunk[pos_cols[1:]].apply(rowleft, axis=1) 
-                chunk['Right'] = chunk[pos_cols[1:]].apply(rowright,axis=1)
+                chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
+                chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
                 ## Save out the chunk
                 chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
