@@ -146,6 +146,7 @@ extend_help  = "Size (in bp) to extend (5' to 3') read position for peak analysi
 macs_help    = "Mode and file type for peak calling with MACS3. Options include BED or BEDPE. Default: BEDPE"
 summits_help = "Boolean flag to all summits with MACS3. Default: False"
 nomodel_help = "Boolean flag to turn off shifting model in MACS3. Default: False"
+lambda_help  = "Boolean flag to turn off local lambda calculation in MACS3. Default: False"
 mgap_help    = "Max gap between peaks called in MACS3."
 mlen_help    = "Minimum length of peaks called in MACS3."
 

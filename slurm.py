@@ -185,12 +185,12 @@ if __name__ == "__main__":
     parser.add_argument("--atac-seq",             dest="atac",        help = atac_help,     action = ST)
     parser.add_argument("--broad",                dest="broad",       help = broad_help,    action = ST)
     parser.add_argument("--skipmacs3",            dest="peaks",       help = peaks_help,    action = ST)
-    parser.add_argument("--nolambda",             dest="nolambda",    help = peaks_help,    action = ST)
+    parser.add_argument("--nolambda",             dest="nolambda",    help = lambda_help,   action = ST)
     parser.add_argument("--nomodel",              dest="nomodel",     help = nomodel_help,  action = ST)
     parser.add_argument("--call-summits",         dest="summits",     help = summits_help,  action = ST)
-    parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False)
-    parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False)
-    parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False)
+    parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False, metavar = 'bp')
+    parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False, metavar = 'bp')
+    parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False, metavar = 'BEDPE')
     parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=None,       required=False, metavar = c_metavar, nargs='+')
     parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False)
     parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False)
@@ -769,7 +769,7 @@ if __name__ == "__main__":
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
-            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode,gsize=genome_size,incontrols=chip_control,shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,broad=broadpeak,summits=callsummits) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.bedpe -p {macs3dir} -m {macs3mode}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,broad=broadpeak,summits=callsummits) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.bedpe -p {macs3dir} -m {macs3mode}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 
