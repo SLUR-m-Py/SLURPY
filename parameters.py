@@ -128,7 +128,7 @@ m_help = "Maximum allowed distance between intra-chromosomal pairs. Default is z
 j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: %s"%nparallel
 
 ## Specific help messages
-node_help = "Space seperated list of nodes to run jobs on."
+node_help  = "Space seperated list of nodes to run jobs on."
 dove_help  = "Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these)."
 atac_help  = "Preset mode to run in ATAC-seq analysis mode."
 rnas_help  = "Preset mode to run in RNA-seq analysis mode."
@@ -137,6 +137,17 @@ mcool_help = "Flag to make an mcool file with cooler."
 pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."
 inter_help = "Flag to return only inter-chromosomal contacts"
 hicex_help = "Flag to run stricter intra-fragment filtering."
+
+## MACS3 specific variables
+shift_size   = 75
+extendsize   = 150
+shift_help   = "Size (in bp) to shift (3' to 5') end of a read for peak analysis in MACS3 (example 75 bp). Only used when --nomodel is passed. Default: %s"%shift_size
+extend_help  = "Size (in bp) to extend (5' to 3') read position for peak analysis in MACS3 (exmale 150 bp). Only used when --nomodel is passed. Default: %s"%extendsize
+macs_help    = "Mode and file type for peak calling with MACS3. Options include BED or BEDPE. Default: BEDPE"
+summits_help = "Boolean flag to all summits with MACS3. Default: False"
+nomodel_help = "Boolean flag to turn off shifting model in MACS3. Default: False"
+mgap_help    = "Max gap between peaks called in MACS3."
+mlen_help    = "Minimum length of peaks called in MACS3."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 

@@ -29,18 +29,6 @@ from directories import slurpydir, macs3dir
 ## Set extension dict 
 exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
 
-## Ftn for formating length parameter
-def formatlen(minlen):
-    """Formats and returns the max length flag and parameter for a call to macs3."""
-    ## Return the len
-    return '--min-length %s'%minlen if minlen else ''
-
-## Ftn for formating gap parameter
-def formatgap(maxgap):
-    """Formats and returns the max gap flag and parameter for a call to macs3."""
-    ## Return the gap
-    return '--max-gap %s'%maxgap if maxgap else ''
-
 ## Ftn for making input into a list of inputs
 def makelist(input):
     """Makes an input variable into a list."""
@@ -67,42 +55,30 @@ def formatinput(inputs):
     ## Return the joined inputs for macs3
     return f'-t {sjoin(inputs)}' if inputs else ''
 
-## Set options for atac-seq opts
-#atacopts = '--keep-dup all --nomodel --shift -75 --extsize 150 --call-summits -B --SPMR --nolambda'
-atacopts = '--keep-dup all --call-summits -B --SPMR --nolambda'
-
-## Set options for chip-seq opts
-narrow_chip = '--keep-dup all --call-summits -B --SPMR'
-broad_chip  = '--keep-dup all --broad -B --SPMR'
-
 ## reformat the input bed names 
 def threebedpe(inbedpe:list) -> list: 
     ## Inaite list, return the new file locations 
     return f'{macs3dir}/{inbedpe.split('/')[-1]}' 
 
+def formatval(valname,val) -> str:
+    """Formats and returns the named parameter and its value for a call to macs3."""
+    ## Format the named value
+    return f' --{valname} {val} ' if val else ' '
+
 ## Write ftn for calling macs3 with atac seq data
-def peakattack(bedpe:str,n,report,broad=False,gsize='hs',mg=None,ml=None,extraoptions=None,incontrols=None,outdir=f'./{macs3dir}'):
-    """Envokes macs3 callpeak function on for a run of the slurpy pipeline (n) on input bam file in bampe mode using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
-    ## Format the input options, if the options are set explicitly, and if the input control is set for chip experiment 
-    if incontrols and broad:
-        opts = broad_chip
-        mode = 'BEDPE'
-    ## A chip or cut-and-tag seq exp 
-    elif incontrols and not broad:
-        opts = narrow_chip
-        mode = 'BEDPE'
-    else: ## otherwise this is an atac exp 
-        opts = atacopts
-        mode = 'BEDPE'
-    
-    ## Add the additional optsions 
-    opts = opts + (' ' + extraoptions if extraoptions else '')
-    
-    ## Forma tthe conversion commands
-    con_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe}\n']
-    ## Format the macs3 callpeak command
-    macs_coms = [f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)} -n {n} -g {gsize} -f {mode} --outdir {outdir} {opts} {formatgap(mg)} {formatlen(ml)} 2>> {report}\n', f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
-    return con_coms + macs_coms
+def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=None,shiftsize=0,extendsize=0,maxgap=0,minlen=0,keepdups='all',nolambda=False,broad=False,summits=False,outdir=f'./{macs3dir}') -> list[str]: 
+    """Formats a call to the macs3 callpeak function for a run of the slurpy pipeline (n) on input bedpe file, using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
+    ## Format the no model paramater
+    nomodel   = ' --nomodel ' if extendsize or shiftsize else ' '
+    ## Format the borad option and call sumits opt
+    isborad   = ' --broad ' if broad else ' '
+    call_sums = ' --call-summits ' if summits else ' '
+    ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
+    macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
+                 f'macs3 callpeak -t {threebedpe(bedpe)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{formatval('nolambda',nolambda)}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
+                 f'{slurpydir}/myecho.py Finished calling peaks in {bedpe} with macs3 {report}\n']
+    ## Return the macs coms 
+    return macs_coms
 
 ## Set the narrow peak names
 peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
@@ -158,7 +134,7 @@ if __name__ == "__main__":
     ## Load in pandas and arg parser
     import argparse, dask.dataframe as dd 
     ## Load in help messages from parameters 
-    from parameters import g_help
+    from parameters import g_help, macs_help
 
     ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
     ## Set parser
@@ -167,6 +143,7 @@ if __name__ == "__main__":
     ## Add optional arguments
     parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                       )
     parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                       )
+    parser.add_argument("-m",   dest="m",   required=True,    type=str,   help=macs_help)
     parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None      )  
     parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False     )
     parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
@@ -175,10 +152,13 @@ if __name__ == "__main__":
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 
-    bedpe_path, peak_path, save_path, genomesize,  dplace = args.b, args.p, args.s, args.g, args.d, 
+    bedpe_path, peak_path, macs_mode, save_path, genomesize,  dplace = args.b, args.p, args.m, args.s, args.g, args.d, 
+
+    col_names = ['Chrom','Left','Right']
+    col_names = col_names if (macs_mode.lower() == 'bedpe') else (col_names + ['Strand'])
 
     ## Load in dask 
-    bedpe = dd.read_csv(bedpe_path,sep='\t',names=['Chrom','Left','Right'],header=None)
+    bedpe = dd.read_csv(bedpe_path,sep='\t',names=col_names,header=None)
 
     ## Calc total
     total = bedpe.Chrom.count().compute()
@@ -218,5 +198,5 @@ if __name__ == "__main__":
     ## round the peak data
     peak_info = peak_info.round(dplace)
     ## Save the peak info
-    peak_info.to_csv(save_path,index=False)
+    peak_info.to_csv(save_path,index=False,float_format=f'%.{dplace}f')
 ## End of file 

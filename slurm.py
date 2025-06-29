@@ -146,7 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
     parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
 
-    ## Set number of threads 
+    ## Set number of threads across software 
     parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel    )
     parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
     parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
@@ -159,35 +159,47 @@ if __name__ == "__main__":
     parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
     parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
     parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
-    parser.add_argument("-c", "--controls",       dest="c",       nargs='+', required=False, help = c_help, metavar = c_metavar,              default = None         )
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
     parser.add_argument("-x", "--Xmemory",        dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
     parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
-    parser.add_argument("-gxg","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
+    parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
 
-    ## Set boolean flags 
-    parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
-    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,     action = ST)
+    ## Set Pipeline boolean blags 
     parser.add_argument("--restart",              dest="restart",   help = restart_help,   action = ST)
+    parser.add_argument("--nomerge",              dest="merge",     help = merge_help,     action = ST)
     parser.add_argument("--force",                dest="force",     help = force_help,     action = ST)
     parser.add_argument("--debug",                dest="debug",     help = debug_help,     action = ST)
-    parser.add_argument("--skipdedup",            dest="skipdedup", help = mark_help,      action = ST)
     parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
     parser.add_argument("--count",                dest="count",     help = count_help,     action = ST)
-    parser.add_argument("--nomerge",              dest="merge",     help = merge_help,     action = ST)
+
+    ## Set Hi-C related boolean flags 
+    parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
+    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,     action = ST)
     parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,     action = ST)
+    parser.add_argument("--hicexplorer",          dest="hicexp",    help = hicex_help,     action = ST)
     parser.add_argument("--inter-only",           dest="inter",     help = inter_help,     action = ST)
     
     ## Set ATAC-seq specifict
-    parser.add_argument("--atac-seq",             dest="atac",       help = atac_help,     action = ST)
+    parser.add_argument("--atac-seq",             dest="atac",        help = atac_help,     action = ST)
+    parser.add_argument("--broad",                dest="broad",       help = broad_help,    action = ST)
+    parser.add_argument("--skipmacs3",            dest="peaks",       help = peaks_help,    action = ST)
+    parser.add_argument("--nolambda",             dest="nolambda",    help = peaks_help,    action = ST)
+    parser.add_argument("--nomodel",              dest="nomodel",     help = nomodel_help,  action = ST)
+    parser.add_argument("--call-summits",         dest="summits",     help = summits_help,  action = ST)
+    parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False)
+    parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False)
+    parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False)
+    parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=None,       required=False, metavar = c_metavar, nargs='+')
+    parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False)
+    parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False)
+
+    ## RNA-seq and other vairables 
     parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
     parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
-    parser.add_argument("--broad",                dest="broad",      help = broad_help,    action = ST)
-    parser.add_argument("--skipmacs3",            dest="peaks",      help = peaks_help,    action = ST)
+    parser.add_argument("--skipdedup",            dest="skipdedup",  help = mark_help,     action = ST)
     parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
-    parser.add_argument("--hicexplorer",          dest="hicexp",     help = hicex_help,    action = ST)
     parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
     parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
 
@@ -212,7 +224,7 @@ if __name__ == "__main__":
     bwaix_jobid     = inputs.a            ##     The job id to have all submissions wait on   
     nice            = inputs.N            ##     Sets the nice parameter 
 
-    ## Set threads                           
+    ## Set threads across softwares                         
     nparallel       = inputs.j            ##     Number of parallel jobs to run at once acorss bwa and filter 
     fastp_threads   = inputs.f            ##     Number of fastp threads
     daskthreads     = inputs.t            ##     Number of threads in dask
@@ -225,33 +237,47 @@ if __name__ == "__main__":
     enzymelib       = inputs.L            ##     Restriction-enzymelib used in Hi-C prep 
     chunksize       = inputs.Z            ##     Chunk size (row number) to load in with pandas 
     pathtochrom     = inputs.G            ##     Path to list of chromosomes to use 
-    chip_control    = inputs.c            ##     Set the input control for chip experimetn
     jarpath         = inputs.J            ##     Path to juicer jar file 
     xmemory         = inputs.x            ##     Amount of memory passed to juicer pre command 
     binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
     max_dist        = inputs.m            ##     Maximum distance of paired end reads
     feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes        ##     List of nodes 
-    dedovetail      = inputs.tails        ##     Boolean for dove tailing 
-    make_mcool      = inputs.mcool        ##     Flag to make mcool file  
-    get_inter       = inputs.inter        ##     Flag to return inter chromosome counts in bedpe file
-    hicexplorer     = inputs.hicexp       ##     Flag to run stricter filtering like Hi-C explorer
-                                            
-    ## Set boolean vars                    
-    toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
-    makepairs       = inputs.makepairs    ##     Flag to make pairs file 
+    
+    ## Set pipeline boolean vars                    
     hardreset       = inputs.restart      ##     Resetart the slurpy run, removing previous
+    postmerging     = not inputs.merge    ##     Forces premerge of outputs 
     force           = inputs.force        ##     Force overwrite of output alignment files 
     debug           = inputs.debug        ##     Run in debug mode 
-    skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates 
     ifclean         = inputs.clean        ##     Flag to run clean up script 
     counting        = inputs.count        ##     Flag to count the read pairs
-    postmerging     = not inputs.merge    ##     Forces premerge of outputs 
+
+    ## Set Hi-C related boolean flasgs                  
+    toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
+    makepairs       = inputs.makepairs    ##     Flag to make pairs file 
+    make_mcool      = inputs.mcool        ##     Flag to make mcool file  
+    hicexplorer     = inputs.hicexp       ##     Flag to run stricter filtering like Hi-C explorer
+    get_inter       = inputs.inter        ##     Flag to return inter chromosome counts in bedpe file
+    
+    ## MACS3 related vars
     atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
-    rna_seq         = inputs.rnas         ##     Boolean flag to run in rna-seq mode 
-    sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
     ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
     skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
+    nolambda        = inputs.nolambda     ##     Flag to skip local lambda control in macs3
+    nomodel         = inputs.nomodel      ##     Flag to skip shifting model
+    callsummits     = inputs.summits      ##     Flag to call summits in macs3
+    shift_size      = inputs.shiftsize    ##     Value of shift size (bp)
+    extendsize      = inputs.extendsize   ##     Value of read extension 
+    macs3mode       = inputs.macmode      ##     Format in MACS3, eg. bedpe.
+    chip_control    = inputs.c            ##     Set the input control for chip experimetn
+    max_gap         = inputs.maxgap       ##     Max gap in used in MACS3    
+    min_len         = inputs.minlen       ##     Min lenght of peaks in MACS3
+
+    ## Set RNA-seq like vars 
+    rna_seq         = inputs.rnas         ##     Boolean flag to run in rna-seq mode 
+    sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
+    skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates       
+    dedovetail      = inputs.tails        ##     Boolean for dove tailing 
     tosam           = inputs.tosam        ##     Boolean flag to convert .bedpe file to sam format
     tobam           = inputs.tobam        ##     Boolean flag to convert .bedpe file to bam format
 
@@ -743,7 +769,7 @@ if __name__ == "__main__":
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the command to macs3
-            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,gsize=genome_size,broad=broadpeak,incontrols=chip_control) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.bedpe -p {macs3dir}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode,gsize=genome_size,incontrols=chip_control,shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,broad=broadpeak,summits=callsummits) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.bedpe -p {macs3dir} -m {macs3mode}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
             ## Append the macs3 command 

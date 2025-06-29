@@ -13,7 +13,7 @@ from gxgcounts import file_end, hicsep
 ## Load in params
 from directories import macs3dir
 ## Lod in chunk size
-from parameters import ST, chunksize, pairs_help, inter_help
+from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help
 """
 Juicer short format:
 
@@ -40,9 +40,11 @@ pairs_cols = ['Qname1','Rname1','Pos1','Rname2','Pos2','Seqrev1','Seqrev2']
 ## Generate a pre cursor to a .hic flie
 desc = "Converts an input bedpe file (representing Hi-C contacts from SLURPY) to a short formated text file for juicer pre command."
 ## Set help message
-I_help = "Input path to a bedpe file from SLURPY Hi-C pipeline."
-B_help = "Format paired end bedpe into a single end bed file for ATAC-seq."
-M_help = "Format input bedpe pairs file into macs3 compatible version."
+I_help              = "Input path to a bedpe file from SLURPY Hi-C pipeline."
+B_help              = "Format paired end bedpe into a single end bed file for ATAC-seq."
+M_help              = "Format input bedpe pairs file into macs3 compatible version."
+intra_help          = "Return only intra-chromosomal contacts from a bedpe file."
+inter_intra_error   = "ERROR: Both the boolean flags of inter-only and intra-only were passed when only one may be ture!"
 
 ## Def ftn for taking left size of the fragment 
 def rowleft(row) -> int:
@@ -52,19 +54,26 @@ def rowleft(row) -> int:
 def rowright(row) -> int:
     return int(sorted(row)[2] + 1)
 
-## Set position col
+## Set position columns used in bedpe transformation 
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
 
-rpos1 = ['Rname1','Pos1','End1']
-rpos2 = ['Rname2','Pos2','End2']
+## Set the read names used in bed transformation 
+rpos1 = ['Rname1','Pos1','End1','Seqrev1']
+rpos2 = ['Rname2','Pos2','End2','Seqrev2']
+## Set the list of new column names from above 
 new_cols = ['Chrom','Left','Right','Strand']
 
-## Fnt to make new chunk
-def makechunk(df,poscols,strand='+') -> pd.DataFrame:
-    ndf           = df[poscols].copy()
-    ndf['Strand'] = strand
-    ndf.columns   = new_cols
-    return ndf 
+def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.DataFrame:
+    ## Gather the chromosome, left, and right position of read one or 2
+    bed = df[old]
+    ## Set the strand and then rename columns 
+    bed[old[-1]] = strand ## TO DO: Remap the given value
+    bed.columns  = new_cols
+    ## Shift the cut site, while making it zero based 
+    bed['Left']  = bed.Left - (shift + 1)
+    bed['Right'] = bed.Left + extend
+    ## Retunr bed 
+    return bed 
 
 ## If the script is envoked 
 if __name__ == "__main__":
@@ -73,39 +82,58 @@ if __name__ == "__main__":
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
-    parser.add_argument("-i",           dest="I", type=str, required=True,  help=I_help, metavar='./path/to/input.bedpe') 
-    parser.add_argument('--bed',        dest="B", help=B_help,      action = ST)
-    parser.add_argument('--bedpe',      dest="M", help=M_help,      action = ST)
-    parser.add_argument('--pairs',      dest="P", help=pairs_help,  action = ST)
-    parser.add_argument('--inter-only', dest="O", help=inter_help,  action = ST)
+    parser.add_argument("-i",            dest="I", type=str, required=True,  help=I_help,      metavar='./path/to/input.bedpe') 
+    parser.add_argument("-s","--shift",  dest="S", type=int, required=False, help=shift_help,  default=shift_size)
+    parser.add_argument("-e","--extend", dest="E", type=int, required=False, help=extend_help, default=extendsize)
+    
+    parser.add_argument('--bed',         dest="B", help=B_help,      action = ST)
+    parser.add_argument('--bedpe',       dest="M", help=M_help,      action = ST)
+    parser.add_argument('--pairs',       dest="P", help=pairs_help,  action = ST)
+    parser.add_argument('--inter-only',  dest="O", help=inter_help,  action = ST)
+    parser.add_argument('--intra-only',  dest="A", help=intra_help,  action = ST)
 
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
     ## Set input
-    input_path  = inputs.I 
-    to_bed      = inputs.B 
-    to_bedpe    = inputs.M
-    makepairs   = inputs.P
-    getinter    = inputs.O
+    input_path  = inputs.I          ## Set path to input bedpe file
+    shift_size  = abs(inputs.S)     ## Set the shift size
+    extendsize  = abs(inputs.E)     ## Set the size to extend read coverage
+    to_bed      = inputs.B          ## Converting to a single bed
+    to_bedpe    = inputs.M          ## Converting to a bedpe (mas3) file
+    makepairs   = inputs.P          ## Boolean flag to make into juicer's pairs format
+    getinter    = inputs.O          ## Boolean flag to gather inter-chromosome contacts only 
+    getintra    = inputs.A          ## Boolean flag to regurn only intra-chromosome contacts from bedpe file
+
+    ## Check bools
+    if getinter:
+        assert not getintra, inter_intra_error
+    if getintra:
+        assert not getinter, inter_intra_error
 
     ## Check path
     assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
 
     ## IF this is an atac-seq sample 
     if to_bed:
+        ## Check shift and size to extend are non zero
+        assert shift_size, "ERROR: Shift size must be non-zero!"
+        assert extendsize,  "ERROR: Extension size must be non-zero!"
+
         ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
         ## Open with chunking 
-        with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
+        with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
             ## Iterate thru chunks 
             for i,chunk in enumerate(chunks):
+                ## Format chunks 
+                chunk1 = formatbed(chunk,rpos1,shift_size,extendsize)
+                chunk2 = formatbed(chunk,rpos1,shift_size,extendsize,strand='-')
 
-                ## Assign the left and right chunk 
-                chunk['Left']  = chunk[pos_cols[1:]].apply(rowleft, axis=1)
-                chunk['Right'] = chunk[pos_cols[1:]].apply(rowright,axis=1)
+                ## Concat new chunks and sort values 
+                chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
                 ## Save out the chunk
-                chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+                chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## If in macs 3 mode 
     elif to_bedpe:

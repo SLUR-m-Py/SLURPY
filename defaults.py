@@ -327,12 +327,6 @@ def samblaster(inbam,outbam,report,threads) -> str:
     ## Return the samtools and samblaster command 
     return f'samtools view -@ {threads} -h {inbam} | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
 
-"""
-## Remove sort command from above
-    return f'samtools sort -@ {threads} -n {inbam} | samtools view -@ {threads} -Sh - -O SAM | {slurpydir}/samblaster --ignoreUnmated -M 2>> {report} | samtools view -@ {threads} -Shb | samtools sort -@ {threads} - -o {outbam} -O BAM --write-index\n'
-
-"""
-
 ## Ftn for formating samblaster command
 def markduplicates(inbam:str, threads:int, pix:int, script='mark') -> tuple:
     """Formats and submits a samtools and samblaster command to mark duplicates on input bam file (i) and saves to output (o)."""
@@ -422,23 +416,6 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestam
             command_df.loc[m,'JobID'] = fakejobid + m if (debug and runlocal) else submitsbatch(intext)
     ## Return submitted sbatchs 
     return subsbatchs
-
-## Ftn for formating merging of bam files
-#def mergebam(bam:str, wildcard:str, threads:int, pix:int, script='merge') -> tuple:
-#    """Formats a samtools merge command."""
-#    ## Format path of out put bam file
-#    outbam = f'{aligndir}/{bam}'
-#    ## Format report name and the merge-bam command
-#    report, merge_bam_command = reportname(outbam,script,i=pix), f'samtools merge -f -@ {threads} -o {outbam} {bamtmpdir}/{wildcard}\n'
-#    ## Format the echo command and count command 
-#    echo_merge_command = f'{slurpydir}/myecho.py Finished merging bam files into {outbam} {report}\n'
-#    ## Return the formated merge command
-#    return [merge_bam_command,echo_merge_command], report
-
-"""
-    report, merge_bam_command = reportname(outbam,script), f'samtools merge -f -@ {threads} -o {outbam} --write-index {bamtmpdir}/{wildcard}\n'
-
-"""
 
 ## Ftn for filtering bam fie 
 def filterbam(inbam:str, M:str, threads:int, chrlist:list, pix:int) -> tuple:
