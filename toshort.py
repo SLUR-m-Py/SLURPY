@@ -117,7 +117,7 @@ if __name__ == "__main__":
             for i,chunk in enumerate(chunks):
 
                 ## Assign the left and right chunk 
-                chunk['Left']  = chunk[pos_cols[1:]].apply(rowleft, axis=1)
+                chunk['Left']  = chunk[pos_cols[1:]].apply(rowleft, axis=1) - 1
                 chunk['Right'] = chunk[pos_cols[1:]].apply(rowright,axis=1)
                 ## Save out the chunk
                 chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
