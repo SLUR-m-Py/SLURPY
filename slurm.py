@@ -418,6 +418,9 @@ if __name__ == "__main__":
 
     ## Moved to trigger if statment correctly
     print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
+
+    ## Reset shift and extention size 
+    shift_size,extendsize = (shift_size,extendsize) if nomodel else (0,0)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
