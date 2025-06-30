@@ -138,6 +138,8 @@ if __name__ == "__main__":
                     chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
                     ## Save out the chunk
                     chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+        else:
+            print("INFO: File %s exists -- skipping."%output_path)
 
     ## If in macs 3 mode 
     elif to_bedpe:
@@ -155,6 +157,8 @@ if __name__ == "__main__":
                     chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
                     ## Save out the chunk
                     chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+        else:
+            print("INFO: File %s exists -- skipping."%output_path)
 
     ## Otherwise make pairs if make pairs is past
     elif makepairs:
