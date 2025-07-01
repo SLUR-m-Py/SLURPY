@@ -195,9 +195,11 @@ if __name__ == "__main__":
     while submitted < nreads:
         ## Try to Submit the command to SLURM
         try:
-            submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {bwa_files[submitted]}')
+            job_id = submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {bwa_files[submitted]}')
             ## Add to sub
             submitted += 1
+            ## Print job id
+            print(job_id)
             ## Wiat a few seconds
             sleep(waittime)
         except Exception as error:
