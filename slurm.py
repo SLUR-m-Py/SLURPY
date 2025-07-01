@@ -160,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
     parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
-    parser.add_argument("-xmx", "--Xmemory",      dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
+    parser.add_argument("-xmx", "--Xmemory",      dest="xmx",     type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
     parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
     parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )

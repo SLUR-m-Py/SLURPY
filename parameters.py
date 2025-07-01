@@ -149,7 +149,7 @@ nomodel_help = "Boolean flag to turn off shifting model in MACS3. Default: False
 lambda_help  = "Boolean flag to turn off local lambda calculation in MACS3. Default: False"
 mgap_help    = "Max gap between peaks called in MACS3."
 mlen_help    = "Minimum length of peaks called in MACS3."
-slurmem_help = "The max amount of memory (for e.g. 4OG) passed to SLURM sbatch processes. This value is applied acorss all subprocesses."
+slurmem_help = "The max amount of memory (for e.g. 4OG) passed to SLURM sbatch processes. If set, this value is applied acorss all subprocesses. Default: None"
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
