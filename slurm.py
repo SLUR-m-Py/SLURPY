@@ -160,11 +160,12 @@ if __name__ == "__main__":
     parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
     parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
-    parser.add_argument("-x", "--Xmemory",        dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
+    parser.add_argument("-xmx", "--Xmemory",      dest="x",       type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
     parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
     parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
     parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
+    parser.add_argument("--memory",               dest="slurmem", type=str,  required=False, help = slurmem_help, metavar='40G',              default = None         )
 
     ## Set Pipeline boolean blags 
     parser.add_argument("--restart",              dest="restart",   help = restart_help,   action = ST)
@@ -211,75 +212,76 @@ if __name__ == "__main__":
     ##      PASS ARGUMENTS & SET VARIABLES 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set required variables
-    reference_path  = inputs.r            ##     Set path to the reference genome
+    reference_path  = inputs.r              ##     Set path to the reference genome
 
-    ## Set default vairables              ##
-    splitsize       = inputs.F            ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
-    threadn         = inputs.T            ##     Set the number of parallel runs of bwa 
-    partitions      = inputs.P            ##     Set the partition 
-    mito            = inputs.M            ##     Set the mito contig name 
-    excludes        = inputs.X            ##     List of chromosomes to exclude from analysis 
-    mapq            = inputs.Q            ##     Set the mapping quality threshold 
-    rerun           = inputs.R            ##     Setp to rerun pipeline from 
-    bwaix_jobid     = inputs.a            ##     The job id to have all submissions wait on   
-    nice            = inputs.N            ##     Sets the nice parameter 
+    ## Set default vairables              
+    splitsize       = inputs.F              ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
+    threadn         = inputs.T              ##     Set the number of parallel runs of bwa 
+    partitions      = inputs.P              ##     Set the partition 
+    mito            = inputs.M              ##     Set the mito contig name 
+    excludes        = inputs.X              ##     List of chromosomes to exclude from analysis 
+    mapq            = inputs.Q              ##     Set the mapping quality threshold 
+    rerun           = inputs.R              ##     Setp to rerun pipeline from 
+    bwaix_jobid     = inputs.a              ##     The job id to have all submissions wait on   
+    nice            = inputs.N              ##     Sets the nice parameter 
 
     ## Set threads across softwares                         
-    nparallel       = inputs.j            ##     Number of parallel jobs to run at once acorss bwa and filter 
-    fastp_threads   = inputs.f            ##     Number of fastp threads
-    daskthreads     = inputs.t            ##     Number of threads in dask
-    bwa_threads     = inputs.b            ##     Number of threads in bwa alignments
-    bwa_opts        = inputs.B            ##     Set options for bwa 
+    nparallel       = inputs.j              ##     Number of parallel jobs to run at once acorss bwa and filter 
+    fastp_threads   = inputs.f              ##     Number of fastp threads
+    daskthreads     = inputs.t              ##     Number of threads in dask
+    bwa_threads     = inputs.b              ##     Number of threads in bwa alignments
+    bwa_opts        = inputs.B              ##     Set options for bwa 
 
     ## Set variables for Hi-C                
-    run_name        = inputs.n            ##     The name of the samples 
-    error_dist      = inputs.E            ##     Distance in bp to check hi-C contacts for errors 
-    enzymelib       = inputs.L            ##     Restriction-enzymelib used in Hi-C prep 
-    chunksize       = inputs.Z            ##     Chunk size (row number) to load in with pandas 
-    pathtochrom     = inputs.G            ##     Path to list of chromosomes to use 
-    jarpath         = inputs.J            ##     Path to juicer jar file 
-    xmemory         = inputs.x            ##     Amount of memory passed to juicer pre command 
-    binsizes        = inputs.S            ##     Bins / resolutions used in hi-c analysis 
-    max_dist        = inputs.m            ##     Maximum distance of paired end reads
-    feature_space   = inputs.gxg          ##     Path to a gff or bed file used in g x g interaction matrix / df 
-    nodes           = inputs.nodes        ##     List of nodes 
+    run_name        = inputs.n              ##     The name of the samples 
+    error_dist      = inputs.E              ##     Distance in bp to check hi-C contacts for errors 
+    enzymelib       = inputs.L              ##     Restriction-enzymelib used in Hi-C prep 
+    chunksize       = inputs.Z              ##     Chunk size (row number) to load in with pandas 
+    pathtochrom     = inputs.G              ##     Path to list of chromosomes to use 
+    jarpath         = inputs.J              ##     Path to juicer jar file 
+    xmemory         = inputs.xmx            ##     Amount of memory passed to juicer pre command 
+    binsizes        = inputs.S              ##     Bins / resolutions used in hi-c analysis 
+    max_dist        = inputs.m              ##     Maximum distance of paired end reads
+    feature_space   = inputs.gxg            ##     Path to a gff or bed file used in g x g interaction matrix / df 
+    nodes           = inputs.nodes          ##     List of nodes 
+    slurm_mem       = inputs.slurmem        ##     Amount of memory setting in SLURM
     
     ## Set pipeline boolean vars                    
-    hardreset       = inputs.restart      ##     Resetart the slurpy run, removing previous
-    postmerging     = not inputs.merge    ##     Forces premerge of outputs 
-    force           = inputs.force        ##     Force overwrite of output alignment files 
-    debug           = inputs.debug        ##     Run in debug mode 
-    ifclean         = inputs.clean        ##     Flag to run clean up script 
-    counting        = inputs.count        ##     Flag to count the read pairs
+    hardreset       = inputs.restart        ##     Resetart the slurpy run, removing previous
+    postmerging     = not inputs.merge      ##     Forces premerge of outputs 
+    force           = inputs.force          ##     Force overwrite of output alignment files 
+    debug           = inputs.debug          ##     Run in debug mode 
+    ifclean         = inputs.clean          ##     Flag to run clean up script 
+    counting        = inputs.count          ##     Flag to count the read pairs
 
     ## Set Hi-C related boolean flasgs                  
-    toshort         = inputs.toshort      ##     Flag the make short file, kicks if jarpath was given 
-    makepairs       = inputs.makepairs    ##     Flag to make pairs file 
-    make_mcool      = inputs.mcool        ##     Flag to make mcool file  
-    hicexplorer     = inputs.hicexp       ##     Flag to run stricter filtering like Hi-C explorer
-    get_inter       = inputs.inter        ##     Flag to return inter chromosome counts in bedpe file
+    toshort         = inputs.toshort        ##     Flag the make short file, kicks if jarpath was given 
+    makepairs       = inputs.makepairs      ##     Flag to make pairs file 
+    make_mcool      = inputs.mcool          ##     Flag to make mcool file  
+    hicexplorer     = inputs.hicexp         ##     Flag to run stricter filtering like Hi-C explorer
+    get_inter       = inputs.inter          ##     Flag to return inter chromosome counts in bedpe file
     
     ## MACS3 related vars
-    atac_seq        = inputs.atac         ##     Boolean flag to run in atac-seq mode 
-    ifbroad         = inputs.broad        ##     Boolean to activate broader peak calling in macs3 
-    skippeaks       = inputs.peaks        ##     Skips peak calling with macs3 
-    nolambda        = inputs.nolambda     ##     Flag to skip local lambda control in macs3
-    nomodel         = inputs.nomodel      ##     Flag to skip shifting model
-    callsummits     = inputs.summits      ##     Flag to call summits in macs3
-    shift_size      = inputs.shiftsize    ##     Value of shift size (bp)
-    extendsize      = inputs.extendsize   ##     Value of read extension 
-    macs3mode       = inputs.macmode      ##     Format in MACS3, eg. bedpe.
-    chip_control    = inputs.c            ##     Set the input control for chip experimetn
-    max_gap         = inputs.maxgap       ##     Max gap in used in MACS3    
-    min_len         = inputs.minlen       ##     Min lenght of peaks in MACS3
+    atac_seq        = inputs.atac           ##     Boolean flag to run in atac-seq mode 
+    ifbroad         = inputs.broad          ##     Boolean to activate broader peak calling in macs3 
+    skippeaks       = inputs.peaks          ##     Skips peak calling with macs3 
+    nolambda        = inputs.nolambda       ##     Flag to skip local lambda control in macs3
+    nomodel         = inputs.nomodel        ##     Flag to skip shifting model
+    callsummits     = inputs.summits        ##     Flag to call summits in macs3
+    shift_size      = inputs.shiftsize      ##     Value of shift size (bp)
+    extendsize      = inputs.extendsize     ##     Value of read extension 
+    macs3mode       = inputs.macmode        ##     Format in MACS3, eg. bedpe.
+    chip_control    = inputs.c              ##     Set the input control for chip experimetn
+    max_gap         = inputs.maxgap         ##     Max gap in used in MACS3    
+    min_len         = inputs.minlen         ##     Min lenght of peaks in MACS3
 
     ## Set RNA-seq like vars 
-    rna_seq         = inputs.rnas         ##     Boolean flag to run in rna-seq mode 
-    sfastp          = inputs.sfast        ##     Flag to skip fastp filtering 
-    skipduplicates  = inputs.skipdedup    ##     Boolean to mark duplicates       
-    dedovetail      = inputs.tails        ##     Boolean for dove tailing 
-    tosam           = inputs.tosam        ##     Boolean flag to convert .bedpe file to sam format
-    tobam           = inputs.tobam        ##     Boolean flag to convert .bedpe file to bam format
+    rna_seq         = inputs.rnas           ##     Boolean flag to run in rna-seq mode 
+    sfastp          = inputs.sfast          ##     Flag to skip fastp filtering 
+    skipduplicates  = inputs.skipdedup      ##     Boolean to mark duplicates       
+    dedovetail      = inputs.tails          ##     Boolean for dove tailing 
+    tosam           = inputs.tosam          ##     Boolean flag to convert .bedpe file to sam format
+    tobam           = inputs.tobam          ##     Boolean flag to convert .bedpe file to bam format
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
@@ -549,7 +551,7 @@ if __name__ == "__main__":
         ##  Gather the fastp command and report 
         fastp_coms, fastp_repo = fastpeel(r1,r2,fastp_threads,sizeosplit,ishic=inhic or sfastp)
         ##  Write the command to file
-        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1,nodelist=nodes) + fastp_coms, debug)
+        writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1,nodelist=nodes,memory=slurm_mem) + fastp_coms, debug)
         ##  Append command to file
         command_files.append((fastp_command_file,sample_name,experi_mode,hic_pipeline[pix],fastp_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -620,7 +622,7 @@ if __name__ == "__main__":
             ## make concat file name
             hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
             ## Write the concat command to file
-            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes) + hiccat_coms, debug)
+            writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + hiccat_coms, debug)
             ## Append the concat command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -646,7 +648,7 @@ if __name__ == "__main__":
             ## Format the commands 
             concat_coms = pandacat(con_ins,con_out,rmheader=True)
             ## Write commands to file 
-            writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes) + concat_coms, debug)
+            writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes,memory=slurm_mem) + concat_coms, debug)
             ## append command to command file list
             command_files.append((con_fil,sample_name,experi_mode,hic_pipeline[pix],con_rep,0,'')) 
 
@@ -678,7 +680,7 @@ if __name__ == "__main__":
                     gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
                     gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
                     ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
-                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes) + gxg_commands, debug)
+                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
                     ## Append to command list for calling/submission later 
                     command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -694,7 +696,7 @@ if __name__ == "__main__":
                 ## Set command file 
                 short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
                 ## Wriet the short command to file
-                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
                 command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
 
@@ -706,7 +708,7 @@ if __name__ == "__main__":
                 ## Set command file 
                 short_file = f'{comsdir}/{pix}B.inter.short.{sample_name}.sh'
                 ## Wriet the short command to file
-                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
                 command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
 
@@ -719,7 +721,7 @@ if __name__ == "__main__":
                 ## Set command file 
                 short_file = f'{comsdir}/{pix}B.pairs.{sample_name}.sh'
                 ## Wriet the short command to file
-                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes) + short_commands, debug)
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
                 command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
                 ## Format the pairs file name
@@ -737,7 +739,7 @@ if __name__ == "__main__":
                 ## make concat file name
                 jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
                 ## Write the concat command to file
-                writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes) + jpre_coms, debug)
+                writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + jpre_coms, debug)
                 ## Append the concat command
                 command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
 
@@ -760,7 +762,7 @@ if __name__ == "__main__":
                             f'rm {outcool}\n',
                             f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
                 ## Write the concat command to file
-                writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes) + cooler_coms, debug)
+                writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes,memory=slurm_mem) + cooler_coms, debug)
                 ## Append the concat command
                 command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -774,7 +776,7 @@ if __name__ == "__main__":
             ## Format the command to macs3
             macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,broad=broadpeak,summits=callsummits) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.{macs3mode.lower()} -p {macs3dir}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
             ## Write the macs3 commands to file
-            writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report) + macs3_commands, debug)
+            writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report,memory=slurm_mem) + macs3_commands, debug)
             ## Append the macs3 command 
             command_files.append((macs3_filename,sample_name,experi_mode,'macs3',macs3_report,0,''))
 
@@ -787,7 +789,7 @@ if __name__ == "__main__":
             ## format the commadn to pairs2sam
             sam_commands, sam_report = bedpetosam(newcatfile,pathtochrom,samthreads,tobam,sample_name)
             ## Wriet the mac
-            writetofile(sam_filename, sbatch(sam_filename,samthreads,the_cwd,sam_report) + sam_commands, debug)
+            writetofile(sam_filename, sbatch(sam_filename,samthreads,the_cwd,sam_report,memory=slurm_mem) + sam_commands, debug)
             ## Append the sam command to command file list
             command_files.append((sam_filename,sample_name,experi_mode,'sam',sam_report,0,''))
 
@@ -820,7 +822,7 @@ if __name__ == "__main__":
         counting_repo = reportname(run_name,'thecount',i=f'{pix}B')   ##   Set the report 
         counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
-        writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes)+ counting_coms, debug)
+        writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes) + counting_coms, debug)
         ## Append the clean up command to file
         command_files.append((counting_sh,run_name,experi_mode,'count',counting_repo,0,''))
     else: ## Otherwise do nothing
@@ -835,7 +837,7 @@ if __name__ == "__main__":
         remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
         remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.valid.pairs\n']
         ## Format the command to clean up          
-        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes)+ remove_comm, debug)
+        writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes) + remove_comm, debug)
         ## Append the clean up command to file
         command_files.append((remove_sh,run_name,experi_mode,'clean',remove_repo,0,''))
     else: ## Otherwise do nothing

@@ -254,7 +254,7 @@ def readann(inpath:str) -> list:
     return pd.DataFrame(list(zip(contigs,lengths)))
     
 ## Ftn for formating an sbatch text
-def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7, nodelist=None) -> list:
+def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1, tasks=1, runtime='200:00:00',nice=10**7, nodelist=None, memory=None) -> list:
     """Generates the sbatch settings for a script with a give input jobname, cpu count, working directory, and others."""
     ## Gather the extension
     jobext = nameojob.split('.')[-1] if nameojob else 'sh'
@@ -268,14 +268,15 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
                  '#SBATCH --ntasks-per-node=%s\n'%str(tasks),                                 ##      Tasks per node
                  '#SBATCH --cpus-per-task=%s\n'%str(cpus),                                    ##      Number of cpus
                  '#SBATCH --time=%s\n'%runtime,                                               ##      Set nice parameter
-                 '#SBATCH --nice=%s\n'%str(nice),                                             ##      The allowed run time of the job 
-                 '#SBATCH --mem=40G']
+                 '#SBATCH --nice=%s\n'%str(nice)]                                             ##      The allowed run time of the job 
     ## Add the current working dir                                                            ##  
     settings = settings + ['#SBATCH --chdir=%s\n'%cwd] if cwd else settings                   ##      Set the current workign dir
     ## Add the partition                                                                      ##      
     settings = settings + ['#SBATCH --partition=%s\n'%partition] if partition else settings   ##      The partitions
     ## Add nodes if they were passed
     settings = settings + ['#SBATCH --nodelist=%s\n'%','.join(nodelist)] if nodelist else settings ## List of nodes to run on
+    ## Add the max memory
+    settings = settings + ['#SBATCH --mem=%s'%memory] if memory else settings
     ## return settings 
     return settings
 
