@@ -79,7 +79,7 @@ def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool
     return [command], report 
 
 ## Load in help messages from parameters 
-from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help
+from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
 
 ## Set description and help messages 
 bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
@@ -108,6 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--njobs",          dest="j",     type=int,  required=False, help = j_help, metavar = 'n',          default = nparallel    )
     parser.add_argument("-B", "--bwa-opts",       dest="bwa",   type=str,  required=False, help = B_help, metavar = hic_options,  default = hic_options  )
     parser.add_argument("--nodelist",             dest="nodes", nargs='+', required=False, help = node_help,                      default = None         )
+    parser.add_argument("--memory",               dest="mem",   type=str,  required=False, help = slurmem_help, metavar = '40G',  default = None         )
 
     ## Add boolean vars 
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = ST                                          )
@@ -126,10 +127,12 @@ if __name__ == "__main__":
     line_count   = inputs.l         ## Number of lines to parse from file
     nice         = inputs.N         ## Nice parameter, "Its nice to be nice"
     nparallel    = inputs.j         ## Number of parallel bwa jobs to run 
+    bwa_opts     = inputs.bwa       ## String of options to also feed into bwa 
     nodes        = inputs.nodes     ## Node list 
+    memory       = inputs.mem       ## Job memory in slurm batchs 
     debug        = inputs.debug     ## To debug, or not debug
     forced       = inputs.force     ## Use the force Luke, let go Luke. Luke trust me.
-    bwa_opts     = inputs.bwa       ## String of options to also feed into bwa 
+    memory       = inputs.mem       ## Set SLURM mem limit 
 
     ## Format the options for bwa mem
     options = f'-v 1 -t {thread_count} ' + ' '.join(bwa_opts.split(","))
@@ -185,7 +188,7 @@ if __name__ == "__main__":
                 bwa_coms = [bwa_coms[-1]]
         
         ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes) + bwa_coms, debug)
+        writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes,memory=memory) + bwa_coms, debug)
         ## append the report and files
         bwa_files.append(bwa_file)
 
@@ -199,7 +202,7 @@ if __name__ == "__main__":
             ## Add to sub
             submitted += 1
             ## Print job id
-            print(job_id)
+            print('Job ID: %s'%job_id)
             ## Wiat a few seconds
             sleep(waittime)
         except Exception as error:

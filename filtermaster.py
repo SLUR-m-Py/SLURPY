@@ -32,7 +32,7 @@ def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:i
     return [command+'\n'], report 
 
 ## Load in help messages
-from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help
+from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
@@ -66,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar = 'n',       default=0            )
     parser.add_argument("-j", dest="j", type=int,  required=False,  help=j_help, metavar = 'n',       default=nparallel    )
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
+    parser.add_argument("--memory",     dest="mem",   type=str,  required=False, help = slurmem_help, metavar = '40G',  default = None         )
 
     ## Add boolean 
     parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = ST )
@@ -99,6 +100,8 @@ if __name__ == "__main__":
     forced      = inputs.force      ## Flag to force 
     intra_only  = inputs.Intra      ## Flag for intra chromosomal contacts only 
     hicexplorer = inputs.hicexp     ## Flag to run filtering in hicexplorer mode
+    memory      = inputs.mem        ## SLURM mem limit 
+    
 
     ## Bring in bedpe paths, calc len
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
@@ -138,7 +141,7 @@ if __name__ == "__main__":
                 filter_coms = [filter_coms[-1]]
 
         ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes) + filter_coms, debug)
+        writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes,memory=memory) + filter_coms, debug)
         ## append the report and files 
         filter_files.append(filter_file)
 
@@ -152,7 +155,7 @@ if __name__ == "__main__":
             ## Add to sub
             submitted += 1
             ## Pring job id
-            print(job_id)
+            print('Job ID: %s'%job_id)
             ## Wiat a few seconds
             sleep(waittime)
         except Exception as error:
