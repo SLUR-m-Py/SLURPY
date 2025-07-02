@@ -97,5 +97,9 @@ if __name__ == "__main__":
 
     ## Plot the memory profile
     sns.barplot(x='Name',y='GB',data=gb_df)
-    plt.savefig(out_path.replace('.csv','.png'))
+    plt.ylabel('Gigabytes',fontsize=12)
+    plt.xlabel('SLUR(M)-py Pipeline Step',fontsize=12)
+    plt.xticks(rotation=90,fontsize=10)
+    ## SAve figure 
+    plt.savefig(out_path.replace('.csv','.png'),dpi=150,bbox_inches='tight')
 ## EOF 
