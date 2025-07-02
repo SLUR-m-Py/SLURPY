@@ -58,7 +58,7 @@ def getmemory(jobid:int) -> str:
 if __name__ == "__main__":
 
     ## Load in command files
-    command_file_paths = sortglob(f'./{debugdir}command.file.*.csv')
+    command_file_paths = sortglob(f'./{debugdir}/command.file.*.csv')
     ## Iterate thru the command file
     command_df = pd.concat([pd.read_csv(inpath) for inpath in command_file_paths],axis=1)
     ## Gahter only those commands ran
