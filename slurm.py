@@ -564,7 +564,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,forced=force,nodelist=nodes,bwaopts=bwa_opts)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,forced=force,nodelist=nodes,bwaopts=bwa_opts,memory=slurm_mem)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
         ## Append to command fil
@@ -579,7 +579,7 @@ if __name__ == "__main__":
         ## Call the master filter command
         filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
-        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,dovetail=dedovetail,removeinter= not inhic,hicexplorer=hicexplorer)
+        filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,dovetail=dedovetail,removeinter= not inhic,hicexplorer=hicexplorer,memory=slurm_mem)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
         ## Append to command file
@@ -932,7 +932,9 @@ if __name__ == "__main__":
     print(f'INFO: A total of {njobssubbed} jobs were submitted with this run' + (f' and will start after {bwaix_jobid}.' if bwaix_jobid else '.')  )
     ## If zero jobs were submitted
     ifprint('WARNING: Zero jobs were submitted; If this was unexpected try running slurpy again, including --restart flag.',(njobssubbed==0))
-    ## Save out the command files 
+    ## Save out the command files, once for patching to other command, and a time stamped one
     command_files.to_csv(f'{debugdir}/command.file.csv', index=False)
+    command_files.to_csv(f'{debugdir}/command.file.{stamp}.csv', index=False)
+
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

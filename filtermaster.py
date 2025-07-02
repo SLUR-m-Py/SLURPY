@@ -26,9 +26,14 @@ def formatinput(inlist) -> str:
     return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False) -> tuple[list[str], str]:
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}' + (' --dedovetail' if dovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' --hicexplorer' if hicexplorer else '')
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False,memory=None) -> tuple[list[str], str]:
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}'\
+            + (' --dedovetail' if dovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') \
+            + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') \
+            + (' --hicexplorer' if hicexplorer else '') + (' --memory %s'%memory if memory else '')
+    ## Format the report 
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
+    ## Return the 
     return [command+'\n'], report 
 
 ## Load in help messages
@@ -66,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("-M", dest="M", type=int,  required=False,  help=m_help, metavar = 'n',       default=0            )
     parser.add_argument("-j", dest="j", type=int,  required=False,  help=j_help, metavar = 'n',       default=nparallel    )
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
-    parser.add_argument("--memory",     dest="mem",   type=str,  required=False, help = slurmem_help, metavar = '40G',  default = None         )
+    parser.add_argument("--memory",     dest="mem",   type=str,  required=False, help = slurmem_help, metavar = '40G',  default = None)
 
     ## Add boolean 
     parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = ST )
@@ -80,27 +85,27 @@ if __name__ == "__main__":
     inputs = parser.parse_args()
 
     ## Set iinputs
-    sample_name = inputs.S
-    ref_path    = inputs.R
-    the_cwd     = inputs.C
-    xcludos     = inputs.X
-    includos    = inputs.i
-    map_q_thres = inputs.Q
-    error_dist  = inputs.E
-    elibrary    = inputs.L
-    partitions  = inputs.P
-    threads     = inputs.T
-    nice        = inputs.N
-    chunksize   = inputs.Z 
-    max_dist    = inputs.M 
-    nparallel   = inputs.j 
-    nodes       = inputs.nodes
+    sample_name = inputs.S          ## Sample name 
+    ref_path    = inputs.R          ## Path to reference genome fasta file
+    the_cwd     = inputs.C          ## The current working directory
+    xcludos     = inputs.X          ## Chromosomes to exclude from analysis 
+    includos    = inputs.i          ## Chromosomes to include in analysis
+    map_q_thres = inputs.Q          ## Mapping quality threshold
+    error_dist  = inputs.E          ## Error distance of Hi-C contacts
+    elibrary    = inputs.L          ## The enzamatic library to run on 
+    partitions  = inputs.P          ## Cluster paritions to run jobs on 
+    threads     = inputs.T          ## The number of threads, thread them all!
+    nice        = inputs.N          ## How nice are we?
+    chunksize   = inputs.Z          ## Chunksize 
+    max_dist    = inputs.M          ## Max linear distance of read pairs
+    nparallel   = inputs.j          ## Set number of parallel jobs 
+    nodes       = inputs.nodes      ## Set the nodes to run on 
     dovetail    = inputs.tails      ## Flag to remove dovetail reads
     debug       = inputs.debug      ## Flag to debug 
     forced      = inputs.force      ## Flag to force 
     intra_only  = inputs.Intra      ## Flag for intra chromosomal contacts only 
     hicexplorer = inputs.hicexp     ## Flag to run filtering in hicexplorer mode
-    memory      = inputs.mem        ## SLURM mem limit 
+    memory      = inputs.mem        ## SLURM memory limit 
     
 
     ## Bring in bedpe paths, calc len

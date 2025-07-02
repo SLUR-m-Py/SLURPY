@@ -18,7 +18,7 @@ from time import sleep
 ## Bring in tile and arange 
 from numpy import tile, arange
 
-## Set opttions 
+## Set opttions for line count and step in pipelien 
 line_count  = 5000
 pix         = 1     
 
@@ -70,19 +70,22 @@ def vectortile(k,n):
     return tile(arange(k)+1,n)
 
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None,bwaopts='') -> tuple[list[str], str]:
-    ## Format command 
-    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' + (f' -L {library}' if library else '') + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') + (' -B %s'%bwaopts if len(bwaopts) else '')
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None,bwaopts='',memory=None) -> tuple[list[str], str]:
+    ## Format command to the bwatobedpe.py 
+    command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' \
+            + (f' -L {library}' if library else '') + (' --debug' if debug else '') \
+            + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') \
+            + (' -B %s'%bwaopts if len(bwaopts) else '') + (' --memory %s'%memory if memory else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     ## Return the command and report 
-    return [command], report 
+    return [command+'\n'], report 
 
 ## Load in help messages from parameters 
 from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
 
-## Set description and help messages 
-bwadescr = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
+## Set description and help messages for this script
+bwadescr   = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
 c_help     = 'The current working directory'
 l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
 hic_flag   = 'Flag to run in Hi-C mode.'
@@ -174,7 +177,7 @@ if __name__ == "__main__":
         outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
         bwa_check = bwa_checkers[i]
 
-        ## format the command 
+        ## format the command to bwa mem 
         bwa_coms = [f'refpath={ref_path}\n',
                     f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
