@@ -830,7 +830,9 @@ if __name__ == "__main__":
     timestampsh      = f'{comsdir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}B')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
+    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', 
+                       f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n',
+                       f'{slurpydir}/memoryprofile.py\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
     ## Append the timestamp command to file
