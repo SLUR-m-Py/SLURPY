@@ -313,7 +313,7 @@ if __name__ == "__main__":
 
     ## If human reference 
     reference_path = t2t_refpath if ist2t else reference_path
-    feature_space  = t2t_gffpath if (feature_space.lower()  == 't2t') else feature_space
+    feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
 
     ## If vero was pass
     reference_path = vero_refpath if isvero else reference_path
@@ -804,13 +804,13 @@ if __name__ == "__main__":
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## <- 
-    ##
+    pix = 6
     ##      COUNTING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## 6A. If the clean boolean or rerun vars were set 
     if counting:
         ## Format command to remove uneedeed files 
-        counting_sh   = f'{comsdir}/{pix}B.thecount.sh'             ##   Set the bash file name 
+        counting_sh   = f'{comsdir}/{pix}A.thecount.sh'             ##   Set the bash file name 
         counting_repo = reportname(run_name,'thecount',i=f'{pix}A')   ##   Set the report 
         counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
@@ -819,14 +819,31 @@ if __name__ == "__main__":
         command_files.append((counting_sh,run_name,experi_mode,'count',counting_repo,0,''))
     else: ## Otherwise do nothing
         pass
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ##
+    ##      SUBMITTING TIME-STAMP   
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 6B. Final timestamp, out clean up
+    ## Format count commands 
+    ## Set the timesampe assocaited file names 
+    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
+    timestampsh      = f'{comsdir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
+    timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}B')       ##     Name of the log to report to 
+    ## Formath time stamp and echo commands 
+    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
+    ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
+    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
+    ## Append the timestamp command to file
+    command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ##
     ##      CLEANING UP FILES   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6B. If the clean boolean or rerun vars were set 
+    ## 6C. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
         remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
-        remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
+        remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
         remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.valid.pairs\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes) + remove_comm, debug)
@@ -835,24 +852,7 @@ if __name__ == "__main__":
     else: ## Otherwise do nothing
         pass
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ##
-    ##      SUBMITTING TIME-STAMP   
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6C. Final timestamp, out clean up
-    pix = 6
-    ## Format count commands 
-    ## Set the timesampe assocaited file names 
-    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
-    timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
-    timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}C')       ##     Name of the log to report to 
-    ## Formath time stamp and echo commands 
-    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
-    ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
-    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
-    ## Append the timestamp command to file
-    command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
+    ## 
     ##      PIPELINE COMMAND SUBMISSION TO SLURM    
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Bring in commmand control, fastp submitter, and submit depends
@@ -902,15 +902,15 @@ if __name__ == "__main__":
     ## Call the sam conversion script 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
     ##
-    ##      6) COUNTING COMMANDS
+    ##      6A) COUNTING COMMANDS
     ## Sumbit the count command 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',hic_pipeline[4],stamp,clean_partition,group='Experiment',debug=debug)
     ##   
-    ##      7) SUBMITTING TIME STOP COMMANDS 
+    ##      6B) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','count' if counting else hic_pipeline[4],stamp,time_partition,group='Experiment',debug=debug) 
     ## 
-    ##      8) CLEAN UP COMMANDS 
+    ##      6C) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','count' if counting else 'timestamp',stamp,clean_partition,group='Experiment',debug=debug) 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##

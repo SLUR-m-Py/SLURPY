@@ -35,9 +35,11 @@ fakejobid = 666666
 if runlocal:
     t2t_refpath = '/Users/croth/Desktop/T2T/GCA_009914755.4_T2T-CHM13v2.0_genomic.named.fasta'
     t2t_gffpath = '/Users/croth/Desktop/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gff'
+    t2t_gtfpath = '/Users/croth/Desktop/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gtf'
 else:
     t2t_refpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCA_009914755.4_T2T-CHM13v2.0_genomic.named.fasta' 
     t2t_gffpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gff'
+    t2t_gtfpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.named.gtf'
 
 ## Set local path to vero gm ref
 vero_refpath = '/panfs/biopan04/4DGENOMESEQ/REFERENCES/GreenMVA/Chlorocebus_sabeus_mva.fasta'
@@ -164,7 +166,7 @@ debug_help    = "A flag to run in verbose mode, printing sbatch commands. Defaul
 mark_help     = "Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking)."
 broad_help    = "Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details."
 clean_help    = "If included will run clean up script at end of run. The default behavior is false, can be run after pipeline."
-count_help    = "Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples."
+count_help    = "Boolean flag to turn off final diagnostics on Hi-C and ATAC-seq samples. Default is to perform the diagnostics"
 skipq_help    = "Flag to skip initial quality control and filtering with fastp (i.e. only split reads)."
 merge_help    = "Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output."
 peaks_help    = "A boolean flag to skip peak calling via macs3."
