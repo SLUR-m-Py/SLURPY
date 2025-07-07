@@ -11,7 +11,8 @@ The easiest way to set up the needed computing environment is via conda and the 
 conda env create -f environment.yml
 ```
 
-Below are commands needed to set up the "bioenv" manually for running slurpy. 
+### Alternative setup instructions
+Below are commands needed to set up the "bioenv" manually for running SLUR(M)-py. 
 
 ```
 ## Make a python environment named bioenv 
@@ -25,8 +26,8 @@ conda activate bioenv
 conda install numpy pandas matplotlib seaborn dask biopython pysam samtools bwa -c bioconda 
 ```
 
-For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use macs3 (the latest version of macs2).
-We recommend installing macs3 via pip (shown below). 
+### Installing MACS for peak calling
+For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use [macs3](https://macs3-project.github.io/MACS/) (the latest version of [macs2](https://pypi.org/project/MACS2/)). We recommend installing macs3 via pip (shown below). 
 
 ```
 pip install macs3
@@ -34,7 +35,7 @@ pip install macs3
 
 A full list of the python libraries and their versions used to develop slurpy are listed within [python.dependencies.txt](https://github.com/SLUR-m-Py/SLURPY/blob/main/python.dependencies.txt).
 
-## Installation
+## Installation of SLUR(M)-py
 Downloading the repository as a .zip archive is easiest. For developers a simple clone command with git works too:
 
 ```
@@ -51,10 +52,10 @@ chmod +x *.py
 
 ## Dependencies 
 
-Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in samtools is also required with the minimum version of 1.15.1. 
+Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also required with the minimum version of 1.15.1. 
 
 
-#### fastp 
+### Splitting input read pairs with fastp 
 For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
 The fastp executable needs to be within the "SLURPY" directory. After downloading move this executable to the SLURPY directory:
 
@@ -80,7 +81,7 @@ Alternatively, fastp can be installed via a conda command.
 conda install bioconda::fastp
 ```
 
-#### juicer tools (optional)
+### juicer tools (optional)
 Here we currently use Juicer tools (specifically the juicer pre command) to process and format penultimate forms of Hi-C data (.bedpe) into a final .hic file. 
 The juicer jar files are hosted on the downloads page of the [juicer github](https://github.com/aidenlab/juicer/wiki/Download). 
 Downloading a jar file into the SLURPY directory makes calls to format .hic data easier (shown later). 
@@ -90,7 +91,7 @@ Downloading a jar file into the SLURPY directory makes calls to format .hic data
 mv juicer_tools_1.22.01.jar ./SLURPY
 ```
 
-### Checking the python environment 
+## Checking the python environment 
 Once within the slrupy directory, run the environment checking script, [modcheck.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/modcheck.py).
 
 ```
