@@ -4,7 +4,16 @@
 ## Setting up the computing environment
 SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.10.13) for a linex OS on a high-performance computing cluster. 
 We recommend using conda to manage the python environment needed by SLUR(M)-py. 
-Below are commands needed to set up the "bioenv" for running slurpy. 
+
+The easiest way to set up the needed computing environment is via conad and the listed envirnoment.yml file.
+The environment.yml file can be found [here](https://github.com/SLUR-m-Py/SLURPY/blob/main/environment.yml).
+The conda command below will make an environment named "bioenv"
+
+```
+conda env create -f environment.yml
+```
+
+Below are commands needed to set up the "bioenv" manually for running slurpy. 
 
 ```
 ## Make a python environment named bioenv 
@@ -65,6 +74,12 @@ chmod a+x ./fastp
 ## Check that fastp works
 ./fastp -h
 
+```
+
+Alternatively, fastp can be installed via a conda command.
+```
+## Install latest version of fastp
+conda install bioconda::fastp
 ```
 
 #### juicer tools (optional)
