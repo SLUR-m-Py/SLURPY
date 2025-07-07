@@ -925,7 +925,7 @@ if __name__ == "__main__":
     ## Calc number of jobs submitted
     njobstosub, njobssubbed = command_files[(command_files.Torun==0)].shape[0], len(sub_sbatchs)
     ## Check our work
-    ifprint(f'WARNING: The number of expected jobs to run ({njobstosub}) and number of jobs submitted {njobssubbed} do not match!' ,not (njobstosub < njobssubbed))
+    ifprint(f'WARNING: The number of expected jobs to run ({njobstosub}) and number of jobs submitted {njobssubbed} do not match!' , (njobstosub < njobssubbed))
     ## Print the number of commands being submitted
     print(f'INFO: A total of {njobssubbed} jobs were submitted with this run' + (f' and will start after {bwaix_jobid}.' if bwaix_jobid else '.')  )
     ## If zero jobs were submitted
