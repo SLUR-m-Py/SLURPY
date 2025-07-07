@@ -236,3 +236,41 @@ To run slurpy to analyze a ChIP-seq experiment run:
 ```
 ./SLURPY/slurm.py -r /path/to/reference/file.fasta -c /path/to/control/or/input.bam --atac-seq
 ```
+
+## Other scripts
+
+### Determining completeness 
+The [checkwork.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/checkwork.py) script can be used to determine if a run of the SLUR(M)-py pipeline. If warnings or error messages are found within any of the logs this script will report it. 
+
+```
+## Check if our run of SLUR(M)-py worked.
+$ ./SLURPY/checkwork.py
+INFO: Good news everyone! No errors were detected in this run.
+        :-) 
+        <3
+```
+
+### Cleaning up old files
+After a completed run of SLUR(M)-py, large, temporary files can be removed using the [cleanup.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/cleanup.py) script.
+```
+## Remove large files.
+./SLURPY/cleanup.py
+```
+
+### Caluclating a memory profile
+SLUR(M)-py has two arguments to control RAM usage, the “--memory”  and the “–xmx” inputs, which control the maximum memory across any processes submitted to SLURM and the amount of memory allocated to Java, used in .hic file creation by juicer’s pre command (respectively). By default, the memory argument is not set. To help set this argument, from a completed run of SLUR(M)-py, a profile of the memory usage per process within the pipeline can be caluclated using the [memoryprofile.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/memoryprofile.py) scirpt.
+
+```
+## Call the memory profile script, no arguments are needed. 
+./SLURPY/memoryprofile.py
+```
+
+### Estimating open (A) and closed (B) chromatin compartments. 
+To further assist in the analysis of Hi-C data, we have written a submodule to calculate the genome-wide compartment scores (named [compartmentscores.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/compartments.py)) from an input .hic file. This submodule of SLUR(M)-py automates a call to the pythonic software [FAN-C](https://fan-c.readthedocs.io/en/latest/index.html). From the .hic file, FAN-C calculates (per chromosome) the eigenvalues representing the open (positive value) and closed (negative value) chromatin compartments and returns them as a .csv file. By default, these chromatin compartment scores are calculated every 100 Kb, but this resolution can be augmented at the command line via user input to [compartmentscores.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/compartments.py). 
+
+In addition to a .hic file, the compartment score module requires the path to the reference genome (in .fasta or .fa format) used in the construction of the input .hic file. This file is needed to calculate binned GC content along a chromosome, which in turn is used by FAN-C to correctly orient the compartment scores; specifically, eigenvalues are multiplied by negative one per chromosome to align compartment assignments (A or B) across the genome (see the [FAN-C documentation](https://fan-c.readthedocs.io/en/latest/api/analyse/compartments.html) for details). 
+
+```
+## Call the compartments script on a Hi-C file with a binsize of 50 kb, exclude chromosome Y. 
+./SLURPY/compartmets.py -i ./path/to/example.hic -f ./path/to/genome.fasta -b 50000 -x chrY
+```

@@ -8,11 +8,11 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Load in rm treat 
 from shutil import rmtree
 ## Laod in defaults 
-from directories import splitsdir, hicdir, bedtmpdir, checkerdir, comsdir
+from directories import splitsdir, hicdir, bedtmpdir, checkerdir
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
 if __name__ == "__main__":
     ## Bring in all the files being gzipped, Iterate thru the file pairs, and G-zip the file with our ftn
-    [rmtree(directory,ignore_errors=True) for directory in [splitsdir, hicdir, bedtmpdir, comsdir, checkerdir]]
+    [rmtree(directory,ignore_errors=True) for directory in [splitsdir, hicdir, bedtmpdir, checkerdir]]
 ## End of file 
