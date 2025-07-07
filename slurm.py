@@ -904,11 +904,12 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
     ##
     ##      6) COUNTING COMMANDS
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',hic_pipeline[4],stamp,clean_partition,group='Experiment',debug=debug) 
+    ## Sumbit the count command 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',hic_pipeline[4],stamp,clean_partition,group='Experiment',debug=debug)
     ##   
     ##      7) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','count',stamp,time_partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','count' if counting else hic_pipeline[4],stamp,time_partition,group='Experiment',debug=debug) 
     ## 
     ##      8) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 

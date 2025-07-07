@@ -1,4 +1,4 @@
-# SLURPY
+# SLUR(M)-PY
 [SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.biorxiv.org/content/10.1101/2024.05.18.594827v2)
 
 ## Setting up the computing environment
