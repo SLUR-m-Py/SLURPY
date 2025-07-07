@@ -804,31 +804,14 @@ if __name__ == "__main__":
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## <- 
-    
-    ##      SUBMITTING TIME-STAMP   
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6A. Final timestamp, out clean up
-    pix = 6
-    ## Format count commands 
-    ## Set the timesampe assocaited file names 
-    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
-    timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
-    timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}A')       ##     Name of the log to report to 
-    ## Formath time stamp and echo commands 
-    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
-    ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
-    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
-    ## Append the timestamp command to file
-    command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
+    ##
     ##      COUNTING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6B. If the clean boolean or rerun vars were set 
+    ## 6A. If the clean boolean or rerun vars were set 
     if counting:
         ## Format command to remove uneedeed files 
         counting_sh   = f'{comsdir}/{pix}B.thecount.sh'             ##   Set the bash file name 
-        counting_repo = reportname(run_name,'thecount',i=f'{pix}B')   ##   Set the report 
+        counting_repo = reportname(run_name,'thecount',i=f'{pix}A')   ##   Set the report 
         counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
         writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes) + counting_coms, debug)
@@ -836,14 +819,14 @@ if __name__ == "__main__":
         command_files.append((counting_sh,run_name,experi_mode,'count',counting_repo,0,''))
     else: ## Otherwise do nothing
         pass
-
+    ##
     ##      CLEANING UP FILES   
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## 6C. If the clean boolean or rerun vars were set 
+    ## 6B. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
         remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
-        remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
+        remove_repo = reportname(run_name,'clean',i=f'{pix}B')   ##   Set the report 
         remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.valid.pairs\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes) + remove_comm, debug)
@@ -852,7 +835,23 @@ if __name__ == "__main__":
     else: ## Otherwise do nothing
         pass
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
+    ##
+    ##      SUBMITTING TIME-STAMP   
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## 6C. Final timestamp, out clean up
+    pix = 6
+    ## Format count commands 
+    ## Set the timesampe assocaited file names 
+    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
+    timestampsh      = f'{comsdir}/{pix}A.time.stamp.sh'                         ##     Name of the .sh bash file 
+    timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}C')       ##     Name of the log to report to 
+    ## Formath time stamp and echo commands 
+    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
+    ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
+    writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
+    ## Append the timestamp command to file
+    command_files.append((timestampsh,run_name,experi_mode,'timestamp',timestamp_repo,0,''))
+    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
     ##      PIPELINE COMMAND SUBMISSION TO SLURM    
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
