@@ -782,8 +782,8 @@ if __name__ == "__main__":
                                         broad=broadpeak,summits=callsummits) +\
                                         [f'{slurpydir}/pymacs3.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
                                          f'{slurpydir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
-                                        [f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
-                                         f'{slurpydir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else []
+                                        ([f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
+                                         f'{slurpydir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else [])
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report,memory=slurm_mem) + macs3_commands, debug)
             ## Append the macs3 command 
