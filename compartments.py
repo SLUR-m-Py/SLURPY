@@ -41,12 +41,12 @@ decplace    = 4
 ## Set help messages
 i_help = 'Path to input .hic file.'
 f_help = 'Optional path to an input .fasta (or .fa) file (used to align Hi-C data) for predicting GC content for compartments.'
+o_help = "Path to ouput diagnostic figure and chromosome compartments scores. Default behavior is to save at same location of input .hic file."
 b_help = 'The binsize or resolution (bp) to use in analysis (default: %s).'%bin_size
 d_help = 'Decimal place to save out eigen values (default = %s).'%decplace
 x_help = 'List of contigs or chromosomes to exclude from analysis'
 P_help = 'Boolean flag to skip plotting compartment scores.'
 D_help = 'Boolean flag to run script in verbose debugging mode.'
-
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
@@ -59,13 +59,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=description)
 
     ## Set input arguments
-    parser.add_argument("-i", "--inhic-file",   dest="i", required=True,  type=str,   help=i_help,  metavar= './path/to/in.hic') 
-    parser.add_argument("-f", "--fasta-path",   dest="f", required=True, type=str,    help=f_help,  metavar='./path/to/in.fasta')
+    parser.add_argument("-i", "--inhic-file",   dest="i", required=True,  type=str, help=i_help,  metavar= './path/to/in.hic') 
+    parser.add_argument("-f", "--fasta-path",   dest="f", required=True,  type=str, help=f_help,  metavar='./path/to/in.fasta')
 
     ## Set default arguments 
-    parser.add_argument("-b", "--binsize",      dest="b", required=False, type=int,   help=b_help,  default= bin_size)
-    parser.add_argument("-d", "--decimals",     dest="d", required=False, type=int,   help=d_help,  default= decplace)
-    parser.add_argument("-x", "--excludes",     dest="x", required=False, type=str,   help=x_help,  default= ['chrM'])
+    parser.add_argument("-o", "--output",       dest="o", required=False, type=str, help=o_help,  default= None)
+    parser.add_argument("-b", "--binsize",      dest="b", required=False, type=int, help=b_help,  default= bin_size)
+    parser.add_argument("-d", "--decimals",     dest="d", required=False, type=int, help=d_help,  default= decplace)
+    parser.add_argument("-x", "--excludes",     dest="x", required=False, type=str, help=x_help,  default= ['chrM'])
 
     ## Set boolean vars
     parser.add_argument("--debug",              dest="D",  help=D_help, action = 'store_true')
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     fas_path = args.f
 
     ## Set defaults 
+    out_path = args.o 
     bin_size = args.b 
     decplace = args.d
     excludes = args.x
@@ -96,9 +98,13 @@ if __name__ == "__main__":
         print(excludes) if debuging else None 
         pass 
 
-    ## Set the savepaths for the png and the 
-    savepath = hic_path.split('/')[-1].split('.hic')[0] + '.compartment.scores.%s.csv'%bin_size
-    saveppng = savepath.split('.csv')[0] + '.pdf'
+    ## If an output path was sent 
+    if out_path:
+        ## Reset the out path ending, and set save path  
+        out_path = out_path if (out_path[-1] == '/') else (out_path + '/')
+        savepath = out_path + hic_path.split('/')[-1].split('.hic')[0] + '.compartment.scores.%s.csv'%bin_size
+    else: ## Set the savepaths for the png and the 
+        savepath = hic_path.split('.hic')[0] + '.compartment.scores.%s.csv'%bin_size
 
     ## Print the paths 
     print('INFO: Saving results to dataframe: %s'%savepath) if debuging else None

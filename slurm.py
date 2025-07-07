@@ -173,7 +173,7 @@ if __name__ == "__main__":
     parser.add_argument("--force",                dest="force",     help = force_help,     action = ST)
     parser.add_argument("--debug",                dest="debug",     help = debug_help,     action = ST)
     parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
-    parser.add_argument("--count",                dest="count",     help = count_help,     action = ST)
+    parser.add_argument("--nocount",              dest="count",     help = count_help,     action = ST)
 
     ## Set Hi-C related boolean flags 
     parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
@@ -252,7 +252,7 @@ if __name__ == "__main__":
     force           = inputs.force          ##     Force overwrite of output alignment files 
     debug           = inputs.debug          ##     Run in debug mode 
     ifclean         = inputs.clean          ##     Flag to run clean up script 
-    counting        = inputs.count          ##     Flag to count the read pairs
+    counting        = not inputs.count      ##     Flag to count the read pairs
 
     ## Set Hi-C related boolean flasgs                  
     toshort         = inputs.toshort        ##     Flag the make short file, kicks if jarpath was given 
@@ -392,8 +392,6 @@ if __name__ == "__main__":
         count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
     
-        ## Load in macs3 ftns
-        from pymacs3 import peakattack
         ## Set the broad pkeack
         broadpeak = '--broad' if ifbroad else ''
 
@@ -771,10 +769,21 @@ if __name__ == "__main__":
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         elif peakcalling:
+            ## Bring in pymacs3 functions
+            from pymacs3 import peakattack
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
+            ## Format the name of the output peaks,  output bed or bedpe file
+            peak_path   = f'{macs3dir}/{sample_name}_peaks.narrowPeak'
+            outbed_file = f'{macs3dir}/{sample_name}*.valid.{macs3mode.lower()}'
             ## Format the command to macs3
-            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,broad=broadpeak,summits=callsummits) + [f'{slurpydir}/pymacs3.py -b {macs3dir}/{sample_name}*.valid.{macs3mode.lower()} -p {macs3dir}/{sample_name}_peaks.narrowPeak -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',f'{slurpydir}/myecho.py Finished calculating FrIP from macs3 {macs3_report}\n']
+            macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,
+                                        shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,
+                                        broad=broadpeak,summits=callsummits) +\
+                                        [f'{slurpydir}/pymacs3.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
+                                         f'{slurpydir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
+                                        [f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space}\n',
+                                         f'{slurpydir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else []
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report,memory=slurm_mem) + macs3_commands, debug)
             ## Append the macs3 command 
@@ -894,26 +903,13 @@ if __name__ == "__main__":
     ## Call the sam conversion script 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
     ##
-    ## Set the last step
-    #if feature_space:
-    #    last_step = 'gxg'
-    #elif jarpath or toshort:
-    #    last_step = 'toshort'
-    #elif peakcalling:
-    #    last_step = 'macs3'
-    #elif make_mcool:
-    #    last_step = 'hic'
-    #else:
-    #    last_step = hic_pipeline[4]   
-    last_step = hic_pipeline[4]   
-    ##
-    ##      6) SUBMITTING TIME STOP COMMANDS 
+    ##      6) COUNTING COMMANDS
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',hic_pipeline[4],stamp,clean_partition,group='Experiment',debug=debug) 
+    ##   
+    ##      7) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',last_step,stamp,time_partition,group='Experiment',debug=debug) 
-    ##
-    ##      7) COUNTING COMMANDS
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',last_step,stamp,clean_partition,group='Experiment',debug=debug) 
-
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp','count',stamp,time_partition,group='Experiment',debug=debug) 
+    ## 
     ##      8) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
     sub_sbatchs = sub_sbatchs + submitdependency(command_files,'clean','count' if counting else 'timestamp',stamp,clean_partition,group='Experiment',debug=debug) 
