@@ -388,7 +388,7 @@ def jobname(args:list) -> str:
     return '--job-name=%s'%'.'.join(map(str,args))
 
 ## Ftn for submission of jobs with dependencies 
-def submitdependency(command_df:pd.DataFrame, operation:str, dependent, timestamp:str, clusterpart:str, bylast=False, group='Sample', debug=False) -> list:
+def submitdependency(command_df:pd.DataFrame, operation:str, dependent:list, timestamp:str, clusterpart:str, bylast=False, group='Sample', debug=False) -> list:
     """Formats and submits sbatch jobs from command dataframe based on operations and dependents"""
     ## Initilzse cap and lists
     subsbatchs, dependent = [], makelist(dependent) + ['bwaix']

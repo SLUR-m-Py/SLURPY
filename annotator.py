@@ -239,7 +239,7 @@ if __name__ == "__main__":
     l,c = np.unique(annoated_peaks.Name.tolist(),return_counts=True)
     ambiquous_total   = np.sum(c>1)
     peak_total        = len(c)
-    ambiquous_percent = np.round(ambiquous_total/peak_total,4)
+    ambiquous_percent = np.round(100*ambiquous_total/peak_total,4)
     ## Print results to screen 
     print('INFO: Annotated %s peaks'%peak_total)
     print('INFO: %s %s of peaks (%s) have more than one annotation.'%(ambiquous_percent,'%',ambiquous_total))
