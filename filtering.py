@@ -27,6 +27,9 @@ from defaults import fileexists
 from Bio import SeqIO
 from Bio.Seq import Seq
 
+## Set columns to sort on
+sort_on_cols = ['Chrn1','Chrn2','Pos1','Pos2']
+
 ## ----------------------------------- FUNCTIONS DEFINING --------------------------------- ##
 ## Ftn for setting output path
 def makeoutpath(inpath,coi) -> str: 
@@ -512,7 +515,7 @@ if __name__ == "__main__":
     ## Compute a sorted list of valid chromosomes by reference indexed number
     chromosomes = sorted(bedpe.Rname1.unique().compute())
     ## Iterate thur and seperat on chromosomes, and saveout the contact. NOTE: We have to do this (rather than groupby) b/c dask dataframes can't precompute groups
-    [bedpe[(bedpe.Rname1==chrom)].to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
+    [bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     
     ## Write out the counts
     new_names = [   'Unmapped',    'Dovetails',    'Excluded',    'Lowquality',   'Inter',     'Largefragment',  'Samefragment',    'Valid',       'Interhic',      'Intrahic']
