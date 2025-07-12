@@ -289,7 +289,7 @@ def sbatch(nameojob:str, cpus:int, cwd:str, report:str, partition=None, nodes=1,
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:
     """Formats the start of a call to fastp given inputs (i,I), outputs (o,O), and the report name (r)."""
     ## Format the fall and return
-    return f'{slurpydir}/fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
+    return f'fastp -i {i} -I {I} -o {o} -O {O} -j {r}.{n}.json -h {r}.{n}.html', f'{r}.{n}.json', f'{r}.{n}.html'
 
 ## Ftn for returning a boolean if in hic
 def inhic(inexp:str) -> bool:

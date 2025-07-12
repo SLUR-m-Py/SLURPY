@@ -52,12 +52,14 @@ chmod +x *.py
 
 ## Dependencies 
 
-Slurpy utilizes SLURM and was developed under version 21.08.8-2. The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also required with the minimum version of 1.15.1. 
+Slurpy utilizes SLURM and was developed under version 21.08.8-2. 
+The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also required with the minimum version of 1.15.1. 
 
 
-### Splitting input read pairs with fastp 
+### Troubleshooting, fastp install. 
 For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
-The fastp executable needs to be within the "SLURPY" directory. After downloading move this executable to the SLURPY directory:
+It is expected, that the fastp executable can be installed within the python/conda environment (shown above, at the top of this document). 
+However, should this fail, the executable can be downloaded and added to the current path (shown below). 
 
 ```
 ## Change directorys
@@ -73,9 +75,13 @@ chmod a+x ./fastp
 ## Check that fastp works
 ./fastp -h
 
+## Add the fastp to path within a ~/.bashrc file
+export PATH=$PATH:</path/to/fastp>
+
 ```
 
 Alternatively, fastp can be installed via a conda command.
+This step is not needed if the creation of the conda environment (shown above) works. 
 ```
 ## Install latest version of fastp
 conda install bioconda::fastp
