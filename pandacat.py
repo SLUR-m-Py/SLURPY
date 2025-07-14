@@ -87,13 +87,14 @@ if __name__ == "__main__":
     ## Remove the previous output file it is exists
     k = reset([outputfile])
 
-    ## Open the output file for wiritng (only once?)
-    with open(outputfile, 'wb') as outfile:
-        ## Iterate over the paths of input files 
-        for i,inpath in enumerate(inpaths):
-            ## If the path is real and has a sizes greater than zero 
-            if exists(inpath) and getsize(inpath): 
+    ## Check that we have actual data files 
+    inpaths = [f for f in inpaths if (exists(f) and getsize(f))]
 
+    if len(inpaths):
+        ## Open the output file for wiritng (only once?)
+        with open(outputfile, 'wb') as outfile:
+            ## Iterate over the paths of input files 
+            for i,inpath in enumerate(inpaths):
                 ## Open the input file for reading 
                 with open(inpath, 'rb') as infile:
                     ## Remove header, by reading in first line
@@ -101,6 +102,7 @@ if __name__ == "__main__":
                         infile.readline()  
                     ## Then block copy the rest of file from input to output without parsing
                     shutil.copyfileobj(infile, outfile)
+                    
     ## print tolog
     print('Finished concatenation of %s input files to %s.'%(len(inpaths),outputfile))
 ## End of file 

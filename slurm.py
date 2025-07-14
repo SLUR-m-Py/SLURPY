@@ -200,6 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
     parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
     parser.add_argument("--skipdedup",            dest="skipdedup",  help = mark_help,     action = ST)
+    parser.add_argument("--save-dups",            dest="save",       help = save_help,     action = ST)
     parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
     parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
     parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
@@ -279,6 +280,7 @@ if __name__ == "__main__":
     rna_seq         = inputs.rnas           ##     Boolean flag to run in rna-seq mode 
     sfastp          = inputs.sfast          ##     Flag to skip fastp filtering 
     skipduplicates  = inputs.skipdedup      ##     Boolean to mark duplicates       
+    keep_dups       = inputs.save           ##     Boolean flag to save out duplicates once identified
     dedovetail      = inputs.tails          ##     Boolean for dove tailing 
     tosam           = inputs.tosam          ##     Boolean flag to convert .bedpe file to sam format
     tobam           = inputs.tobam          ##     Boolean flag to convert .bedpe file to bam format
@@ -606,7 +608,7 @@ if __name__ == "__main__":
         ## Set the new concat file name by chromosome index 
         for chrom in chrlist:
             ## Set start name for wildcard use to bring in inputs  to ftn 
-            sample_start = f'valid.{chrom}.bedpe' if postmerging else f'{sample_name}.valid.{chrom}.bedpe'
+            sample_start = f'_valid_{chrom}' if postmerging else f'{sample_name}_valid_{chrom}'
             hiccat_out = f'{hicdir}/{sample_name}.valid.{chrom}.bedpe'
             hicdup_out = f'{hicdir}/{sample_name}.duplicates.{chrom}.bedpe'
             ## Append to hic cat outs to preserve order 
@@ -615,13 +617,13 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('\n' if skipduplicates else ' --dedup\n')]
+            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('' if skipduplicates else ' --dedup ') + (' --save-dups ' if keep_dups else '') ]
 
-            ## make concat file name
+            ## make deduplication file name
             hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
-            ## Write the concat command to file
+            ## Write the deduplicat command to file
             writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + hiccat_coms, debug)
-            ## Append the concat command
+            ## Append the deduplication command
             command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
@@ -812,7 +814,7 @@ if __name__ == "__main__":
         ## Format command to remove uneedeed files 
         counting_sh   = f'{comsdir}/{pix}A.thecount.sh'             ##   Set the bash file name 
         counting_repo = reportname(run_name,'thecount',i=f'{pix}A')   ##   Set the report 
-        counting_coms = [f'{slurpydir}/totalcount.py {run_name} {diagdir}\n'] + [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
+        counting_coms = [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
         writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes) + counting_coms, debug)
         ## Append the clean up command to file
@@ -830,9 +832,8 @@ if __name__ == "__main__":
     timestampsh      = f'{comsdir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}B')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [ f'{slurpydir}/totalcount.py {run_name} {diagdir}\n', 
-                       f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n']
-                       #f'{slurpydir}/memoryprofile.py\n']
+    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n',
+                      f'{slurpydir}/memoryprofile.py\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
     ## Append the timestamp command to file

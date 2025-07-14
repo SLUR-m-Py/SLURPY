@@ -17,17 +17,19 @@ croth@lanl.gov
 desc = "Concats, sorts, and removes duplicates from input bedpe files representing Hi-C contacts from a paired-end Hi-C experiment."
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
-## Bring in pandas
-import dask.dataframe as dd, numpy as np 
 ## Bring in params
-from parameters import ST, hicsep
+from parameters import ST, hicsep, save_help
 ## Bring in ftn from defaults
 from directories import bedtmpdir
+## Load in from defaults
+from defaults import sortglob
+## Set debuging 
+debuging = False 
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 
 drop_by = ['Chrn1','Chrn2','Pos1','Pos2','Seqrev1','Seqrev2','Mcount1','Mcount2']
-sort_by = drop_by[:-4]
+sort_by = drop_by[:4]
 """
 Why?
 Chrn1 and Chrn2:       Duplicates must map to the same pair of chromosomes / contigs.
@@ -38,17 +40,13 @@ Seqrev1 and Seqrev2:   Integers signifying the strand, 0 for positive, anything 
 
 ## Set help messages
 sort_help = 'Flag to left right sort input rows by chromosome and position.'
-dup_help  = 'Flag to drop duplicate rows. Duplicates are found by read positions and sequencing length of fragment.'
+dup_help  = 'Flag to drop duplicate rows. Duplicates are found by read positions and sequencing signal of fragment.'
 D_help    = 'Output file name and path to save duplciate read pairs to (in bedpe format).'
 O_help    = 'Output file name and path to save results to (in bedpe format).'
 B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 
 ## Set run local
 runlocal = False
-
-## Ftn for returning the match coutn in a cigar str
-def matchcount(cig:str) -> int:
-    return cig.count('M')
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -58,16 +56,20 @@ if __name__ == "__main__":
     ## Make the parse
     parser = argparse.ArgumentParser(description = desc)
     ## Add the required arguments
-    parser.add_argument("-b",      dest="B",     type=str,  required=True,    help=B_help ) 
-    parser.add_argument("-o",      dest="O",     type=str,  required=True,    help=O_help )
-    parser.add_argument("-d",      dest="D",     type=str,  required=False,   help=D_help )
+    parser.add_argument("-b",           dest="B",     type=str,  required=True,    help=B_help ) 
+    parser.add_argument("-o",           dest="O",     type=str,  required=True,    help=O_help )
+    parser.add_argument("-d",           dest="D",     type=str,  required=False,   help=D_help )
 
     ## Add boolean vars 
-    parser.add_argument("--sort",  dest="sort",   help = sort_help,  action = ST)
-    parser.add_argument("--dedup", dest="dup",    help = dup_help,   action = ST)
+    parser.add_argument("--sort",       dest="sort",   help = sort_help,  action = ST)
+    parser.add_argument("--dedup",      dest="dup",    help = dup_help,   action = ST)
+    parser.add_argument("--save-dups",  dest="save",   help = save_help,  action = ST)
    
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
+
+    ## Bring in pandas
+    import dask.dataframe as dd
 
     ## Set inputs 
     filebackend = inputs.B      ## Set the file backend 
@@ -75,15 +77,17 @@ if __name__ == "__main__":
     dedupe_path = inputs.D      ## Deduplication out file
     sorting     = inputs.sort   ## Are we sorting
     deduplicate = inputs.dup    ## Are we deduplicating
-
-    ## Check input
-    assert filebackend.split('.')[-1] == 'bedpe', "ERROR: The given extension ending -- %s -- is not a bedpe file!"%filebackend
+    keep_dups   = inputs.save   ## Flag to save out the duplicates
 
     ## Set wild card ofr input paths to dask dataframes 
-    input_paths = f'{bedtmpdir}/*.{filebackend}' if not runlocal else f'*.{filebackend}'
+    input_wc =  f'*{filebackend}' if runlocal else f'{bedtmpdir}/*{filebackend}'
+    input_paths = sortglob(input_wc)
+    ## Check our work 
+    assert len(input_paths), "ERROR: No input files found."
+    print(input_paths) if debuging else None 
 
     ## Load in bedpe file
-    bedpe = dd.read_csv(input_paths,sep=hicsep)
+    bedpe = dd.concat([dd.read_parquet(input_path) for input_path in input_paths])
 
     ## Preset duplicate counts
     interdup_counts = 0
@@ -91,37 +95,37 @@ if __name__ == "__main__":
 
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
     if sorting and deduplicate:
-        ## Gather the counts and number of uniq pos1 and 2
-        (pos1,pc1), (pos2,pc2) = np.unique(bedpe.Pos1,return_counts=True), np.unique(bedpe.Pos2,return_counts=True)
-        ## Gather duplicated pos
-        dpos1,dpos2 = pos1[(pc1>1)], pos2[(pc2>1)]
-        
-        ## Compute the possible duplicates
-        pos_dups = bedpe[(bedpe.Pos1.isin(dpos1) & bedpe.Pos2.isin(dpos2))].compute()
-        ## Calculate the mcounds, apply match count 
-        pos_dups['Mcount1'] = pos_dups.Cigar1.apply(matchcount)
-        pos_dups['Mcount2'] = pos_dups.Cigar2.apply(matchcount)
+        ## Drop the non-unique rows via dask dataframes, and sort and save out csv
+        deduped = bedpe.drop_duplicates(drop_by)
+        deduped.sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
 
-        ## Drop duplicates
-        pos_uniq   = pos_dups.drop_duplicates(drop_by)
-        ## Gather duplicate hits by read names 
-        duplicates = pos_dups[~(pos_dups.Qname1.isin(pos_uniq.Qname1))] 
-        ## Count the duplicates
-        duplicate_count = duplicates.Pos1.count()
-        ## If we have duplicates
-        if duplicate_count:
-            ## Calculate the inter duplicates
-            interdup_count = duplicates.Inter.sum()
-            ## Calc the intra dup count
-            intradup_count = duplicate_count - interdup_count
-            ## Update counts
-            interdup_counts += interdup_count
-            intradup_counts += intradup_count
-            ## Save the duplicates to csv 
-            duplicates.to_csv(dedupe_path,header=True,index=False,sep=hicsep) 
+        if keep_dups:
+            ## Gather the duplicates and count them 
+            duplicates = bedpe[(~bedpe.Qname1.isin(deduped.Qname1.compute().tolist()))]
+            duplicate_count = duplicates.Pos1.count().compute()
 
-        ## Drop duplicates,sort values, and save out a csv file 
-        bedpe[~(bedpe.Qname1.isin(duplicates.Qname1))].sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
+            ## If we have duplicates
+            if duplicate_count:
+                ## Calculate the inter duplicates
+                interdup_counts = duplicates.Inter.sum().compute()
+                ## Calc the intra dup count
+                intradup_counts = duplicate_count - interdup_counts
+                ## Save the duplicates to csv 
+                duplicates.to_csv(dedupe_path,index=False,header=True,single_file=True,sep=hicsep)
+        else:
+            ## Calc totals 
+            Total_counts = bedpe.Chrn1.count().compute()
+            Inter_counts = bedpe.Inter.sum().compute()
+            Intra_counts = Total_counts - Inter_counts
+
+            ## Calc new totals 
+            Total_dedup = deduped.Chrn1.count().compute()
+            Inter_dedup = deduped.Inter.sum().compute()
+            Intra_dedup = Total_dedup - Inter_dedup
+
+            ## Calc the removed
+            interdup_counts = Inter_counts - Inter_dedup 
+            intradup_counts = Intra_counts - Intra_dedup
 
     ## Just sorting and not deduplciating 
     elif sorting and (not deduplicate):
@@ -131,7 +135,7 @@ if __name__ == "__main__":
         print("WARNING: A combination of arguments left us doing nothing for this call of deduphic.py.")
     
     ## Format new names and print counts
-    new_names = [  'Interdups',     'Intradups']
+    new_names = ['InterDuplicates', 'IntraDuplicates']
     new_count = [interdup_counts, intradup_counts]
     ## Iterate thru and print the counts to log 
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]

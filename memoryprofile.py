@@ -102,4 +102,6 @@ if __name__ == "__main__":
     plt.xticks(rotation=90,fontsize=10)
     ## SAve figure 
     plt.savefig(out_path.replace('.csv','.png'),dpi=150,bbox_inches='tight')
+    ## Print we have completed this
+    print('Finished calculating memory usage.')
 ## EOF 

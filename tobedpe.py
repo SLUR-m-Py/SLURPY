@@ -243,6 +243,10 @@ def appenddf(df:pd.DataFrame,outpath:str,toappend:bool,thesep=hicsep) -> None:
     df.to_csv(outpath,mode='a' if toappend else 'w',index=False,header= not toappend,sep=thesep)
     pass 
 
+## Ftn for returning the match coutn in a cigar str
+def matchcount(cig:str) -> int:
+    return cig.count('M')
+
 ## Ftn for post filtering recroeds 
 def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):  #,enzymelib:str,error_dist:int,frag_size:int,refseqio:str):
     ## add mapped flags
@@ -278,11 +282,6 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):
     newmap['Len'] = newmap['Cigar'].apply(lencigar)
     ## Add in end positoin
     newmap['End'] = newmap.Pos + newmap.Len 
-    ## Check the danginling ends
-    #if danglingends:
-    #    newmap['Dangend'] = newmap.apply(lambda row: endcheck(row['Seq'], row['Seqrev'], danglingends),axis=1) ## Removed, only check error fragments 
-    #else:
-    #    newmap['Dangend'] = 0
 
     ## Check our shape and readnames
     assert newmap.shape[0] == mmapped.shape[0], "ERROR: Shape missmatch!"
@@ -316,10 +315,9 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):
     long.loc[unmapped_bool,'Inter'] = -1         
     long.loc[unmapped_bool,orient]  = 'Unmapped'
 
-    ## Set distance of inter-chrom contacts to a dummy var
-    ## Set filename 
-    #if filename:
-    #    long['File'] = filename
+    ## Add in the match count 
+    long['Mcount1'] = long.Cigar1.apply(matchcount)
+    long['Mcount2'] = long.Cigar2.apply(matchcount)
 
     ## Save out the pairs and pass back to main
     appenddf(long,outdfpath,toappend) if long.shape[0] else None

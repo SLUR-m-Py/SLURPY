@@ -506,17 +506,23 @@ if __name__ == "__main__":
     else:
         pass 
 
-    ## Set output file path, gather the not used dataframes and save out as sicnle file
-    not_usede_path = makeoutpath(bedpe_path,'notused')
-    dd.read_csv(not_usede_paths,sep=hicsep).to_csv(not_usede_path,sep=hicsep,single_file=True,index=False)
+    ## Set output file path, gather the not used dataframes and save out as single file
+    dd.read_csv(not_usede_paths,sep=hicsep).to_csv(makeoutpath(bedpe_path,'notused'),sep=hicsep,single_file=True,index=False,header=True)
+    #not_used_out = bedpe_path.split('.bedpe')[0] + '_notused'
+    #dd.read_csv(not_usede_paths,sep=hicsep).to_parquet(not_used_out,partition_on=sort_on_cols[:2],overwrite=True)
 
     ## Gather the valid dataframes
     bedpe = dd.read_csv(hic_valid_paths,sep=hicsep)
     ## Compute a sorted list of valid chromosomes by reference indexed number
     chromosomes = sorted(bedpe.Rname1.unique().compute())
     ## Iterate thur and seperat on chromosomes, and saveout the contact. NOTE: We have to do this (rather than groupby) b/c dask dataframes can't precompute groups
-    [bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
-    
+    #[bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
+    for chrom in chrlist:
+        ## Set the chrom out path 
+        chrom_out_path = bedpe_path.split('.bedpe')[0] + '_valid_%s'%chrom
+        ## Save out the parquet 
+        bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
+
     ## Write out the counts
     new_names = [   'Unmapped',    'Dovetailed',    'Excluded',    'LowQuality',   'InterRemoved',     'LargeFragment',  'SameFragment',    'Valid',       'InterHiC',      'IntraHiC']
     new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
