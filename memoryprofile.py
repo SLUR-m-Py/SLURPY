@@ -68,7 +68,7 @@ if __name__ == "__main__":
     ## Gather job memory
     command_df['Memory Utilized'] = [getmemory(int(jid)) for jid in command_df.JobID.replace(np.nan,0).tolist()]
     ## convert memory values to GB
-    command_df['GB'] = [ float(k.split(' ')[0])*memory_dict[k.split(' ')[-1]] for k in command_df['Memory Utilized'] ]
+    command_df['GB'] = [ float(k.split(' ')[0])*memory_dict[k.split(' (')[0].split(' ')[-1]] for k in command_df['Memory Utilized'] ]
 
     ## Gather bwa jobs
     bwa_master_paths = sortglob(f'./{debugdir}/1.bwa.to.bedpe.*.log')
