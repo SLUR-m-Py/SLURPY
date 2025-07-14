@@ -21,7 +21,7 @@ croth@lanl.gov
 """
 ## ----------------------------------------- LOAD IN MODULES ------------------------------------------ ## 
 ## Load time and sys mods 
-import time, sys, pandas as pd 
+import time, sys, pandas as pd, json 
 ## Load in os path getctime
 from os.path import getctime
 ## Load in date and time
@@ -33,89 +33,98 @@ from defaults import sortglob
 ## load in log dir
 from directories import debugdir, diagdir
 
-## ------------------------------------------ Input Variables ------------------------------------------ ##
-## Gather the file name, the start time stamp from input and calculate the end time stamp 
-filename,sstamp,estamp = sys.argv[1], float(sys.argv[2]), time.time()
+## Ftn for reading in json
+def loadjson(jsonpath):
+    # Open the JSON file in read mode
+    with open(jsonpath, 'r') as file:
+        # Load the JSON data from the file
+        json_data = json.load(file)
+    return json_data
 
-## Format the start time stamp 
-dt0 = datetime.fromtimestamp(sstamp)
+## Get the total data counts 
+def gettotal(data) -> int: 
+    return int(data['summary']['before_filtering']['total_reads'])
 
-## Format the end time stamp
-dt2 = datetime.fromtimestamp(estamp)
+def getfiltered(data) -> int: 
+    return int(data['summary']['after_filtering']['total_reads'])
 
-## Gather logs from dir
-fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
+## If the script is envoked 
+if __name__ == "__main__":
+    ## ------------------------------------------ Input Variables ------------------------------------------ ##
+    ## Gather the file name, the start time stamp from input and calculate the end time stamp 
+    filename,sstamp,estamp = sys.argv[1], float(sys.argv[2]), time.time()
 
-## Format tiem stamp from fastp log if we find one 
-dt1 = datetime.fromtimestamp(getctime(fastp_log[0])) if len(fastp_log) else dt0 
+    ## Format the start time stamp 
+    dt0 = datetime.fromtimestamp(sstamp)
 
-## Calculate delta of time stamps and then the approx run time
-runtime = dt2 - dt1 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
+    ## Format the end time stamp
+    dt2 = datetime.fromtimestamp(estamp)
 
-## Write the timestamp to file 
-writetofile(filename,['SUBMIT TIME: %s\n'%dt0, 'START TIME: %s\n'%dt1, 'END TIME: %s\n'%dt2, 'RUN TIME: %s\n'%runtime],False)
+    ## Gather logs from dir
+    fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
 
-## Gather filtering and duplicate logs
-filter_logs = sortglob(f'./{debugdir}/*.filter.bedpe.*.log')
-duplit_logs = sortglob(f'./{debugdir}/*.dedup.*.log')
+    ## Format tiem stamp from fastp log if we find one 
+    dt1 = datetime.fromtimestamp(getctime(fastp_log[0])) if len(fastp_log) else dt0 
 
-## Gather counts across logs 
-mappings = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in filter_logs]).groupby('Mapping').sum()
-duplicat = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in duplit_logs]).groupby('Mapping').sum()
+    ## Calculate delta of time stamps and then the approx run time
+    runtime = dt2 - dt1 #runtime = datetime.utcfromtimestamp(estamp - sstamp).strftime('%Y-%m-%d %H:%M:%S').split(' ')[-1]
 
-## Copy new map
-newmap = pd.concat([mappings,duplicat],axis=0)
-## Adjust for duplicates
-newmap.loc['INFO: InterHiC','Counts'] = newmap.loc['INFO: InterHiC','Counts'] - duplicat.loc['INFO: InterDuplicates','Counts']
-newmap.loc['INFO: IntraHiC','Counts'] = newmap.loc['INFO: IntraHiC','Counts'] - duplicat.loc['INFO: IntraDuplicates','Counts']
-newmap.loc['INFO: Valid',   'Counts'] = newmap.loc['INFO: Valid',   'Counts'] - (duplicat.loc['INFO: InterDuplicates','Counts'] + duplicat.loc['INFO: IntraDuplicates','Counts'])
-## Reset the index
-newmap.reset_index(inplace=True)
-## Reet column name
-newmap['Mapping'] = [v.split('INFO: ')[-1] for v in newmap.Mapping.tolist()]
+    ## Write the timestamp to file 
+    writetofile(filename,['SUBMIT TIME: %s\n'%dt0, 'START TIME: %s\n'%dt1, 'END TIME: %s\n'%dt2, 'RUN TIME: %s\n'%runtime],False)
 
-## Calc number of total pairs from mapped
-thecount = newmap[(newmap.Mapping!='Valid')].Counts.sum()
+    ## Gather filtering and duplicate logs
+    filter_logs = sortglob(f'./{debugdir}/*.filter.bedpe.*.log')
+    duplit_logs = sortglob(f'./{debugdir}/*.dedup.*.log')
 
-## Bring in total read counts if the exist
-counts_paths = [p for p in sortglob(f'./{diagdir}/*.counts.csv') if 'valid' not in p]  
-## If we found any paths
-if len(counts_paths):
-    total_counts = pd.concat([pd.read_csv(p,header=None,names=['Name','Pairs','Total']) for p in counts_paths],axis=0)
-    total_counts = total_counts.Total.sum()
-    fastp_lost = total_counts - thecount
-else:
-    print("WARNING: Unable to find fastp log(s)!")
-    fastp_lost = 0
-    total_counts = thecount
+    ## Gather counts across logs 
+    mappings = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in filter_logs]).groupby('Mapping').sum()
+    duplicat = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in duplit_logs]).groupby('Mapping').sum()
 
-## Transpose and add fastp counts
-newmap = newmap.T
-newmap['fastp'] = ['Fastp',fastp_lost]
-newmap['total'] = ['Total',total_counts]
+    ## Copy new map
+    newmap = pd.concat([mappings,duplicat],axis=0)
+    ## Adjust for duplicates
+    newmap.loc['INFO: InterHiC','Counts'] = newmap.loc['INFO: InterHiC','Counts'] - duplicat.loc['INFO: InterDuplicates','Counts']
+    newmap.loc['INFO: IntraHiC','Counts'] = newmap.loc['INFO: IntraHiC','Counts'] - duplicat.loc['INFO: IntraDuplicates','Counts']
+    newmap.loc['INFO: Valid',   'Counts'] = newmap.loc['INFO: Valid',   'Counts'] - (duplicat.loc['INFO: InterDuplicates','Counts'] + duplicat.loc['INFO: IntraDuplicates','Counts'])
+    ## Reset the index
+    newmap.reset_index(inplace=True)
+    ## Reet column name
+    newmap['Mapping'] = [v.split('INFO: ')[-1] for v in newmap.Mapping.tolist()]
 
-## Retranspose newmap
-newmap = newmap.T
-newmap.reset_index(drop=True,inplace=True)
-## Calc new sum 
-newsum = newmap[(~newmap.Mapping.isin(['Valid','Total']))].Counts.sum()
 
-## Check our work 
-if abs(newsum  - total_counts):
-    print("WARNING: The total number of counts did not match after accounting for those removed by fastp: %s - %s"%(newsum,total_counts))
+    ## Check inital (zeroth) fastp logs for total
+    initial_fastp_logs = sortglob(f'./{diagdir}/*fastp.*.0.json') 
+    ## Calculate total read pairs 
+    total_counts = int(sum([gettotal(loadjson(fastlog)) for fastlog in initial_fastp_logs])/2)
+    fastp_lost   = int(sum([gettotal(loadjson(fastlog)) - getfiltered(loadjson(fastlog)) for fastlog in initial_fastp_logs])/2)
+   
+    ## Transpose and add fastp counts
+    newmap = newmap.T
+    newmap['fastp'] = ['Fastp',fastp_lost]
+    newmap['total'] = ['Total',total_counts]
 
-## Set outfile name
-outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
+    ## Retranspose newmap
+    newmap = newmap.T
+    newmap.reset_index(drop=True,inplace=True)
+    ## Calc new sum 
+    newsum = newmap[(~newmap.Mapping.isin(['Valid','Total']))].Counts.sum()
 
-## Format counts column into integers
-newmap['Counts'] = newmap.Counts.apply(int)
-## ADd the percent to the new map
-newmap['Percent (Total)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Total')].Counts.max()]
-newmap['Percent (Valid)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Valid')].Counts.max()]
+    ## Check our work 
+    if abs(newsum  - total_counts):
+        print("WARNING: The total number of counts did not match after accounting for those removed by fastp: %s - %s"%(newsum,total_counts))
 
-## Save out new map
-newmap.to_csv(outfilename,index=False)
+    ## Set outfile name
+    outfilename = filename.split('.time')[0] + '.slurpy.counts.csv'
 
-## Print to log
-print("Finished our SLUR(M)-py!")
-## End of file 
+    ## Format counts column into integers
+    newmap['Counts'] = newmap.Counts.apply(int)
+    ## ADd the percent to the new map
+    newmap['Percent (Total)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Total')].Counts.max()]
+    newmap['Percent (Valid)'] = [round(r,5) for r in newmap.Counts.values/newmap[(newmap.Mapping=='Valid')].Counts.max()]
+
+    ## Save out new map
+    newmap.to_csv(outfilename,index=False)
+
+    ## Print to log
+    print("Finished our SLUR(M)-py!")
+    ## End of file 
