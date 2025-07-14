@@ -66,9 +66,9 @@ duplicat = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Count
 ## Copy new map
 newmap = pd.concat([mappings,duplicat],axis=0)
 ## Adjust for duplicates
-newmap.loc['INFO: Interhic','Counts'] = newmap.loc['INFO: Interhic','Counts'] - duplicat.loc['INFO: Interdups','Counts']
-newmap.loc['INFO: Intrahic','Counts'] = newmap.loc['INFO: Intrahic','Counts'] - duplicat.loc['INFO: Intradups','Counts']
-newmap.loc['INFO: Valid',   'Counts'] = newmap.loc['INFO: Valid',   'Counts'] - (duplicat.loc['INFO: Interdups','Counts'] + duplicat.loc['INFO: Intradups','Counts'])
+newmap.loc['INFO: InterHiC','Counts'] = newmap.loc['INFO: InterHiC','Counts'] - duplicat.loc['INFO: InterDuplicates','Counts']
+newmap.loc['INFO: IntraHiC','Counts'] = newmap.loc['INFO: IntraHiC','Counts'] - duplicat.loc['INFO: IntraDuplicates','Counts']
+newmap.loc['INFO: Valid',   'Counts'] = newmap.loc['INFO: Valid',   'Counts'] - (duplicat.loc['INFO: InterDuplicates','Counts'] + duplicat.loc['INFO: IntraDuplicates','Counts'])
 ## Reset the index
 newmap.reset_index(inplace=True)
 ## Reet column name

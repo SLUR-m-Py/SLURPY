@@ -518,7 +518,7 @@ if __name__ == "__main__":
     [bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     
     ## Write out the counts
-    new_names = [   'Unmapped',    'Dovetails',    'Excluded',    'Lowquality',   'Inter',     'Largefragment',  'Samefragment',    'Valid',       'Interhic',      'Intrahic']
+    new_names = [   'Unmapped',    'Dovetailed',    'Excluded',    'LowQuality',   'InterRemoved',     'LargeFragment',  'SameFragment',    'Valid',       'InterHiC',      'IntraHiC']
     new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
     ## Iterate thru and print the counts to log 
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
