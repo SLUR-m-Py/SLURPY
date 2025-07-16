@@ -520,8 +520,15 @@ if __name__ == "__main__":
     for chrom in chrlist:
         ## Set the chrom out path 
         chrom_out_path = bedpe_path.split('.bedpe')[0] + '_valid_%s'%chrom
-        ## Save out the parquet 
-        bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
+        ## Parse ont he chrom
+        chrombed = bedpe[(bedpe.Rname1==chrom)]
+        ## Count the chrom
+        chrom_count = 1 #chrombed.Chrn1.count().compute() ## We have desabled this, b/c we don't need to count
+        ## Save out the parquet
+        if chrom_count:     
+            chrombed.sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
+        else:
+            print("INFO: Zero filtered Hi-C contacts were retained on %s post processing"%chrom)
 
     ## Write out the counts
     new_names = [   'Unmapped',    'Dovetailed',    'Excluded',    'LowQuality',   'InterRemoved',     'LargeFragment',  'SameFragment',    'Valid',       'InterHiC',      'IntraHiC']

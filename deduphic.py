@@ -48,6 +48,25 @@ B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 ## Set run local
 runlocal = False
 
+## Bring in dask
+import dask.dataframe as dd
+
+## Define ftn for laoding in parquets with dask
+def loadparquets(inpaths:list):
+    ## Check inputs
+    assert len(inpaths) and (type(inpaths) == list), "ERROR: A list with paths was not provided for deduplication!"
+    ## initilize list of dask dataframes
+    to_cat = []
+    ## iterate over input paths
+    for p in inpaths:
+        try: ## Attempt ot cat the file 
+            to_cat.append(dd.read_parquet(p))
+        ## Soem seem to be empty
+        except ValueError:
+            print("INFO: One of the given parquet files did not load and might be empty: %s"%p)
+    ## Return the dask concatonated list
+    return dd.concat(to_cat)
+
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
 if __name__ == "__main__":
@@ -68,9 +87,6 @@ if __name__ == "__main__":
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
-    ## Bring in pandas
-    import dask.dataframe as dd
-
     ## Set inputs 
     filebackend = inputs.B      ## Set the file backend 
     output_path = inputs.O      ## Output path   
@@ -83,11 +99,10 @@ if __name__ == "__main__":
     input_wc =  f'*{filebackend}' if runlocal else f'{bedtmpdir}/*{filebackend}'
     input_paths = sortglob(input_wc)
     ## Check our work 
-    assert len(input_paths), "ERROR: No input files found."
     print(input_paths) if debuging else None 
 
     ## Load in bedpe file
-    bedpe = dd.concat([dd.read_parquet(input_path) for input_path in input_paths])
+    bedpe = loadparquets(input_paths)
 
     ## Preset duplicate counts
     interdup_counts = 0
