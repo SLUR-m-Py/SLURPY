@@ -60,9 +60,14 @@ if __name__ == "__main__":
     ## Load in command files
     command_file_paths = sortglob(f'./{debugdir}/command.file.*.csv')
     ## Iterate thru the command file
-    command_df = pd.concat([pd.read_csv(inpath) for inpath in command_file_paths],axis=1)
-    ## Gahter only those commands ran
-    command_df = command_df[(command_df.Torun==0)]
+    command_df = []
+    for inpath in command_file_paths:
+        tmp = pd.read_csv(inpath)
+        tmp = tmp[(tmp.Jobfile!='jobfile') & (tmp.Torun==0)].reset_index(drop=True)
+        command_df.append(tmp)
+    ## Concat the command dfs 
+    command_df = pd.concat(command_df,axis=1)
+
     ## Parse the name of the pipeline step 
     command_df['Name'] = [a.split('/')[-1].split('.')[1] for a in command_df.Jobfile]
     ## Gather job memory
@@ -94,6 +99,9 @@ if __name__ == "__main__":
     ## Save out the dataframe
     out_path = f'./{diagdir}/Memory.profile.csv'
     gb_df.to_csv(out_path,index=False,header=True)
+
+    ## Print the maimum memory used 
+    print('INFO: Maximum memory used: %s GB'%gb_df.GB.max())
 
     ## Plot the memory profile
     sns.barplot(x='Name',y='GB',data=gb_df)
