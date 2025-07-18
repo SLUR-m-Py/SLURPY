@@ -327,7 +327,7 @@ if __name__ == "__main__":
     time_partition  = bwa_partition  if ist2t or isvero else partition
 
     ## Set nodelists to run bwa and filter master
-    bwanodes = 'c0826,c1002,c701,c702'
+    bwanodes = 'c0826,c1002,c0701,c0702'
     filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
