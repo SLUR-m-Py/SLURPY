@@ -321,10 +321,14 @@ if __name__ == "__main__":
     reference_path = vero_refpath if isvero else reference_path
 
     ## Set bwa master partition to mpi (FOR ROTH only)
-    bwa_partition   = 'mpi' if ist2t or isvero else partition
-    filt_partition  = 'mpi' if ist2t or isvero else partition
-    clean_partition = 'mpi' if ist2t or isvero else partition
-    time_partition  = 'mpi' if ist2t or isvero else partition
+    bwa_partition   = 'gpu,fast,mpi' if ist2t or isvero else partition
+    filt_partition  = bwa_partition  if ist2t or isvero else partition
+    clean_partition = bwa_partition  if ist2t or isvero else partition
+    time_partition  = bwa_partition  if ist2t or isvero else partition
+
+    ## Set nodelists to run bwa and filter master
+    bwanodes = 'c0826,c1002,c701,c702'
+    filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -566,7 +570,7 @@ if __name__ == "__main__":
         ## Gahter the bwa master command and report
         bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,forced=force,nodelist=nodes,bwaopts=bwa_opts,memory=slurm_mem)
         ## Write command to file
-        writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=nodes) + bwa_master_commands, debug)
+        writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=bwanodes) + bwa_master_commands, debug)
         ## Append to command fil
         command_files.append((bwa_master_file,sample_name,experi_mode,hic_pipeline[pix],bwa_master_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -581,7 +585,7 @@ if __name__ == "__main__":
         ## Gather the filter master commadn and report
         filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,dovetail=dedovetail,removeinter= not inhic,hicexplorer=hicexplorer,memory=slurm_mem)
         ## Write command to file
-        writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=nodes) + filter_master_commands, debug)
+        writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=filternodes) + filter_master_commands, debug)
         ## Append to command file
         command_files.append((filter_master_file,sample_name,experi_mode,hic_pipeline[pix],filter_master_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
