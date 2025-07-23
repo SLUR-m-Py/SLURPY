@@ -66,7 +66,7 @@ if __name__ == "__main__":
         tmp = tmp[(tmp.Jobfile!='jobfile') & (tmp.Torun==0)].reset_index(drop=True)
         command_df.append(tmp)
     ## Concat the command dfs 
-    command_df = pd.concat(command_df,axis=1)
+    command_df = pd.concat(command_df,axis=0)
 
     ## Parse the name of the pipeline step 
     command_df['Name'] = [a.split('/')[-1].split('.')[1] for a in command_df.Jobfile]

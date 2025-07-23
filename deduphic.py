@@ -22,9 +22,11 @@ from parameters import ST, hicsep, save_help, Z_help, chunksize
 ## Bring in ftn from defaults
 from directories import bedtmpdir
 ## Load in from defaults
-from defaults import sortglob
+from defaults import sortglob, remove
 ## Set debuging 
 debuging = False 
+## Load in subprocess 
+import subprocess
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 
@@ -110,12 +112,28 @@ if __name__ == "__main__":
 
     ## Load the parquet files
     bedpe = loadparquets(input_paths)
+    ## Gather the column space
+    column_names = bedpe.columns.tolist()
 
     ## Set the sorted ouput path 
     sorted_path = (output_path + '.sort.tmp') if deduplicate else output_path
+    tmp_path    = (output_path + '.tmp') 
 
-    ## Sort the input parquet files 
-    bedpe.sort_values(sort_by).to_csv(sorted_path,index=False,header=True,single_file=True,sep=hicsep)
+    ## Write the column space to file 
+    with open(sorted_path,'w') as outfile:
+        outfile.writelines(' '.join(column_names)+'\n')
+        outfile.close()
+
+    ## Sort the input parquet files #bedpe.sort_values(sort_by).to_csv(sorted_path,index=False,header=True,single_file=True,sep=hicsep)
+    bedpe.to_csv(tmp_path,index=False,header=False,single_file=True,sep=hicsep)
+
+    ## set the index of the positions 
+    chr1_ix = column_names.index('Chrn1') + 1
+    chr2_ix = column_names.index('Chrn2') + 1
+    pos1_ix = column_names.index('Pos1')  + 1
+    pos2_ix = column_names.index('Pos2')  + 1
+    ## Call our sort command
+    k = subprocess.run(f'sort -nb -k{chr1_ix},1 -k{chr2_ix},2 -k{pos1_ix},3 -k{pos2_ix},4 {tmp_path} >> {sorted_path}',shell=True)
 
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
     if deduplicate:
@@ -193,6 +211,10 @@ if __name__ == "__main__":
                 ## Save out the duplicates, if we are 
                 if keep_dups and sum(dups_ix):
                     dups_rows.to_csv(dedupe_path,mode='a' if dups_appending else 'w',index=False,header =not dups_appending,sep=hicsep)
+
+        ## Remove the large temporary file
+        remove(sorted_path)
+        remove(tmp_path)
 
     ## Format new names and print counts
     new_names = ['InterDuplicates', 'IntraDuplicates']

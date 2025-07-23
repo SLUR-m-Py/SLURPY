@@ -325,6 +325,7 @@ if __name__ == "__main__":
     filt_partition  = bwa_partition  if ist2t or isvero else partition
     clean_partition = bwa_partition  if ist2t or isvero else partition
     time_partition  = bwa_partition  if ist2t or isvero else partition
+    dedup_partition = 'fast,tb,gpu'  if ist2t or isvero else partition
 
     ## Set nodelists to run bwa and filter master
     bwanodes = ['c0826', 'c1002', 'c0701', 'c0702']
@@ -609,8 +610,8 @@ if __name__ == "__main__":
         hicdups_outs = []
         ## Set pipeline step 
         pix = 3
-        ## Set the new concat file name by chromosome index 
-        for chrom in chrlist:
+        ## Set the new concat file name by chromosome name, in reverse order, this is to free up resrouces as smaller chromosomes finish first
+        for chrom in chrlist[::-1]:
             ## Set start name for wildcard use to bring in inputs  to ftn 
             sample_start = f'_valid_{chrom}' if postmerging else f'{sample_name}_valid_{chrom}'
             hiccat_out = f'{hicdir}/{sample_name}.valid.{chrom}.bedpe'
@@ -883,7 +884,7 @@ if __name__ == "__main__":
     ##
     ##      3) SUBMITTING DEDUPLICATING AND SORTING 
     ## Submit the dedup and sort script 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[3],hic_pipeline[2],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[3],hic_pipeline[2],stamp,dedup_partition,debug=debug,group='Experiment' if postmerging else 'Sample')
     ##
     ##      4) SUBMITTING CONCATONATION 
     ## Submit the concatonation sciprt 
