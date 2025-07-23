@@ -18,7 +18,7 @@ desc = "Concats, sorts, and removes duplicates from input bedpe files representi
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in params
-from parameters import ST, hicsep, save_help
+from parameters import ST, hicsep, save_help, Z_help, chunksize
 ## Bring in ftn from defaults
 from directories import bedtmpdir
 ## Load in from defaults
@@ -49,10 +49,10 @@ B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 runlocal = False
 
 ## Bring in dask
-import dask.dataframe as dd
+import dask.dataframe as dd, pandas as pd  
 
 ## Define ftn for laoding in parquets with dask
-def loadparquets(inpaths:list):
+def loadparquets(inpaths:list,usecols = []):
     ## Check inputs
     assert len(inpaths) and (type(inpaths) == list), "ERROR: A list with paths was not provided for deduplication!"
     ## initilize list of dask dataframes
@@ -60,7 +60,7 @@ def loadparquets(inpaths:list):
     ## iterate over input paths
     for p in inpaths:
         try: ## Attempt ot cat the file 
-            to_cat.append(dd.read_parquet(p))
+            to_cat.append(dd.read_parquet(p,columns=usecols) if len(usecols) else dd.read_parquet(p))
         ## Soem seem to be empty
         except ValueError:
             print("INFO: One of the given parquet files did not load and might be empty: %s"%p)
@@ -75,80 +75,125 @@ if __name__ == "__main__":
     ## Make the parse
     parser = argparse.ArgumentParser(description = desc)
     ## Add the required arguments
-    parser.add_argument("-b",           dest="B",     type=str,  required=True,    help=B_help ) 
-    parser.add_argument("-o",           dest="O",     type=str,  required=True,    help=O_help )
-    parser.add_argument("-d",           dest="D",     type=str,  required=False,   help=D_help )
+    parser.add_argument("-b", dest="B", type=str, required=True,  help=B_help ) 
+    parser.add_argument("-o", dest="O", type=str, required=True,  help=O_help )
+    parser.add_argument("-z", dest="Z", type=int, required=False, help=Z_help,   default=chunksize )
+    parser.add_argument("-d", dest="D", type=str, required=False, help=D_help,   default=None      )
 
     ## Add boolean vars 
-    parser.add_argument("--sort",       dest="sort",   help = sort_help,  action = ST)
-    parser.add_argument("--dedup",      dest="dup",    help = dup_help,   action = ST)
     parser.add_argument("--save-dups",  dest="save",   help = save_help,  action = ST)
    
     ## Set the paresed values as inputs
     inputs = parser.parse_args()
 
     ## Set inputs 
-    filebackend = inputs.B      ## Set the file backend 
-    output_path = inputs.O      ## Output path   
-    dedupe_path = inputs.D      ## Deduplication out file
-    sorting     = inputs.sort   ## Are we sorting
-    deduplicate = inputs.dup    ## Are we deduplicating
-    keep_dups   = inputs.save   ## Flag to save out the duplicates
+    filebackend = inputs.B          ## Set the file backend 
+    output_path = inputs.O          ## Output path   
+    chunksize   = inputs.Z          ## Chunksize for loading in rows 
+    dedupe_path = inputs.D          ## Deduplication out file
+    keep_dups   = inputs.save       ## Flag to save out the duplicates
+
+    ## Was a path passed 
+    deduplicate = True if dedupe_path else False  ## Are we deduplicating
 
     ## Set wild card ofr input paths to dask dataframes 
     input_wc =  f'*{filebackend}' if runlocal else f'{bedtmpdir}/*{filebackend}'
+    ## Bring in paths by wild card
     input_paths = sortglob(input_wc)
     ## Check our work 
     print(input_paths) if debuging else None 
 
-    ## Load in bedpe file
-    bedpe = loadparquets(input_paths)
-
     ## Preset duplicate counts
     interdup_counts = 0
     intradup_counts = 0
+    Total_counts    = 0 
+
+    ## Load the parquet files
+    bedpe = loadparquets(input_paths)
+
+    ## Set the sorted ouput path 
+    sorted_path = (output_path + '.sort.tmp') if deduplicate else output_path
+
+    ## Sort the input parquet files 
+    bedpe.sort_values(sort_by).to_csv(sorted_path,index=False,header=True,single_file=True,sep=hicsep)
 
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
-    if sorting and deduplicate:
-        ## Drop the non-unique rows via dask dataframes, and sort and save out csv
-        deduped = bedpe.drop_duplicates(drop_by)
-        deduped.sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
+    if deduplicate:
+        ## Appending?
+        uniq_appending = False
+        dups_appending = False
+        last_chunk     = []
+        ## Load in the sorted file for deduplication
+        with pd.read_csv(sorted_path,sep=hicsep,chunksize=chunksize) as chunks:
+            for chunk in chunks:
+                ## Add to the counts
+                Total_counts += chunk.Chrn1.count()
+                ## Append the cunk to the last chunk 
+                chunk = pd.concat([last_chunk,chunk],axis=0).reset_index(drop=True) if len(last_chunk) else chunk
+                ## Get the last row 
+                lastrow  = chunk.tail(1)
+                
+                ## Gather all rows within the last chunk 
+                last_chunk = chunk[(chunk.Chrn2==lastrow.Chrn2.max()) & (chunk.Pos1==lastrow.Pos1.max()) & (chunk.Pos2==lastrow.Pos2.max())]
+                ## Gather the rest of the chunk to dedup licat
+                to_dedup   = chunk[(~chunk.index.isin(last_chunk.index.tolist()))]
 
-        if keep_dups:
-            ## Gather the duplicates and count them 
-            duplicates = bedpe[(~bedpe.Qname1.isin(deduped.Qname1.compute().tolist()))]
-            duplicate_count = duplicates.Pos1.count().compute()
+                ## Set duplicate index 
+                dups_ix    = to_dedup.duplicated(subset=drop_by)
+                uniq_ix    = ~dups_ix
 
-            ## If we have duplicates
-            if duplicate_count:
-                ## Calculate the inter duplicates
-                interdup_counts = duplicates.Inter.sum().compute()
-                ## Calc the intra dup count
-                intradup_counts = duplicate_count - interdup_counts
-                ## Save the duplicates to csv 
-                duplicates.to_csv(dedupe_path,index=False,header=True,single_file=True,sep=hicsep)
-        else:
-            ## Calc totals 
-            Total_counts = bedpe.Chrn1.count().compute()
-            Inter_counts = bedpe.Inter.sum().compute()
-            Intra_counts = Total_counts - Inter_counts
+                ## Gather the duplicates and unique rows
+                dups_rows  = to_dedup[(dups_ix)]
+                uniq_rows  = to_dedup[(uniq_ix)]
 
-            ## Calc new totals 
-            Total_dedup = deduped.Chrn1.count().compute()
-            Inter_dedup = deduped.Inter.sum().compute()
-            Intra_dedup = Total_dedup - Inter_dedup
+                ## Count intra and inter dups
+                chunk_dups = dups_rows.Chrn1.count()
+                inter_dups = dups_rows.Inter.sum()
+                intra_dups = chunk_dups - inter_dups
 
-            ## Calc the removed
-            interdup_counts = Inter_counts - Inter_dedup 
-            intradup_counts = Intra_counts - Intra_dedup
+                ## Add to the totals 
+                interdup_counts += inter_dups 
+                intradup_counts += intra_dups
 
-    ## Just sorting and not deduplciating 
-    elif sorting and (not deduplicate):
-        bedpe.sort_values(sort_by).to_csv(output_path,index=False,header=True,single_file=True,sep=hicsep)
-    ## Otherwise just concat inputs 
-    else: ## Do nothing
-        print("WARNING: A combination of arguments left us doing nothing for this call of deduphic.py.")
-    
+                ## Save out the non duplicates
+                if sum(uniq_ix):
+                    uniq_rows.to_csv(output_path,mode='a' if uniq_appending else 'w',index=False,header =not uniq_appending,sep=hicsep)
+                    uniq_appending = True
+
+                ## Save out the duplicates, if we are 
+                if keep_dups and sum(dups_ix):
+                    dups_rows.to_csv(dedupe_path,mode='a' if dups_appending else 'w',index=False,header =not dups_appending,sep=hicsep)
+                    dups_appending = True
+
+            ## Finish off the last row
+            if len(last_chunk):
+                ## Set the last row 
+                to_dedup = last_chunk
+                ## Set duplicate index 
+                dups_ix    = to_dedup.duplicated(subset=drop_by)
+                uniq_ix    = ~dups_ix
+
+                ## Gather the duplicates and unique rows
+                dups_rows  = to_dedup[(dups_ix)]
+                uniq_rows  = to_dedup[(uniq_ix)]
+
+                ## Count intra and inter dups
+                chunk_dups = dups_rows.Chrn1.count()
+                inter_dups = dups_rows.Inter.sum()
+                intra_dups = chunk_dups - inter_dups
+
+                ## Add to the totals 
+                interdup_counts += inter_dups 
+                intradup_counts += intra_dups
+
+                ## Save out the non duplicates
+                if sum(uniq_ix):
+                    uniq_rows.to_csv(output_path,mode='a' if uniq_appending else 'w',index=False,header =not uniq_appending,sep=hicsep)
+
+                ## Save out the duplicates, if we are 
+                if keep_dups and sum(dups_ix):
+                    dups_rows.to_csv(dedupe_path,mode='a' if dups_appending else 'w',index=False,header =not dups_appending,sep=hicsep)
+
     ## Format new names and print counts
     new_names = ['InterDuplicates', 'IntraDuplicates']
     new_count = [interdup_counts, intradup_counts]

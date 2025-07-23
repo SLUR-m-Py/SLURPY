@@ -621,7 +621,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -d {hicdup_out} --sort' +  ('' if skipduplicates else ' --dedup ') + (' --save-dups ' if keep_dups else '') ]
+            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -z {chunksize}' + (' ' if skipduplicates else f' -d {hicdup_out} ') + ('--save-dups' if keep_dups else '')]
 
             ## make deduplication file name
             hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
