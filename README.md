@@ -51,10 +51,11 @@ chmod +x *.py
 ```
 
 ## Dependencies 
-
 Slurpy utilizes SLURM and was developed under version 21.08.8-2. 
 The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also required with the minimum version of 1.15.1. 
 
+### The sort function
+New testing on the duplication step of SLUR(M)-py showed high memory usage and low speed when processing very large, human datasets; this often led to crashes on smaller nodes. To correct this, we implemented a new deduplication algorithm in SLUR(M)-py that utilizes the Linex core utility’s function [sort](https://en.wikipedia.org/wiki/Sort_(Unix)) to quickly sort (by chromosome and position) bedpe files for deduplication. This [new script](https://github.com/SLUR-m-Py/SLURPY/blob/main/deduphic.py) is currently the most memory efficient implementation we could integrate into SLUR(M)-py. 
 
 ### Troubleshooting, fastp install. 
 For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
