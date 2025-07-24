@@ -519,14 +519,15 @@ if __name__ == "__main__":
     #[bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     for chrom in chrlist:
         ## Set the chrom out path 
-        chrom_out_path = bedpe_path.split('.bedpe')[0] + '_valid_%s'%chrom
+        chrom_out_path = bedpe_path.split('.bedpe')[0] + '_valid_%s.bedpe'%chrom
         ## Parse ont he chrom
         chrombed = bedpe[(bedpe.Rname1==chrom)]
-        ## Count the chrom
+        ## set chrom count to one, we are assumign we will have Hi-C contacts per chromocome
         chrom_count = 1 #chrombed.Chrn1.count().compute() ## We have desabled this, b/c we don't need to count
         ## Save out the parquet
         if chrom_count:     
-            chrombed.sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
+            #chrombed.sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
+            chrombed.to_csv(chrom_out_path,index=False,header=True,single_file=True,sep=hicsep)
         else:
             print("INFO: Zero filtered Hi-C contacts were retained on %s post processing"%chrom)
 

@@ -26,7 +26,9 @@ from defaults import sortglob, remove
 ## Set debuging 
 debuging = False 
 ## Load in subprocess 
-import subprocess
+import subprocess, pandas as pd 
+## Bring in conactonation ftn 
+from pandacat import concatonation
 
 ## ---------------------------------- VARIABLE SETTING ------------------------------------ ##
 ## Set drop and sorting by columns 
@@ -51,23 +53,27 @@ B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 runlocal = False
 
 ## Bring in dask
-import dask.dataframe as dd, pandas as pd  
+#import dask.dataframe as dd, pandas as pd  
+
+import pandas as pd 
 
 ## Define ftn for laoding in parquets with dask
-def loadparquets(inpaths:list,usecols = []):
-    ## Check inputs
-    assert len(inpaths) and (type(inpaths) == list), "ERROR: A list with paths was not provided for deduplication!"
-    ## initilize list of dask dataframes
-    to_cat = []
-    ## iterate over input paths
-    for p in inpaths:
-        try: ## Attempt ot cat the file 
-            to_cat.append(dd.read_parquet(p,columns=usecols) if len(usecols) else dd.read_parquet(p))
-        ## Soem seem to be empty
-        except ValueError:
-            print("INFO: One of the given parquet files did not load and might be empty: %s"%p)
-    ## Return the dask concatonated list
-    return dd.concat(to_cat)
+#def loadparquets(inpaths:list,usecols = []):
+#    ## Check inputs
+#    assert len(inpaths) and (type(inpaths) == list), "ERROR: A list with paths was not provided for deduplication!"
+#    ## initilize list of dask dataframes
+#    to_cat = []
+#    ## iterate over input paths
+#    for p in inpaths:
+#        try: ## Attempt ot cat the file 
+#            to_cat.append(dd.read_parquet(p,columns=usecols) if len(usecols) else dd.read_parquet(p))
+#        ## Soem seem to be empty
+#        except ValueError:
+#            print("INFO: One of the given parquet files did not load and might be empty: %s"%p)
+#    ## Return the dask concatonated list
+#    return dd.concat(to_cat)
+
+## Def for concatonatin files
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -110,10 +116,15 @@ if __name__ == "__main__":
     intradup_counts = 0
     Total_counts    = 0 
 
-    ## Load the parquet files
-    bedpe = loadparquets(input_paths)
+    ## Load the first of the file  #bedpe = loadparquets(input_paths)
+    bedpe = pd.read_csv(input_paths[0],sep=hicsep)
     ## Gather the column space
     column_names = bedpe.columns.tolist()
+    ## set the index of the positions 
+    chr1_ix = column_names.index('Chrn1') + 1
+    chr2_ix = column_names.index('Chrn2') + 1
+    pos1_ix = column_names.index('Pos1')  + 1
+    pos2_ix = column_names.index('Pos2')  + 1
 
     ## Set the sorted ouput path 
     sorted_path = (output_path + '.sort.tmp') if deduplicate else output_path
@@ -123,15 +134,10 @@ if __name__ == "__main__":
     with open(sorted_path,'w') as outfile:
         outfile.writelines(' '.join(column_names)+'\n')
         outfile.close()
-
     ## Sort the input parquet files #bedpe.sort_values(sort_by).to_csv(sorted_path,index=False,header=True,single_file=True,sep=hicsep)
-    bedpe.to_csv(tmp_path,index=False,header=False,single_file=True,sep=hicsep)
-
-    ## set the index of the positions 
-    chr1_ix = column_names.index('Chrn1') + 1
-    chr2_ix = column_names.index('Chrn2') + 1
-    pos1_ix = column_names.index('Pos1')  + 1
-    pos2_ix = column_names.index('Pos2')  + 1
+    #bedpe.to_csv(tmp_path,index=False,header=False,single_file=True,sep=hicsep)
+    ## Concatonate the bedpe files with no header 
+    assert concatonation(input_paths,tmp_path,noheader=True), "ERROR: Unable to concatonate input files!"
     ## Call our sort command
     k = subprocess.run(f'sort -nb -k{chr1_ix},1 -k{chr2_ix},2 -k{pos1_ix},3 -k{pos2_ix},4 {tmp_path} >> {sorted_path}',shell=True)
 

@@ -36,6 +36,31 @@ def pandacat(infiles:list, outfile:str, rmheader=False, sortpaths=False) -> tupl
     ## Return the formated commands
     return [f'{slurpydir}/pandacat.py -i {" ".join(infiles)} -o {outfile}{skiphead}{sorting}\n']#, f'{scriptsdir}/myecho.py Finished concatenating files into file: {outfile} {report}\n']
 
+## Concatonation ftn 
+def concatonation(inputs:list,output:str,noheader:bool) -> bool:
+    ## Open the output file for wiritng (only once?)
+    with open(output, 'wb') as outfile:
+        ## Iterate over the paths of input files 
+        for i,inpath in enumerate(inputs):
+            ## Open the input file for reading 
+            with open(inpath, 'rb') as infile:
+                ## Remove header, by reading in first line,
+                if i: ## of every file past the first (zeroth)
+                    infile.readline()
+                ## if we don't want a header and its our first file
+                elif noheader and (not i):
+                    infile.readline()  
+                else: ## Otherwise do nothing 
+                    pass 
+                ## Then block copy the rest of file from input to output without parsing
+                shutil.copyfileobj(infile, outfile)
+                ## Close the infile
+                infile.close()
+        ## close the outfile 
+        outfile.close()
+    ## Return the output file path boolean 
+    return exists(output)
+
 ## Set the script sescription
 pandadesc = "Concatonates a series of input pandas dataframes as text files (ingnoring header on all but first)."
 
@@ -90,19 +115,9 @@ if __name__ == "__main__":
     ## Check that we have actual data files 
     inpaths = [f for f in inpaths if (exists(f) and getsize(f))]
 
-    if len(inpaths):
-        ## Open the output file for wiritng (only once?)
-        with open(outputfile, 'wb') as outfile:
-            ## Iterate over the paths of input files 
-            for i,inpath in enumerate(inpaths):
-                ## Open the input file for reading 
-                with open(inpath, 'rb') as infile:
-                    ## Remove header, by reading in first line
-                    if i and removeheader:
-                        infile.readline()  
-                    ## Then block copy the rest of file from input to output without parsing
-                    shutil.copyfileobj(infile, outfile)
+    ## Concatonate the input paths 
+    assert (concatonation(inpaths,outputfile,removeheader) if len(inpaths) else True), "ERROR: Unable to concatonate files!"
                     
-    ## print tolog
+    ## print to log
     print('Finished concatenation of %s input files to %s.'%(len(inpaths),outputfile))
 ## End of file 

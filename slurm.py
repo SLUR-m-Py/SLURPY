@@ -612,8 +612,10 @@ if __name__ == "__main__":
         pix = 3
         ## Set the new concat file name by chromosome name, in reverse order, this is to free up resrouces as smaller chromosomes finish first
         for chrom in chrlist[::-1]:
+            ## Set valid ead
+            valid_end = f'_valid_{chrom}.bedpe'
             ## Set start name for wildcard use to bring in inputs  to ftn 
-            sample_start = f'_valid_{chrom}' if postmerging else f'{sample_name}_valid_{chrom}'
+            sample_start = valid_end if postmerging else f'{sample_name}' + valid_end
             hiccat_out = f'{hicdir}/{sample_name}.valid.{chrom}.bedpe'
             hicdup_out = f'{hicdir}/{sample_name}.duplicates.{chrom}.bedpe'
             ## Append to hic cat outs to preserve order 
@@ -651,7 +653,7 @@ if __name__ == "__main__":
         ## Iterate thru the zipped concat files 
         for (con_ins,con_out,con_rep,con_fil) in zip(concat_inputs,concat_outputs,concat_reports,concat_files):
             ## Format the commands 
-            concat_coms = pandacat(con_ins,con_out,rmheader=True)
+            concat_coms = pandacat(con_ins,con_out)
             ## Write commands to file 
             writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes,memory=slurm_mem) + concat_coms, debug)
             ## append command to command file list
