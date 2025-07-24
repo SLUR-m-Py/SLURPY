@@ -26,7 +26,7 @@ conda activate bioenv
 conda install numpy pandas matplotlib seaborn dask biopython pysam samtools bwa -c bioconda 
 ```
 
-### Installing MACS for peak calling
+### Troubleshooting Installation of MACS for peak calling
 For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use [macs3](https://macs3-project.github.io/MACS/) (the latest version of [macs2](https://pypi.org/project/MACS2/)). We recommend installing macs3 via pip (shown below). 
 
 ```
@@ -55,7 +55,7 @@ Slurpy utilizes SLURM and was developed under version 21.08.8-2.
 The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also required with the minimum version of 1.15.1. 
 
 ### The sort function
-New testing on the duplication step of SLUR(M)-py showed high memory usage and low speed when processing very large, human datasets; this often led to crashes on smaller nodes. To correct this, we implemented a new deduplication algorithm in SLUR(M)-py that utilizes the Linex core utility’s function [sort](https://en.wikipedia.org/wiki/Sort_(Unix)) to quickly sort (by chromosome and position) bedpe files for deduplication. This [new script](https://github.com/SLUR-m-Py/SLURPY/blob/main/deduphic.py) is currently the most memory efficient implementation we could integrate into SLUR(M)-py. 
+New testing on the duplication step of SLUR(M)-py showed high memory usage and low speed when processing very large, human datasets; this often led to crashes on smaller nodes. To correct this, we implemented a new deduplication algorithm in SLUR(M)-py that utilizes the Linex core utility’s function [sort](https://en.wikipedia.org/wiki/Sort_(Unix)) to quickly sort (by chromosome and position) bedpe files for deduplication. This [new script](https://github.com/SLUR-m-Py/SLURPY/blob/main/deduphic.py) is currently the most memory efficient implementation we could integrate into SLUR(M)-py. We are assuming the sort function is already installed in our SLURM/Linex environment.
 
 ### Troubleshooting, fastp install. 
 For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
@@ -153,8 +153,10 @@ conda activate bioenv
 
 ## Call the help menu for hic.py 
 $ ./SLURPY/slurm.py -h
-usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-c ./path/to/control.bam [./path/to/control.bam ...]] [-J ./path/to/juicer.jar] [-x 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-gxg ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--toshort] [--pairs] [--restart] [--force] [--debug] [--skipdedup]
-                [--clean] [--count] [--nomerge] [--mcool] [--inter-only] [--atac-seq] [--skipfastp] [--broad] [--skipmacs3] [--dedovetail] [--hicexplorer] [--sam] [--bam]
+usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP]
+                [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-J ./path/to/juicer.jar] [-xmx 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-m 1000] [-gtf ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--memory 40G]
+                [--restart] [--nomerge] [--force] [--debug] [--clean] [--nocount] [--toshort] [--pairs] [--mcool] [--hicexplorer] [--inter-only] [--atac-seq] [--broad] [--skipmacs3] [--nolambda] [--nomodel] [--call-summits] [--shift-size bp]
+                [--extend-size bp] [--macs-mode BEDPE] [-c ./path/to/control.bam [./path/to/control.bam ...]] [--max-gap MAXGAP] [--max-length MINLEN] [--rna-seq] [--skipfastp] [--skipdedup] [--save-dups] [--dedovetail] [--sam] [--bam]
 
 A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.
 
@@ -178,7 +180,7 @@ options:
   -a 666666, --afterok 666666
                         A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination.
   -N n, --nice n        The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: 100000000
-  -j n, --n-parallel n  Number of bwa and filtering jobs allowed to run in parallel. Default: 33
+  -j n, --n-parallel n  Number of bwa and filtering jobs allowed to run in parallel. Default: 24
   -f 8, --fastp-threads 8
                         The number of threads used in fastp to split input fastq files. Default is: 8. Note: must be an even multiple of the number of splits.
   -t 8, --dask-threads 8
@@ -192,42 +194,55 @@ options:
   -E bp, --error-distance bp
                         Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is 25000. These pairs are also marked for dangling ends and self-circles.
   -L MboI, --library MboI
-                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is Arima. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped.
+                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is Arima. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but
+                        checks for restriction sites and dangling ends will be skipped.
   -Z n, --chunksize n   Number of rows loaded into pandas at a time. Default is: 950000. WARNING: while increasing could speed up pipeline it could also cause memeory issues.
   -G ./path/to/list.tsv, --genomelist ./path/to/list.tsv
                         Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header.
-  -c ./path/to/control.bam [./path/to/control.bam ...], --controls ./path/to/control.bam [./path/to/control.bam ...]
-                        Path to control or input bam/bedpe files used in ChIP-seq experiments.
   -J ./path/to/juicer.jar, --jar-path ./path/to/juicer.jar
                         Path to a juicer jar file with the juicer pre command. Required for .hic file creation.
-  -x 49152, --Xmemory 49152
+  -xmx 49152, --Xmemory 49152
                         Amount of Xmx and Xms memory passed to juicer's pre command. Default is: 49152.
   -S 25000, 10000, ... [25000, 10000, ... ...], --bin-sizes 25000, 10000, ... [25000, 10000, ... ...]
                         Space seperated list of chromosome resolutions (i.e. bin sizes) for .hic files. Default: 2500000 2000000 1000000 750000 500000 250000 200000 100000 75000 50000 25000 10000 5000
-  -gxg ./path/to/my.gff, --features ./path/to/my.gff
+  -m 1000, --max-dist 1000
+                        Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter.
+  -gtf ./path/to/my.gff, --features ./path/to/my.gff
                         The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes.
   --nodelist NODES [NODES ...]
                         Space seperated list of nodes to run jobs on.
-  --toshort             A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed.
-  --pairs               Convert final output to pairs format defined by the 4DNucleome consortium.
+  --memory 40G          The max amount of memory (for e.g. 4OG) passed to SLURM sbatch processes. If set, this value is applied acorss all subprocesses. Default: None
   --restart             Flag to force the pipeline to reset and run from start.
+  --nomerge             Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output.
   --force               Flag to force the overwrite of output files generated from bwa.
   --debug               A flag to run in verbose mode, printing sbatch commands. Default behavior is false.
-  --skipdedup           Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
   --clean               If included will run clean up script at end of run. The default behavior is false, can be run after pipeline.
-  --count               Boolean flag to performe diagnostics on Hi-C and ATAC-seq samples.
-  --nomerge             Passing this flag will keep replicates/samples seperate acorss (n) pairs of input fastqs, generating (n) outputs rather than one final output.
+  --nocount             Boolean flag to turn off final diagnostics on Hi-C and ATAC-seq samples. Default is to perform the diagnostics
+  --toshort             A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed.
+  --pairs               Convert final output to pairs format defined by the 4DNucleome consortium.
   --mcool               Flag to make an mcool file with cooler.
+  --hicexplorer         Flag to run stricter intra-fragment filtering.
   --inter-only          Flag to return only inter-chromosomal contacts
   --atac-seq            Preset mode to run in ATAC-seq analysis mode.
-  --skipfastp           Flag to skip initial quality control and filtering with fastp (i.e. only split reads).
   --broad               Flag to call broad peaks using the --broad-cutoff=0.1 setting in macs3. See macs3 callpeak --help for more details.
   --skipmacs3           A boolean flag to skip peak calling via macs3.
+  --nolambda            Boolean flag to turn off local lambda calculation in MACS3. Default: False
+  --nomodel             Boolean flag to turn off shifting model in MACS3. Default: False
+  --call-summits        Boolean flag to all summits with MACS3. Default: False
+  --shift-size bp       Size (in bp) to shift (3' to 5') end of a read for peak analysis in MACS3 (example 75 bp). Only used when --nomodel is passed. Default: 75
+  --extend-size bp      Size (in bp) to extend (5' to 3') read position for peak analysis in MACS3 (exmale 150 bp). Only used when --nomodel is passed. Default: 150
+  --macs-mode BEDPE     Mode and file type for peak calling with MACS3. Options include BED or BEDPE. Default: BEDPE
+  -c ./path/to/control.bam [./path/to/control.bam ...], --controls ./path/to/control.bam [./path/to/control.bam ...]
+                        Path to control or input bam/bedpe files used in ChIP-seq experiments.
+  --max-gap MAXGAP      Max gap between peaks called in MACS3.
+  --max-length MINLEN   Minimum length of peaks called in MACS3.
+  --rna-seq             Preset mode to run in RNA-seq analysis mode.
+  --skipfastp           Flag to skip initial quality control and filtering with fastp (i.e. only split reads).
+  --skipdedup           Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
+  --save-dups           Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.
   --dedovetail          Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these).
-  --hicexplorer         Flag to run stricter intra-fragment filtering.
   --sam                 Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools.
   --bam                 Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools.
-
 ```
 ### For ATAC-seq experiments
 To call the peaks.py script within the slurpy pipeline to analyze an ATAC-seq experiment and save output to .bam format:
@@ -264,7 +279,7 @@ After a completed run of SLUR(M)-py, large, temporary files can be removed using
 ```
 
 ### Caluclating a memory profile
-SLUR(M)-py has two arguments to control RAM usage, the “--memory”  and the “–xmx” inputs, which control the maximum memory across any processes submitted to SLURM and the amount of memory allocated to Java, used in .hic file creation by juicer’s pre command (respectively). By default, the memory argument is not set. To help set this argument, from a completed run of SLUR(M)-py, a profile of the memory usage per process within the pipeline can be caluclated using the [memoryprofile.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/memoryprofile.py) scirpt.
+SLUR(M)-py has two arguments to control RAM usage, the “--memory”  and the “–xmx” inputs, which control the maximum memory across any processes submitted to SLURM and the amount of memory allocated to Java, used in .hic file creation by juicer’s pre command (respectively). By default, the memory argument is not set. To help set this argument, from a completed run of SLUR(M)-py, a profile of the memory usage per process within the pipeline can be calculated using the [memoryprofile.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/memoryprofile.py) script. This script is automatically called after a run of SLUR(M)-py, generating a memory profile for the run.
 
 ```
 ## Call the memory profile script, no arguments are needed. 
