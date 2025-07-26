@@ -5,7 +5,6 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
-
 ## Load in debug dir 
 from directories import debugdir, diagdir
 ## Load in matplot lib
@@ -45,7 +44,7 @@ def parseseff(inreport) -> str:
     ## Iterate thru lines of the reposrt if the mem string is there return it 
     for l in inreport:
         if mem_str in l:
-            mem = l.split(mem_str)[-1] 
+            mem = l.split(mem_str)[-1].split(' (estimated maximum)')[0]
     ## Return the mem
     return mem 
 
@@ -80,21 +79,17 @@ if __name__ == "__main__":
     ## Gather job ides then memory, then convert to GB
     bwa_job_ids = np.concatenate([subjobids(k) for k in bwa_master_paths])
     bwa_job_mem = [getmemory(int(jid)) for jid in bwa_job_ids]
-    bwa_job_GB  = pd.DataFrame([('bwa mem',float(k.split(' ')[0])*memory_dict[k.split(' ')[-1]]) 
-                                for k in bwa_job_mem],columns=['Name','GB'])
+    bwa_job_GB  = pd.DataFrame([('bwa mem',float(k.split(' ')[0])*memory_dict[k.split(' ')[-1]]) for k in bwa_job_mem],columns=['Name','GB'])
     
     ## Gather filter jobs
     filt_master_paths = sortglob(f'./{debugdir}/2.filter.master.*.log')
     ## Gather job ides
     filt_job_ids = np.concatenate([subjobids(k) for k in  filt_master_paths])
     filt_job_mem = [getmemory(int(jid)) for jid in filt_job_ids]
-    filt_job_GB  = pd.DataFrame([('filtering',float(k.split(' ')[0])*memory_dict[k.split(' ')[-1]]) 
-                                for k in filt_job_mem],columns=['Name','GB'])
+    filt_job_GB  = pd.DataFrame([('filtering',float(k.split(' ')[0])*memory_dict[k.split(' ')[-1]]) for k in filt_job_mem],columns=['Name','GB'])
     
     ## concatonate the gb df 
-    gb_df = pd.concat([command_df[['Name','GB']],
-                       bwa_job_GB[['Name','GB']],
-                       filt_job_GB[['Name','GB']]]).reset_index(drop=True)
+    gb_df = pd.concat([command_df[['Name','GB']], bwa_job_GB[['Name','GB']],filt_job_GB[['Name','GB']]]).reset_index(drop=True)
     
     ## Save out the dataframe
     out_path = f'./{diagdir}/Memory.profile.csv'
