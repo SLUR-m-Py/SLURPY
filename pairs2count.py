@@ -411,4 +411,6 @@ if __name__ == "__main__":
 
         ## Saveout the png 
         plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
+    ## Print we are finished
+    print('Finished counting paired end reads.')
     ## EOF      
