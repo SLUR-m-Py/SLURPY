@@ -51,7 +51,7 @@ def getwarnings(inpath:str) -> bool:
     with open(inpath,'r') as inhandle:
         for l in inhandle:
             ll = l.lower()
-            k = ('warning' in ll)
+            k = ('warning' in ll) and (not ('runtimewarning' in ll))
             if k:
                 break 
             else:
