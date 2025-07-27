@@ -27,9 +27,9 @@ if __name__ == "__main__":
     inputs = parser.parse_args()
 
     ## Set input paths 
-    bedpe_path = parser.I
-    inbed_path = parser.B
-    outcu_path = parser.O 
+    bedpe_path = inputs.I
+    inbed_path = inputs.B
+    outcu_path = inputs.O 
 
     ## Reset out path
     outcu_path = outcu_path if outcu_path else bedpe_path.split('.bedpe')[0] + '.counts.bed'
