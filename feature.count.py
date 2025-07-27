@@ -38,7 +38,7 @@ if __name__ == "__main__":
     import dask.dataframe as dd
 
     ## Bring in the fragments and features 
-    fragments = dd.read_csv(inbed_path,sep='\t',usecols=['Rname1','Pos1','End2'])
+    fragments = dd.read_csv(inbed_path,sep=' ',usecols=['Rname1','Pos1','End2'])
     features  = dd.read_csv(inbed_path,sep='\t')
 
     ## Gather the list of chromosomes
