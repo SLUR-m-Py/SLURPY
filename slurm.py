@@ -321,11 +321,11 @@ if __name__ == "__main__":
     reference_path = vero_refpath if isvero else reference_path
 
     ## Set bwa master partition to mpi (FOR ROTH only)
-    bwa_partition   = 'gpu,fast,mpi' if ist2t or isvero else partition
-    filt_partition  = bwa_partition  if ist2t or isvero else partition
-    clean_partition = bwa_partition  if ist2t or isvero else partition
-    time_partition  = bwa_partition  if ist2t or isvero else partition
-    dedup_partition = 'fast,tb,gpu'  if ist2t or isvero else partition
+    bwa_partition   = 'gpu,fast,mpi,tb' if ist2t or isvero else partition
+    filt_partition  = bwa_partition     if ist2t or isvero else partition
+    clean_partition = bwa_partition     if ist2t or isvero else partition
+    time_partition  = bwa_partition     if ist2t or isvero else partition
+    dedup_partition = bwa_partition     if ist2t or isvero else partition
 
     ## Set nodelists to run bwa and filter master
     bwanodes = ['c0826', 'c1002', 'c0701', 'c0702']
@@ -645,7 +645,7 @@ if __name__ == "__main__":
         
         ## Set file names, concat the inputs, set output names, repor tnames, and files 
         hic_fileends   = ['notused','duplicates','valid']
-        concat_inputs  = [unused_start,hicdups_outs,hiccats_outs]
+        concat_inputs  = [unused_start,hicdups_outs,hiccats_outs[::-1]] ## Reverse this to match reverse above 
         concat_outputs = [f'{aligndir}/{sample_name}.{f}.bedpe' for f in hic_fileends]
         concat_reports = [reportname(f,hic_pipeline[pix],i=f'{pix}{a}') for a,f in zip(['A','B','C'],concat_outputs)]
         concat_files   = [f'{comsdir}/{pix}.concat.{sample_name}.{f}.sh' for f in hic_fileends]

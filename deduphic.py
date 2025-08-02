@@ -52,11 +52,6 @@ B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 ## Set run local
 runlocal = False
 
-## Bring in dask
-#import dask.dataframe as dd, pandas as pd  
-
-import pandas as pd 
-
 ## Define ftn for laoding in parquets with dask
 #def loadparquets(inpaths:list,usecols = []):
 #    ## Check inputs
@@ -117,9 +112,11 @@ if __name__ == "__main__":
     Total_counts    = 0 
 
     ## Load the first of the file  #bedpe = loadparquets(input_paths)
-    bedpe = pd.read_csv(input_paths[0],sep=hicsep)
+    bedpe = pd.read_csv(input_paths[0],sep=hicsep,nrows=2)
+    print(bedpe.head())
     ## Gather the column space
     column_names = bedpe.columns.tolist()
+    print(column_names)
     ## set the index of the positions 
     chr1_ix = column_names.index('Chrn1') + 1
     chr2_ix = column_names.index('Chrn2') + 1
@@ -139,8 +136,10 @@ if __name__ == "__main__":
     ## Concatonate the bedpe files with no header 
     assert concatonation(input_paths,tmp_path,noheader=True), "ERROR: Unable to concatonate input files!"
     ## Call our sort command
-    k = subprocess.run(f'sort -nb -k{chr1_ix},1 -k{chr2_ix},2 -k{pos1_ix},3 -k{pos2_ix},4 {tmp_path} >> {sorted_path}',shell=True)
-
+    sort_command = f'sort -k{chr1_ix},{chr1_ix}n -k{chr2_ix},{chr2_ix}n -k{pos1_ix},{pos1_ix}n -k{pos2_ix},{pos2_ix}n {tmp_path} >> {sorted_path}'
+    print(sort_command)
+    k = subprocess.run(sort_command,shell=True)
+    print(k)
     ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
     if deduplicate:
         ## Appending?
@@ -219,8 +218,8 @@ if __name__ == "__main__":
                     dups_rows.to_csv(dedupe_path,mode='a' if dups_appending else 'w',index=False,header =not dups_appending,sep=hicsep)
 
         ## Remove the large temporary file
-        remove(sorted_path)
-        remove(tmp_path)
+        #remove(sorted_path)
+        #remove(tmp_path)
 
     ## Format new names and print counts
     new_names = ['InterDuplicates', 'IntraDuplicates']
