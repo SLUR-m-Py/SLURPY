@@ -23,8 +23,8 @@ from parameters import ST, hicsep, save_help, Z_help, chunksize
 from directories import bedtmpdir
 ## Load in from defaults
 from defaults import sortglob, remove
-## Set debuging 
-debuging = False 
+## Set debuging and run local variabels 
+debuging, runlocal = False, False 
 ## Load in subprocess 
 import subprocess, pandas as pd 
 ## Bring in conactonation ftn 
@@ -48,27 +48,6 @@ dup_help  = 'Flag to drop duplicate rows. Duplicates are found by read positions
 D_help    = 'Output file name and path to save duplciate read pairs to (in bedpe format).'
 O_help    = 'Output file name and path to save results to (in bedpe format).'
 B_help    = 'The ending pattern of bedpe files wanted as input into script.'
-
-## Set run local
-runlocal = False
-
-## Define ftn for laoding in parquets with dask
-#def loadparquets(inpaths:list,usecols = []):
-#    ## Check inputs
-#    assert len(inpaths) and (type(inpaths) == list), "ERROR: A list with paths was not provided for deduplication!"
-#    ## initilize list of dask dataframes
-#    to_cat = []
-#    ## iterate over input paths
-#    for p in inpaths:
-#        try: ## Attempt ot cat the file 
-#            to_cat.append(dd.read_parquet(p,columns=usecols) if len(usecols) else dd.read_parquet(p))
-#        ## Soem seem to be empty
-#        except ValueError:
-#            print("INFO: One of the given parquet files did not load and might be empty: %s"%p)
-#    ## Return the dask concatonated list
-#    return dd.concat(to_cat)
-
-## Def for concatonatin files
 
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
@@ -111,19 +90,21 @@ if __name__ == "__main__":
     intradup_counts = 0
     Total_counts    = 0 
 
-    ## Load the first of the file  #bedpe = loadparquets(input_paths)
+    ## Load the first 2 rows of the first bedpe file, print columsn 
     bedpe = pd.read_csv(input_paths[0],sep=hicsep,nrows=2)
-    print(bedpe.head())
-    ## Gather the column space
+    print(bedpe.head()) if debuging else None 
+
+    ## Gather the column space names and print if debugin 
     column_names = bedpe.columns.tolist()
-    print(column_names)
-    ## set the index of the positions 
+    print(column_names) if debuging else None 
+
+    ## Set the index of the columns names we plan to sort on 
     chr1_ix = column_names.index('Chrn1') + 1
     chr2_ix = column_names.index('Chrn2') + 1
     pos1_ix = column_names.index('Pos1')  + 1
     pos2_ix = column_names.index('Pos2')  + 1
 
-    ## Set the sorted ouput path 
+    ## Set the sorted ouput path and temporary output path 
     sorted_path = (output_path + '.sort.tmp') if deduplicate else output_path
     tmp_path    = (output_path + '.tmp') 
 
@@ -131,18 +112,20 @@ if __name__ == "__main__":
     with open(sorted_path,'w') as outfile:
         outfile.writelines(' '.join(column_names)+'\n')
         outfile.close()
-    ## Sort the input parquet files #bedpe.sort_values(sort_by).to_csv(sorted_path,index=False,header=True,single_file=True,sep=hicsep)
-    #bedpe.to_csv(tmp_path,index=False,header=False,single_file=True,sep=hicsep)
+    
     ## Concatonate the bedpe files with no header 
     assert concatonation(input_paths,tmp_path,noheader=True), "ERROR: Unable to concatonate input files!"
-    ## Call our sort command
+    ## Format the call to the sort command
     sort_command = f'sort -k{chr1_ix},{chr1_ix}n -k{chr2_ix},{chr2_ix}n -k{pos1_ix},{pos1_ix}n -k{pos2_ix},{pos2_ix}n {tmp_path} >> {sorted_path}'
-    print(sort_command)
+    ## Print the command id debugging 
+    print(sort_command) if debuging else None 
+    ## Call subprocess passing subcomand 
     k = subprocess.run(sort_command,shell=True)
-    print(k)
-    ## Set up if statements, if we are BOTH deduplicateing and soritng our inputs 
+    print(k) if debuging else None 
+    
+    ## Set up if statements, if we are BOTH soritng and deduplicateing our inputs contacts 
     if deduplicate:
-        ## Appending?
+        ## Appending?, set boolean for inital header writing then appending 
         uniq_appending = False
         dups_appending = False
         last_chunk     = []
@@ -218,8 +201,8 @@ if __name__ == "__main__":
                     dups_rows.to_csv(dedupe_path,mode='a' if dups_appending else 'w',index=False,header =not dups_appending,sep=hicsep)
 
         ## Remove the large temporary file
-        #remove(sorted_path)
-        #remove(tmp_path)
+        remove(sorted_path)
+        remove(tmp_path)
 
     ## Format new names and print counts
     new_names = ['InterDuplicates', 'IntraDuplicates']
@@ -227,5 +210,5 @@ if __name__ == "__main__":
     ## Iterate thru and print the counts to log 
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## Print to log
-    print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s"%filebackend)
+    print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s into %s"%(filebackend,output_path))
 ## End of file 
