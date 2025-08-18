@@ -116,7 +116,7 @@ if __name__ == "__main__":
     ## Concatonate the bedpe files with no header 
     assert concatonation(input_paths,tmp_path,noheader=True), "ERROR: Unable to concatonate input files!"
     ## Format the call to the sort command
-    sort_command = f'sort -k{chr1_ix},{chr1_ix}n -k{chr2_ix},{chr2_ix}n -k{pos1_ix},{pos1_ix}n -k{pos2_ix},{pos2_ix}n {tmp_path} >> {sorted_path}'
+    sort_command = f'LC_ALL=C sort -k{chr1_ix},{chr1_ix}n -k{chr2_ix},{chr2_ix}n -k{pos1_ix},{pos1_ix}n -k{pos2_ix},{pos2_ix}n {tmp_path} >> {sorted_path}'
     ## Print the command id debugging 
     print(sort_command) if debuging else None 
     ## Call subprocess passing subcomand 

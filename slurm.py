@@ -110,12 +110,12 @@ def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts
     return [just_split,dry,mvh,mvj] if ishic else [initial_filtering,split_filtered,throwout,dry,mvh,mvj], report
 
 ## Ftn for calling juicer's pre command
-def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str) -> tuple:
+def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str,pix:str) -> tuple:
     """
     java -Xmx49152m -Xms49152m -jar $jarpath pre -j 5 -r 500000,250000,200000,150000,100000,50000,25000,10000,5000,1000 $1 ${1}.hic $2
     """
     ## Format the report name 
-    report = reportname(outhic+'.bam','hic.pre',i='6C')
+    report = reportname(outhic+'.bam','hic.pre',i=pix)
     ## Set the java command for the passed juicer jar file 
     prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
               f'{slurpydir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
@@ -694,10 +694,10 @@ if __name__ == "__main__":
 
             ## BEDPE TO SHORT or PAIRS
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-            ## 5B. Make the bedpe file into a short file for juicer pre command 
+            ## 5A. Make the bedpe file into a short file for juicer pre command 
             if toshort: 
                 ## make a report
-                short_repo = reportname(sample_name,'toshort',i=f'{pix}B')
+                short_repo = reportname(sample_name,'toshort',i=f'{pix}A')
                 ## Format the command
                 short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
                 ## Set command file 
@@ -742,7 +742,7 @@ if __name__ == "__main__":
                 ## Set the output hic path
                 shortfile, outhicpath = newcatfile.split('.bedpe')[0] + '.short', newcatfile.split('.bedpe')[0] +'.hic'
                 ## Sort and saveout the the concatonated hic file 
-                jpre_coms, jpre_repo = juicerpre(shortfile,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom)
+                jpre_coms, jpre_repo = juicerpre(shortfile,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom,f'{pix}C')
                 ## make concat file name
                 jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
                 ## Write the concat command to file

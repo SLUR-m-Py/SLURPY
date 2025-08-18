@@ -34,7 +34,7 @@ downsample_desc = "Randomly downsamples rows from an input .txt file representin
 
 ## Set the defaults
 ranseed = 720
-chunks  = 500000
+chunks  = 1000000
 ST      = 'store_true'
 
 ## Set some default input variables used in these functions, such as the input column names and file seperator
