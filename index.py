@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = desc)
     ## Add the required arguments
     parser.add_argument("-b", dest="B",  type=str,  required=True,   help = B_help  ) 
-    parser.add_argument("-g", dest="G",  type=str,  required=False,  help = G_help, default=None )
+    parser.add_argument("-g", dest="G",  type=str,  required=False,  help = G_help, default=hicsep     )
     parser.add_argument("-Z", dest="Z",  type=int,  required=False,  help = Z_help, default=chunksize  )
     parser.add_argument("-S", "--short", dest="S",  action = ST,     help = S_help  )
     parser.add_argument("-D", "--debug", dest="D",  action = ST,     help = D_help  )
