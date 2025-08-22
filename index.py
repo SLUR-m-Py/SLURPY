@@ -17,6 +17,12 @@ Los Alamos National Laboratory
 Los Alamos, NM 87545
 croth@lanl.gov
 """
+## Load in system
+import sys 
+## Load in current wd 
+from os import getcwd
+## append path path
+sys.path.append(getcwd()) 
 ########################################################################################
     ##      Make an index dataframe of an input BEDPE file from SLUR(M)-py        ##
 ########################################################################################
