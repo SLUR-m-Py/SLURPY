@@ -399,7 +399,10 @@ if __name__ == "__main__":
         max_dist      = max_dist if max_dist else 1000
         count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
-    
+
+        ## Set peakcalling boolean 
+        peakcalling = (not skippeaks)
+
         ## Set the broad pkeack
         broadpeak = '--broad' if ifbroad else ''
 
@@ -420,9 +423,6 @@ if __name__ == "__main__":
         experi_mode = 'chip'
     else: ## Set the hardset hic mode 
         experi_mode = 'hic'
-
-    ## Set peakcalling boolean 
-    peakcalling = atac_seq and (not skippeaks)
 
     ## Moved to trigger if statment correctly
     print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
