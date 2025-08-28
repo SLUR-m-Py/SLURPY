@@ -25,7 +25,6 @@ croth@lanl.gov
 squeue -u croth | grep 'croth' | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep tb | awk '{print $1}' | xargs -n 1 scancel
 squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | awk '{print $1}' | xargs -n 1 scancel
-
 """
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      VARIABLE SETTING
@@ -139,7 +138,7 @@ mcool_help = "Flag to make an mcool file with cooler."
 pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."
 inter_help = "Flag to return only inter-chromosomal contacts"
 hicex_help = "Flag to run stricter intra-fragment filtering."
-save_help = 'Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.'
+save_help  = 'Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.'
 
 ## MACS3 specific variables
 shift_size   = 75

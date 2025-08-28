@@ -60,8 +60,6 @@ from filtermaster import filtermaster
 ## Load in bedpe to sam
 from pairs2sam import bedpetosam
 
-## Set the ftn descritption
-hiclite_descr = "Processing and analysis pipeline for paired-end sequencing data from Hi-C experiments."
 ## Define help messages
 R_help = R_help%h_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -122,15 +120,11 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
 
     ## Return the pre and report
     return prestr, report
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
-##      MAIN SCRIPT & ARGUMENT PARSING 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## If the script is envoked by name 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+## Load in arg parser
+import argparse
+## Write ftn for parsing args 
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = slurpy_descr)
 
@@ -206,10 +200,17 @@ if __name__ == "__main__":
     parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
 
     ## Set the paresed values as inputs
-    inputs = parser.parse_args() 
+    return parser.parse_args() 
+    
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      MAIN SCRIPT & ARGUMENT PARSING 
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## If the script is envoked by name 
+if __name__ == "__main__":
+    ## Bring in argparse and set parser
+    inputs = parse_args()
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
    
-
     ##      PASS ARGUMENTS & SET VARIABLES 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set required variables
@@ -286,7 +287,7 @@ if __name__ == "__main__":
     tobam           = inputs.tobam          ##     Boolean flag to convert .bedpe file to bam format
 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    
+
     ##      CORRECT SPLIT / Chunksize
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     max_splitsize = max([int(s) for s in splitsize])
