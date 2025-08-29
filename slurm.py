@@ -273,7 +273,7 @@ if __name__ == "__main__":
     shift_size      = inputs.shiftsize      ##     Value of shift size (bp)
     extendsize      = inputs.extendsize     ##     Value of read extension 
     macs3mode       = inputs.macmode        ##     Format in MACS3, eg. bedpe.
-    chip_control    = inputs.c              ##     Set the input control for chip experimetn
+    chip_control    = inputs.c              ##     Set the input controls for chip experiments
     max_gap         = inputs.maxgap         ##     Max gap in used in MACS3    
     min_len         = inputs.minlen         ##     Min lenght of peaks in MACS3
 

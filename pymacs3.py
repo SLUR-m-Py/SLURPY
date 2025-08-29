@@ -21,33 +21,34 @@ croth@lanl.gov
 """
 ## ------------------------------------------------------------- macs3 Functions ----------------------------------------------------------------- ## 
 ## Load in pandas 
-import pandas as pd 
-
+import pandas as pd, argparse 
 ## Load in scripts dir 
 from directories import slurpydir, macs3dir 
+## Bring in help messages 
+from parameters import g_help
 
 ## Set extension dict 
 exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
 
 ## Ftn for making input into a list of inputs
-def makelist(input):
-    """Makes an input variable into a list."""
-    ## Return the listed input
-    return input if (type(input) == list) else [input]
+#def makelist(input):
+#    """Makes an input variable into a list."""
+#    ## Return the listed input
+#    return input if (type(input) == list) else [input]
 
 ## Ftn for formating inputs
-def sjoin(input):
-    """Joins an input into a list, seperated by a space."""
-    ## Make the input a list 
-    inputs = makelist(input)
-    ## Make the inputs into a joined list 
-    return inputs[0] if (len(inputs) == 1) else ' '.join(inputs)
+#def sjoin(input):
+#    """Joins an input into a list, seperated by a space."""
+#    ## Make the input a list 
+#    inputs = makelist(input)
+#    ## Make the inputs into a joined list 
+#    return inputs[0] if (len(inputs) == 1) else ' '.join(inputs)
 
 ## Ftn for formatting control
-def formatcontrol(incontrols):
-    """Formats the input controls for a call to macs3 in chip mode."""
-    ## Return the formated input control 
-    return f'-c {sjoin(incontrols)}' if incontrols else ''
+#def formatcontrol(incontrols):
+#    """Formats the input controls for a call to macs3 in chip mode."""
+#    ## Return the formated input control 
+#    return f'-c {sjoin(incontrols)}' if incontrols else ''
 
 ## Ftn for formatting inputs
 #def formatinput(inputs):
@@ -56,7 +57,7 @@ def formatcontrol(incontrols):
 #    return f'-t {sjoin(inputs)}' if inputs else ''
 
 ## reformat the input bed names 
-def formatin(inbedpe:str,mode:str) -> list: 
+def formatbymode(inbedpe:str,mode:str) -> list: 
     ## Inaite list, return the new file locations 
     return f'{macs3dir}/{inbedpe.split("/")[-1].split(".bed")[0]}.{mode.lower()}' 
 
@@ -66,7 +67,7 @@ def formatval(valname,val) -> str:
     return f' --{valname} {val} ' if val else ' '
 
 ## Write ftn for calling macs3 with atac seq data
-def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=None,shiftsize=0,extendsize=0,maxgap=0,minlen=0,keepdups='all',nolambda=False,broad=False,summits=False,outdir=f'./{macs3dir}') -> list[str]: 
+def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=[],shiftsize=0,extendsize=0,maxgap=0,minlen=0,keepdups='all',nolambda=False,broad=False,summits=False,outdir=f'./{macs3dir}') -> list[str]: 
     """Formats a call to the macs3 callpeak function for a run of the slurpy pipeline (n) on input bedpe file, using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
     ## Format the no model paramater
     nomodel   = ' --nomodel '  if extendsize or shiftsize else ' '
@@ -74,12 +75,22 @@ def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=None,sh
     ## Format the borad option and call sumits opt
     isborad   = ' --broad ' if broad else ' '
     call_sums = ' --call-summits ' if summits else ' '
+    ## Reformat controls
+    if len(incontrols):
+        ## make the input controls into bed format 
+        short_controls = [f'{slurpydir}/toshort.py --{mode.lower()} -i {control} -s {shiftsize} -e {extendsize}\n' for control in incontrols]
+        ## Repath the input controls
+        controls = '-c ' + ' '.join([formatbymode(control,mode) for control in incontrols])
+    else:
+        short_controls = []
+        controls = ''
+
     ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
     macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
-                 f'macs3 callpeak -t {formatin(bedpe,mode)} {formatcontrol(incontrols)}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
-                 f'{slurpydir}/myecho.py Finished calling peaks in {formatin(bedpe,mode)} with macs3 {report}\n']
+                 f'macs3 callpeak -t {formatbymode(bedpe,mode)} {controls}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
+                 f'{slurpydir}/myecho.py Finished calling peaks in {formatbymode(bedpe,mode)} with macs3 {report}\n']
     ## Return the macs coms 
-    return macs_coms
+    return short_controls + macs_coms
 
 ## Set the narrow peak names
 peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
@@ -115,40 +126,41 @@ def makemap(inbam):
     ## Return the dataframe 
     return pd.DataFrame(zip(inbam.references,inbam.lengths),columns=['Chrom','Length'])
 
-## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
-## If the library is called as an executable
-if __name__ == "__main__":
-    ## ---------------------------------------------- DEFAULT VARIABLES ---------------------------------------------------- ## 
-    ## Set description of this library and scirpt
-    description = 'Calculates the fraction of reads within peaks from input bedpe and narrow peaks files.'
+## ---------------------------------------------- DEFAULT VARIABLES ---------------------------------------------------- ## 
+## Set description of this library and scirpt
+description = 'Calculates the fraction of reads within peaks from input bedpe and narrow peaks files.'
 
-    ## Set defaults
-    savename, dplace = './frip.stats.csv', 4
+ ## Set defaults
+savename, dplace = './frip.stats.csv', 4
 
-    ## Set help messages
-    b_help = "Path to input bedpe file."
-    p_help = "Path to input peak (BED) files from macs3."
-    s_help = "Path and name of output diagnostic statistics."
-    d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
+## Set help messages
+b_help = "Path to input bedpe file."
+p_help = "Path to input peak (BED) files from macs3."
+s_help = "Path and name of output diagnostic statistics."
+d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
 
-    ## ------------------------------------------- MODULE LOADING ---------------------------------------------------- ## 
-    ## Load in pandas and arg parser
-    import argparse, dask.dataframe as dd 
-    ## Load in help messages from parameters 
-    from parameters import g_help, macs_help
-
-    ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
+## Define ftn for parsing variables
+def parse_args():
     ## Set parser
     parser = argparse.ArgumentParser(description=description)
 
     ## Add optional arguments
-    parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                       )
-    parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                       )
-    parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None      )  
-    parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False     )
-    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace    )
+    parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                   )
+    parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                   )
+    parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None  )  
+    parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False )
+    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace)
     ## Parse the arguments
-    args = parser.parse_args()
+    return parser.parse_args()
+
+## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
+## If the library is called as an executable
+if __name__ == "__main__":
+    ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
+    args = parse_args()
+
+    ## Load in mods like dask dataframes 
+    import dask.dataframe as dd 
 
     ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
     ## Gather inputs 

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#SBATCH --job-name=hictojuice           ## Name of job
+#SBATCH --job-name=short.hic            ## Name of job
 #SBATCH --output=%x.%j.out              ## Name stdout
 #SBATCH --error=%x.%j.err               ## Name stderr
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
-#SBATCH --partition=tb                  ## Set the partition
+#SBATCH --partition=mpi                 ## Set the partition
 ## bring in mods
 import dask.dataframe as dd, pandas as pd 
 ## Brin in defaults
