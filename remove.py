@@ -7,10 +7,8 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Bring in shutil and gzip 
 import sys
-
 ## Load in rm treat 
 from shutil import rmtree
-
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
 if __name__ == "__main__":

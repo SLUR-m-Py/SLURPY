@@ -24,7 +24,7 @@ croth@lanl.gov
 ## Load in shutil
 import shutil       
 ## Load in direcotries
-from directories import *
+from parameters import debugdir, aligndir, splitsdir, comsdir, macs3dir, hicdir, diagdir, bedtmpdir, checkerdir
 ## -------------------------------------------------------------------- ##
 
 ## -------------------------------------------------------------------- ##

@@ -6,7 +6,12 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=mpi                 ## Set the partition
-
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## Bring in sys, and other mods  and getcwd
 import sys, pandas as pd, numpy as np    
 ## Bring in exists 
@@ -121,10 +126,8 @@ span        = 5
 interc      = mycols[:-1]
 debugging   = False
 
-## Load in paraamters from slurpy mods hic sep 
-from parameters import hicsep, Z_help, chunksize, atac_help
-## Bring in diag dir 
-from directories import diagdir
+## Load in paraamters from slurpy mods hic sep, and dir
+from parameters import hicsep, Z_help, chunksize, atac_help, diagdir
 
 ## If the script is envoked 
 if __name__ == "__main__":

@@ -21,20 +21,13 @@ croth@lanl.gov
 """
 ## ------------- Function Defining ------------------ ##
 ## Import fanc, sys, nupy and and padns 
-import fanc, numpy as np, pandas as pd
-
+import fanc, numpy as np, pandas as pd, argparse
 ## Load in narrow peak file 
-from .pymacs3 import loadnarrowpeak
-
+from pymacs3 import loadnarrowpeak
 ## Bring in matplot lib 
 from matplotlib import pyplot as plt
-
 ## Load in statmodels 
 from statsmodels.api import nonparametric
-
-## Load in exists from os
-#from os.path import exists
-
 ## Load in mode ftn from math
 from statistics import mode 
 
@@ -96,20 +89,13 @@ P_help = 'Boolean flag to skip plotting compartment scores.'
 D_help = 'Boolean flag to run script in verbose debugging mode.'
 m_help = 'Method used to correct A/B comparment scores (default = mean). Current options include: %s.'%', '.join(method_ops)
 
-## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
-## If the library is called as an executable
-if __name__ == "__main__":
-    ## ------------------------------------------- MODULE LOADING ---------------------------------------------------- ## 
-    ## Load in pandas and arg parser
-    import argparse 
-    ## ------------------------------------------ PARSER SETTING ---------------------------------------------------- ## 
+## Ftn for parsing arguments 
+def parse_args():
     ## Set parser
     parser = argparse.ArgumentParser(description=description)
-
     ## Set input arguments
     parser.add_argument("-i", "--inhic-file",        dest="i", required=True,  type=str,   help=i_help, metavar= './path/to/in.hic') 
     parser.add_argument("-p", "--peaks-file",        dest="p", required=True,  type=str,   help=p_help, metavar= './path/to/narrow.peaks')
-
     ## Set default arguments 
     parser.add_argument("-f", "--fasta-path",        dest="f", required=False, type=str,   help=f_help,  default = None, metavar='./path/to/in.fasta')
     parser.add_argument("-b", "--binsize",           dest="b", required=False, type=int,   help=b_help,  default = bins_size)
@@ -118,13 +104,17 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--lowess-fraction",   dest="l", required=False, type=float, help=l_help,  default = lowess_fraction, metavar='p')
     parser.add_argument("-m", "--method",            dest="m", required=False, type=str,   help=m_help,  default = 'mean')
     parser.add_argument("-d", "--decimals",          dest="d", required=False, type=int,   help=d_help,  default = decplace)
-
     ## Set boolean vars
     parser.add_argument("--no-plot",                 dest="P",  help=P_help, action = 'store_true')
     parser.add_argument("--debug",                   dest="D",  help=D_help, action = 'store_true')
-
     ## Parse the arguments
-    args = parser.parse_args()
+    return parser.parse_args()
+
+## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
+## If the library is called as an executable
+if __name__ == "__main__":
+    ## Parse the arguments
+    args = parse_args()
 
     ## Print we are starting
     print('INFO: Starting A/B compartment correction and analysis.')

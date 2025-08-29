@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## List of needed python libraries
 """
 numpy
@@ -24,49 +30,38 @@ dask
 """
 samtools
 bwa
-macs2
+macs3
 """
 ## Conda install command 
 """
-conda install numpy pandas matplotlib seaborn ipython pysam samtools macs2 bwa 
+conda install numpy pandas matplotlib seaborn ipython pysam samtools macs3 bwa 
 """
 ## If the conda install dosn't work for macs2, try:
 """
-pip install macs2
+pip install macs3
 """
 ## Load in date and time
 from datetime import datetime
-
 ## Load in glob
 from glob import glob 
-
 ## Load in SeqIO
 from Bio import SeqIO
-
 ## Bring in basename, get file size, and path-exists 
 from os.path import isfile, basename, exists, getsize 
-
 ## Bring in make dirs
 from os import makedirs, remove, getcwd
-
 ## bring in matplot lib 
 from matplotlib import pyplot as plt
-
 ## Load pandas, numpy and seaborn 
 import pandas as pd, numpy as np, seaborn as sns 
-
 ## Load in system, json, time, argparese and subprocess 
 import sys, json, time, argparse, subprocess
-
 ## Loadin checksam
 from pysamtools import checksam
-
 ## Bring in dask 
 import dask.dataframe as dd 
-
 ## Check samtools
 assert checksam(), 'ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again.\n'
-
 ## Print to screen that this ran
 print("INFO: Modules loaded correctly.\nINFO: We are ready to run slurpy!")
 ## End of file 

@@ -22,39 +22,11 @@ croth@lanl.gov
 ## ------------------------------------------------------------- macs3 Functions ----------------------------------------------------------------- ## 
 ## Load in pandas 
 import pandas as pd, argparse 
-## Load in scripts dir 
-from directories import slurpydir, macs3dir 
-## Bring in help messages 
-from parameters import g_help
+## Load in scripts dir and bring in help messages 
+from parameters import slurpydir, macs3dir, g_help
 
 ## Set extension dict 
 exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
-
-## Ftn for making input into a list of inputs
-#def makelist(input):
-#    """Makes an input variable into a list."""
-#    ## Return the listed input
-#    return input if (type(input) == list) else [input]
-
-## Ftn for formating inputs
-#def sjoin(input):
-#    """Joins an input into a list, seperated by a space."""
-#    ## Make the input a list 
-#    inputs = makelist(input)
-#    ## Make the inputs into a joined list 
-#    return inputs[0] if (len(inputs) == 1) else ' '.join(inputs)
-
-## Ftn for formatting control
-#def formatcontrol(incontrols):
-#    """Formats the input controls for a call to macs3 in chip mode."""
-#    ## Return the formated input control 
-#    return f'-c {sjoin(incontrols)}' if incontrols else ''
-
-## Ftn for formatting inputs
-#def formatinput(inputs):
-#    """Formats the input bam files for a call to macs3."""    
-#    ## Return the joined inputs for macs3
-#    return f'-t {sjoin(inputs)}' if inputs else ''
 
 ## reformat the input bed names 
 def formatbymode(inbedpe:str,mode:str) -> list: 

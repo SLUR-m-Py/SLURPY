@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ########################################################################################
 ##      Concat, sort, and deduplicate bedpe file representing Hi-C contacts           ##
 ########################################################################################
@@ -17,16 +23,14 @@ croth@lanl.gov
 desc = "Concats, sorts, and removes duplicates from input bedpe files representing Hi-C contacts from a paired-end Hi-C experiment."
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
-## Bring in params
-from parameters import ST, hicsep, save_help, Z_help, chunksize
-## Bring in ftn from defaults
-from directories import bedtmpdir
+## Bring in params and dirs
+from parameters import ST, hicsep, save_help, Z_help, chunksize, bedtmpdir
 ## Load in from defaults
 from defaults import sortglob, remove
 ## Set debuging and run local variabels 
 debuging, runlocal = False, False 
 ## Load in subprocess 
-import subprocess, pandas as pd 
+import subprocess, pandas as pd, argparse
 ## Bring in conactonation ftn 
 from pandacat import concatonation
 
@@ -49,11 +53,8 @@ D_help    = 'Output file name and path to save duplciate read pairs to (in bedpe
 O_help    = 'Output file name and path to save results to (in bedpe format).'
 B_help    = 'The ending pattern of bedpe files wanted as input into script.'
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+## ftn for parsing arguments
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = desc)
     ## Add the required arguments
@@ -61,12 +62,16 @@ if __name__ == "__main__":
     parser.add_argument("-o", dest="O", type=str, required=True,  help=O_help )
     parser.add_argument("-z", dest="Z", type=int, required=False, help=Z_help,   default=chunksize )
     parser.add_argument("-d", dest="D", type=str, required=False, help=D_help,   default=None      )
-
     ## Add boolean vars 
     parser.add_argument("--save-dups",  dest="save",   help = save_help,  action = ST)
-   
     ## Set the paresed values as inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
+## if the script is envoked
+if __name__ == "__main__":
+    ## Set the paresed values as inputs
+    inputs = parse_args()
 
     ## Set inputs 
     filebackend = inputs.B          ## Set the file backend 

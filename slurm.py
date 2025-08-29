@@ -47,8 +47,6 @@ count_mod = ''
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in vars from parameter space
 from parameters import * 
-## Load in default directories from defaults 
-from directories import * 
 ## Load in ftns from other libraries
 from pysamtools import checksam, writetofile
 ## Load in panda cat ftn

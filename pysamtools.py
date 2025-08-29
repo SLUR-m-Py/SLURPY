@@ -19,14 +19,13 @@ Los Alamos, NM 87545
 croth@lanl.gov
 """
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
-## Bring in subprocess, pysam 
-import subprocess, pysam 
+## Bring in subprocess, pysam, pandas 
+import subprocess, pysam, pandas as pd  
 ## Load in is file ftn 
 from os.path import isfile
 ## Load in SeqIO
 from Bio import SeqIO
-## Bring in pandas 
-import pandas as pd 
+
 
 ## ----------------------------------- GENERAL FUNCTIONS --------------------------------- ##
 ## Ftn for making a dicitonary for zipped lists

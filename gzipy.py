@@ -7,9 +7,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Bring in shutil and gzip 
 import gzip, shutil, sys 
-
-## Remove the old file
-## Bring file exists
+## Remove the old file, bring in file exists ftn 
 from os.path import exists
 from os import remove
 

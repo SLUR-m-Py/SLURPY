@@ -1,22 +1,28 @@
 #!/usr/bin/env python
-#SBATCH --job-name=filter.master        ## Name of job
+#SBATCH --job-name=filtermaster         ## Name of job
+#SBATCH --output=%x.%j.out              ## Name stdout
+#SBATCH --error=%x.%j.err               ## Name stderr
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
-#SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
-
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, remove
-## Load in directories
-from directories import comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile
 ## Load in params
-from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel, comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 ## load in sleep
 from time import sleep
 ## Load in report check 
 from bwatobedpe import reportcheck, vectortile, hic_flag
+## Load in argparse
+import argparse
 
 ## Set stage in piepline
 pix = 2
@@ -45,19 +51,13 @@ s_help     = 'Sample starting name to form wild card extraction of paths'
 I_help     = "List of chormosomes/contigs to only include in analysis"
 c_help     = 'The current working directory'
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = filtdescr)
-
     ## Add the required arguments
     parser.add_argument("-s", dest="S", type=str,  required=True,   help=s_help, metavar='./path/to/input.bedpe'           )   
     parser.add_argument("-r", dest="R", type=str,  required=True,   help=r_help, metavar='./path/to/ref.fasta'             )
     parser.add_argument("-c", dest="C", type=str,  required=True,   help=c_help, metavar = './the/cwd'                     )
-
     ## Add optional args
     parser.add_argument("-x", dest="X", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
     parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
@@ -72,7 +72,6 @@ if __name__ == "__main__":
     parser.add_argument("-j", dest="j", type=int,  required=False,  help=j_help, metavar = 'n',       default=nparallel    )
     parser.add_argument("--nodelist",   dest="nodes", nargs='+', required=False, help = node_help,    default = None       )
     parser.add_argument("--memory",     dest="mem",   type=str,  required=False, help = slurmem_help, metavar = '40G',  default = None)
-
     ## Add boolean 
     parser.add_argument("--dedovetail",     dest="tails",  help = dove_help,    action = ST )
     parser.add_argument("--debug",          dest="debug",  help = dove_help,    action = ST )
@@ -80,9 +79,14 @@ if __name__ == "__main__":
     parser.add_argument("--hic",            dest="hic",    help = hic_flag,     action = ST )
     parser.add_argument("--intra-only",     dest="Intra",  help = intra_help,   action = ST )
     parser.add_argument("--hicexplorer",    dest="hicexp", help = hicex_help,   action = ST )
-
     ## Set the paresed values as inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
+## if the script is envoked
+if __name__ == "__main__":
+    ## Set the paresed values as inputs
+    inputs = parse_args()
 
     ## Set iinputs
     sample_name = inputs.S          ## Sample name 

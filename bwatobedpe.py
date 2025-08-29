@@ -4,19 +4,24 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=1               ## Number of tasks to be launched
 #SBATCH --nice=2147483645               ## Nice parameter, sets job to lowest priority 
-
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove
-## Load in directories
-from directories import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## Load in write to file from pysam tools 
 from pysamtools import writetofile, listzip, ifprint
 ## Load input vars from params
-from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel
+from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## load in sleep
 from time import sleep
 ## Bring in tile and arange 
 from numpy import tile, arange
+## Bring in argparse and set parser
+import argparse
 
 ## Set opttions for line count and step in pipelien 
 line_count  = 5000
@@ -90,12 +95,7 @@ c_help     = 'The current working directory'
 l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
 hic_flag   = 'Flag to run in Hi-C mode.'
 
-##      MAIN SCRIPT & ARGUMENT PARSING 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## If the script is envoked by name 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = bwadescr)
 
@@ -117,7 +117,14 @@ if __name__ == "__main__":
     parser.add_argument("--debug",                dest="debug",     help = debug_help,    action = ST                                          )
     parser.add_argument("--force",                dest="force",     help = force_help,    action = ST                                          )
     ## Set the paresed values as inputs
-    inputs = parser.parse_args() 
+    return parser.parse_args() 
+
+##      MAIN SCRIPT & ARGUMENT PARSING 
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## If the script is envoked by name 
+if __name__ == "__main__":
+    ## Set the paresed values as inputs
+    inputs = parse_args() 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     
     ## Set inputs 

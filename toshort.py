@@ -6,16 +6,18 @@
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=mpi                 ## Set the partition
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## bring in mods
-import dask.dataframe as dd, pandas as pd 
-## Brin in defaults
-from gxgcounts import file_end, hicsep
-## Load in params
-from directories import macs3dir
+import dask.dataframe as dd, pandas as pd, argparse
 ## Load in exists
 from defaults import fileexists
-## Lod in chunk size
-from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help
+## Load in parameters, like chunk size, and directories 
+from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help, hicsep, macs3dir
 """
 Juicer short format:
 
@@ -28,6 +30,7 @@ frag: the fragment, if using dummy var must be different for the pair
 """
 ## Set use columns for short format
 short_cols = ['Seqrev1','Rname1','Pos1','Mapq1','Seqrev2','Rname2','Pos2','Mapq2','Inter']
+file_end    = '.bedpe'
 
 """
 https://liz-fernandez.github.io/HiC-Langebio/04-matrix.html
@@ -77,25 +80,26 @@ def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.Da
     ## Retunr bed 
     return bed 
 
-## If the script is envoked 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
     parser.add_argument("-i",            dest="I", type=str, required=True,  help=I_help,      metavar='./path/to/input.bedpe') 
     parser.add_argument("-s","--shift",  dest="S", type=int, required=False, help=shift_help,  default=shift_size)
     parser.add_argument("-e","--extend", dest="E", type=int, required=False, help=extend_help, default=extendsize)
-    
+    ## Set options 
     parser.add_argument('--bed',         dest="B", help=B_help,      action = ST)
     parser.add_argument('--bedpe',       dest="M", help=M_help,      action = ST)
     parser.add_argument('--pairs',       dest="P", help=pairs_help,  action = ST)
     parser.add_argument('--inter-only',  dest="O", help=inter_help,  action = ST)
     parser.add_argument('--intra-only',  dest="A", help=intra_help,  action = ST)
-
     ## Set the paresed values as inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+    
+## If the script is envoked 
+if __name__ == "__main__":
+    ## Set the paresed values as inputs
+    inputs = parse_args()
 
     ## Set input
     input_path  = inputs.I          ## Set path to input bedpe file

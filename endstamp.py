@@ -31,7 +31,7 @@ from pysamtools import writetofile
 ## Load in sort glbo 
 from defaults import sortglob
 ## load in log dir
-from directories import debugdir, diagdir
+from parameters import debugdir, diagdir
 
 ## Ftn for reading in json
 def loadjson(jsonpath):

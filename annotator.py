@@ -15,7 +15,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Set verbosity
 verbose = False 
 ## Load in mods 
-import sys, pandas as pd, numpy as np, seaborn as sns 
+import sys, pandas as pd, numpy as np, seaborn as sns, argparse 
 ## Load in current wd 
 from os import getcwd
 ## append path path
@@ -90,10 +90,8 @@ Visulization and methods sampled from:
 https://hbctraining.github.io/Intro-to-ChIPseq/lessons/12_functional_analysis.html
 """
 
-## If the script is envoked 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+## Set arg parser
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
     ## Add arguments 
@@ -103,16 +101,20 @@ if __name__ == "__main__":
     parser.add_argument("-w", dest="W", type=int,  required=False, help=W_help, metavar='bp', default=500)
     ## Add boolean vars
     parser.add_argument("--plot", dest="P",  help = P_help, action = 'store_true')
-
     ## Set the paresed values as inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## If the script is envoked 
+if __name__ == "__main__":
+    ## Set the paresed values as inputs
+    inputs = parse_args()
 
     ## Set input vars
-    peak_path = inputs.I
-    gtfs_path = inputs.G
-    outs_path = inputs.O
-    prom_oter = inputs.W
-    make_plot = inputs.P
+    peak_path = inputs.I    ## SEt peak path
+    gtfs_path = inputs.G    ## Set gtf path
+    outs_path = inputs.O    ## Set output path
+    prom_oter = inputs.W    ## Set windowsize
+    make_plot = inputs.P    ## IF we are making a plot
 
     ## Load in gtf
     gtf = loadgtf(gtfs_path)

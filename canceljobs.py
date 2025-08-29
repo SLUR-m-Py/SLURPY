@@ -10,7 +10,7 @@ import pandas as pd
 ## Bring in submitter
 from defaults import submitter
 ## Load in dir
-from directories import debugdir
+from parameters import debugdir
 
 ## Set command file path 
 job_file = f'./{debugdir}/command.file.csv'

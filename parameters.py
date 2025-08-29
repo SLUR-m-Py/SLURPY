@@ -152,7 +152,6 @@ lambda_help  = "Boolean flag to turn off local lambda calculation in MACS3. Defa
 mgap_help    = "Max gap between peaks called in MACS3."
 mlen_help    = "Minimum length of peaks called in MACS3."
 slurmem_help = "The max amount of memory (for e.g. 4OG) passed to SLURM sbatch processes. If set, this value is applied acorss all subprocesses. Default: None"
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -194,4 +193,20 @@ index_error = "ERROR: We could not detect an index associated with the input ref
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 slurpy_descr = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+##      DIRECTORY NAMES 
+## Set directory names 
+debugdir    = 'logs'                 ##       Hold logs for debug 
+fastqdir    = 'fastqs'               ##       The directory holding fastq files 
+aligndir    = 'aligned'              ##       Holds final aligments 
+splitsdir   = 'splits'               ##       Temporary dir for split fastq 
+comsdir     = 'commands'             ##       Folder for holding all command files 
+macs3dir    = 'peaks'                ##       Has results from macs3 
+hicdir      = 'merged'               ##       Has hic resluts 
+diagdir     = 'diagnostics'          ##       Plots for diagnostics are held here 
+bedtmpdir   = 'bedpe'                ##       Tempeory bedpe dir
+checkerdir  = 'checks'               ##       Temporary log to check for script outputs
+slurpydir   = './SLURPY'             ##       The script directory holding this file
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## EOF 

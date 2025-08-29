@@ -1,12 +1,17 @@
 #!/usr/bin/env python
-#SBATCH --job-name=pairstosam            ## Name of job
+#SBATCH --job-name=pairstosam           ## Name of job
 #SBATCH --nodes=1                       ## Number of nodes needed for the job
 #SBATCH --ntasks-per-node=1             ## Number of tasks to be launched per Node
 #SBATCH --cpus-per-task=12              ## Number of tasks to be launched
 #SBATCH --partition=mpi                 ## Set the partition
-
+"""
+© 2023. Triad National Security, LLC. All rights reserved.
+This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
+All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
+The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+"""
 ## Load in mods 
-import pandas as pd, sys 
+import pandas as pd, sys, argparse
 
 ## Load in current wd 
 from os import getcwd
@@ -15,11 +20,8 @@ sys.path.append(getcwd())
 
 ## Bring in defaults
 from defaults import submitter, fileexists, remove
-## Load in parameters
-from parameters import ST
-## Load in directories
-from directories import slurpydir, debugdir
-
+## Load in parameters and in directories
+from parameters import ST, slurpydir, debugdir
 """
 Qname1 Flag1 Rname1 Pos1 Mapq1 Cigar1 Seq1 Chimeric1 Seqrev1 Len1 End1 Chrn1 
 Flag2 Rname2 Pos2 Mapq2 Cigar2 Seq2 Chimeric2 Seqrev2 Len2 End2 Chrn2 Distance Minmapq Orientation Inter 
@@ -83,6 +85,11 @@ def samheader(df:pd.DataFrame) -> list:
     ## Gather a chromosome list form genome map (df), zip and format header lines 
     return [f'@SQ\tSN:{c}\tLN:{l}\n' for c,l in zip(df[0].tolist(),df[1].tolist())]
 
+## Ftn for calling this scrpt
+def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=5) -> tuple:
+    ## Return the formmatted commdn
+    return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam\n' if tobam else '\n')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
+
 ## Set help ftns
 I_help = "Input path to a .bedpe file from SLURPY HI-C pipeline."
 G_help = "Input paht to .txt file (tab or space deliminated) representing map of the genome (chormosome names and lengths)."
@@ -90,15 +97,7 @@ O_help = "Path of output sam file. If not given taken from input .bedpe file."
 B_help = "Boolean flag to convert sam to bam."
 T_help = "Thread count for sam to bam conversion."
 
-## Ftn for calling this scrpt
-def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=5) -> tuple:
-    ## Return the formmatted commdn
-    return [f'{slurpydir}/pairs2sam.py -i {inpath} -g {genomepath} -t {threads}' + (' --bam\n' if tobam else '\n')], f'{debugdir}/{pix}E.to.sam.{sname}.log'
-
-## If the script is envoked 
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = description)
     parser.add_argument("-i", dest="I", type=str,  required=True,   help=I_help, metavar='./path/to/input.bedpe'              ) 
@@ -107,9 +106,13 @@ if __name__ == "__main__":
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=T_help, metavar='n', default=threads)
     ## Add boolean
     parser.add_argument("--bam", dest="B",  help = B_help,    action = ST)
-
     ## Parse the inputs from parser obj 
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## If the script is envoked 
+if __name__ == "__main__":
+    ## Parse the inputs from parser obj 
+    inputs = parse_args()
 
     ## Set inputs
     input_path = inputs.I
@@ -163,4 +166,4 @@ if __name__ == "__main__":
     out_file_name = bam_path.split('/')[0] if tobam else outpt_path.split('/')[0]
     ## Print to log we are finished
     print(f'Finished bedpe pairs file conversion ({ins_file_name}) to {out_file_name}')
-## End file 
+## End of file 

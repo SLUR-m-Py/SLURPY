@@ -6,7 +6,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Load in debug dir 
-from directories import debugdir, diagdir
+from parameters import debugdir, diagdir
 ## Load in matplot lib
 from matplotlib import pyplot as plt 
 ## Bring in pandas, numpy, seaborn 

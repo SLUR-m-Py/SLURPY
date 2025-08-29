@@ -18,7 +18,7 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 
 ## ----------------------------------- MODULE LOADING ------------------------------------ ##
 ## Bring in pandas
-import pandas as pd, dask.dataframe as dd
+import pandas as pd, dask.dataframe as dd, argparse
 ## Load in params
 from parameters import chunksize, map_q_thres, hicsep, error_dist
 ## Bring in ftns from slurpy 
@@ -121,30 +121,24 @@ def nearestrest(pos,restsites,chromseq,isleft,pads=[100,500,1000,2000,5000,10000
     return findmindist(modpos,dists_away,isleft) 
 
 ## ------------------------------------- Define Variables ------------------------------------------------- ##
-B_help     = "Path to an input bed paired-end file (bedpe)."
-I_help     = "List of chormosomes/contigs to only include in analysis"
-
-## Import help messages
-from parameters import ST, L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help, hicex_help, dove_help
-
 ## Set check names 
 check_names = ['Rname1','Pos1','Pos2','End1','End2','Qname1','Distance']
 
 ## set the value tuples 
 value_tuple = list(zip(['Left1','Right1','Left2','Right2'],['Pos1','End1','Pos2','End2'],[True,False,True,False]))
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
-    ## Bring in argparse and set parser
-    import argparse
+## Set help messages 
+B_help     = "Path to an input bed paired-end file (bedpe)."
+I_help     = "List of chormosomes/contigs to only include in analysis"
+## Import more help messages
+from parameters import ST, L_help, E_help, r_help, X_help, Z_help, intra_help, Q_help, m_help, hicex_help, dove_help
+
+def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = filter_desc)
-
     ## Add the required arguments
     parser.add_argument("-b", dest="b", type=str,  required=True,   help=B_help, metavar='./path/to/input.bedpe'           )   
     parser.add_argument("-r", dest="r", type=str,  required=True,   help=r_help, metavar='./path/to/ref.fasta'             )
-    
     ## Add optional args
     parser.add_argument("-e", dest="e", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
     parser.add_argument("-l", dest="l", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
@@ -157,9 +151,14 @@ if __name__ == "__main__":
     parser.add_argument("--dedovetail",     dest="D",  help = dove_help,    action = ST)
     parser.add_argument("--intra-only",     dest="I",  help = intra_help,   action = ST) 
     parser.add_argument("--hicexplorer",    dest="E",  help = hicex_help,   action = ST)
-
     ## Set the paresed values as inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
+## if the script is envoked
+if __name__ == "__main__":
+    ## SEt inputs
+    inputs = parse_args()
 
     ## Set inputs 
     bedpe_path  = inputs.b   ## Path to bedpe file 

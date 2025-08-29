@@ -73,31 +73,28 @@ def sumcounts(inpaths:list) -> int:
     ## Sum the counts 
     return sum(counts)
 
-## If the script is envoked 
-if __name__ == "__main__":
-    ## ------------------------------------------ Input Variables ------------------------------------------ ##
-    ## Gather the file name, the start time stamp from input and calculate the end time stamp 
-    new_name       = sys.argv[1]
-    directory_path = sys.argv[2]
-
+## Ftn for getting counts
+def getcounts(new_name,directory_path):
     ## Correct directory path
     directory_path = directory_path[:-1] if (directory_path[-1] == '/') else directory_path
-
     ## Set sjon paths 
     fastp_paths = getjson(directory_path)
-
     ## Calc totlas
     total_count = sumcounts(fastp_paths)
-
     ## Reset new name if none was passed
     new_name = directory_path.split('/diag')[0].split('/')[-1] if ((new_name.lower() =='none') or (new_name is None)) else new_name
-
     ## Format output file name
     out_file_name = directory_path + f'/{new_name}.counts.csv'
     #print(out_file_name)
-
     ## Open and write to file, Format new lines to print to file 
     with open(out_file_name,'w') as outf:
         outf.writelines([f'{new_name}, {len(fastp_paths)}, {total_count}\n'])
         outf.close()
+    pass 
+
+## If the script is envoked 
+if __name__ == "__main__":
+    ## ------------------------------------------ Input Variables ------------------------------------------ ##
+    ## Gather the file name, the start time stamp from input and calculate the end time stamp 
+    getcounts(sys.argv[1],sys.argv[2])
 ## End of file 

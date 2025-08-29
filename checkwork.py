@@ -23,7 +23,7 @@ croth@lanl.gov
 ##      MODULE LOADING 
 ## Bring in sorted glob 
 from defaults import sortglob, getfilesize
-from directories import debugdir
+from parameters import debugdir
 ## bring in numpy 
 import numpy as np 
 ## -------------------------------------------------------------------- ##
@@ -71,72 +71,73 @@ def unfinished(inpath:str) -> bool:
 def logsvslog(n) -> str:
     return 'logs' if n > 1 else 'log'
 ## -------------------------------------------------------------------- ##
+## If the script is envoked by name 
+if __name__ == "__main__":
+    ## -------------------------------------------------------------------- ##
+    ##      ANALYSIS of ERROR LOGS
+    ## Bring in the error logs 
+    all_error_logs = sortglob(f'./{debugdir}/*.log')
+    ## Filter the error logs for those with text only within them
+    error_logs = np.array([k for k in all_error_logs if getfilesize(k)])
+    ## Gather the sizes 
+    error_counts = np.array([checkforerror(k) for k in error_logs])
+    warns_counts = np.array([getwarnings(k) for k in error_logs])
+    unfin_counts = np.array([unfinished(k) for k in error_logs])
+    ## -------------------------------------------------------------------- ##
 
-## -------------------------------------------------------------------- ##
-##      ANALYSIS of ERROR LOGS
-## Bring in the error logs 
-all_error_logs = sortglob(f'./{debugdir}/*.log')
-## Filter the error logs for those with text only within them
-error_logs = np.array([k for k in all_error_logs if getfilesize(k)])
-## Gather the sizes 
-error_counts = np.array([checkforerror(k) for k in error_logs])
-warns_counts = np.array([getwarnings(k) for k in error_logs])
-unfin_counts = np.array([unfinished(k) for k in error_logs])
-## -------------------------------------------------------------------- ##
 
+    ## -------------------------------------------------------------------- ##
+    ##      CHECK ERROR STATUS
+    ## Check if we have non-zeros
+    if np.sum(error_counts):
+        ## Gather the logs with erros 
+        has_errors = error_logs[error_counts]
+        ## calc total erros
+        total_erros = len(has_errors)
 
-## -------------------------------------------------------------------- ##
-##      CHECK ERROR STATUS
-## Check if we have non-zeros
-if np.sum(error_counts):
-    ## Gather the logs with erros 
-    has_errors = error_logs[error_counts]
-    ## calc total erros
-    total_erros = len(has_errors)
+        ## Set if log vs logs based on error count
+        lvls = logsvslog(total_erros)
 
-    ## Set if log vs logs based on error count
-    lvls = logsvslog(total_erros)
+        ## Print the number of warnings
+        print(f'WARNING: Errors were detected in {total_erros} {lvls}!')
+        print(f'WARNING: Check the following {lvls}:\n')
+        ## Print the logs with erros
+        [print("\t%s"%f) for f in has_errors]
+        print(f'WARNING: Check the above logs for errors.')
 
-    ## Print the number of warnings
-    print(f'WARNING: Errors were detected in {total_erros} {lvls}!')
-    print(f'WARNING: Check the following {lvls}:\n')
-    ## Print the logs with erros
-    [print("\t%s"%f) for f in has_errors]
-    print(f'WARNING: Check the above logs for errors.')
+    elif np.sum(warns_counts):
+        ## Gather lots with warnings 
+        has_warnings = error_logs[warns_counts]
+        ## Calc total warnigns
+        total_warns = len(has_warnings)
 
-elif np.sum(warns_counts):
-    ## Gather lots with warnings 
-    has_warnings = error_logs[warns_counts]
-    ## Calc total warnigns
-    total_warns = len(has_warnings)
+        ## Set if log vs logs based on error count
+        lvls = logsvslog(total_warns)
 
-    ## Set if log vs logs based on error count
-    lvls = logsvslog(total_warns)
+        ## Print the number of warnings
+        print(f'INFO: Warnings were detected in {total_warns} {lvls}!')
+        print(f'INFO: Check the following {lvls}:\n')
+        ## Print the logs with erros
+        [print("\t%s"%f) for f in has_warnings]
+        print(f'INFO: Check the above logs for warnings (may be nothing).')
 
-    ## Print the number of warnings
-    print(f'INFO: Warnings were detected in {total_warns} {lvls}!')
-    print(f'INFO: Check the following {lvls}:\n')
-    ## Print the logs with erros
-    [print("\t%s"%f) for f in has_warnings]
-    print(f'INFO: Check the above logs for warnings (may be nothing).')
+    elif np.sum(unfin_counts):
+        ## Agther unfin counts
+        is_unfin = error_logs[unfin_counts]
+        ## Calc totla number un fin
+        total_unfin = len(is_unfin)
 
-elif np.sum(unfin_counts):
-    ## Agther unfin counts
-    is_unfin = error_logs[unfin_counts]
-    ## Calc totla number un fin
-    total_unfin = len(is_unfin)
+        ## Set level of log
+        lvls = logsvslog(total_unfin)
 
-    ## Set level of log
-    lvls = logsvslog(total_unfin)
+        ## Print the number of warnings
+        print(f'WARNING: We detected {total_unfin} {lvls} with unfinished marks!')
+        print(f'WARNING: Check the following {lvls}:\n')
+        ## Print the logs with erros
+        [print("\t%s"%f) for f in is_unfin]
+        print(f'WARNING: Check the above logs for unfinished processes.')
 
-    ## Print the number of warnings
-    print(f'WARNING: We detected {total_unfin} {lvls} with unfinished marks!')
-    print(f'WARNING: Check the following {lvls}:\n')
-    ## Print the logs with erros
-    [print("\t%s"%f) for f in is_unfin]
-    print(f'WARNING: Check the above logs for unfinished processes.')
-
-else: ## Otherwise
-    print("INFO: Good news everyone! No errors were detected in this run.\n\t:-)\n\t<3")
-## -------------------------------------------------------------------- ##
+    else: ## Otherwise
+        print("INFO: Good news everyone! No errors were detected in this run.\n\t:-)\n\t<3")
+    ## -------------------------------------------------------------------- ##
 ## End of file 
