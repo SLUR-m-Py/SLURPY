@@ -57,7 +57,7 @@ import pandas as pd, numpy as np, seaborn as sns
 ## Load in system, json, time, argparese and subprocess 
 import sys, json, time, argparse, subprocess
 ## Loadin checksam
-from pysamtools import checksam
+from biotools import checksam
 ## Bring in dask 
 import dask.dataframe as dd 
 ## Check samtools

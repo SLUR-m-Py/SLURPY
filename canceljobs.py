@@ -8,7 +8,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Load in pandas 
 import pandas as pd
 ## Bring in submitter
-from defaults import submitter
+from defaults import submitsbatch
 ## Load in dir
 from parameters import debugdir
 
@@ -24,7 +24,7 @@ i = 0
 ## Iterate thrut he job ids and canclse them
 for job in jobids:
     try:
-        submitter(f'scancel {job}')
+        submitsbatch(f'scancel {job}',returnid=False)
         i += 1
     except Exception as error:
         print(error)

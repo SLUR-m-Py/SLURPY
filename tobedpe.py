@@ -7,10 +7,12 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Import mods 
 import pandas as pd, numpy as np, re, sys 
-## Loading defaults
-from defaults import pathexists
+## Load in the is file ftn 
+from os.path import isfile
+## Load in defautls
+from defaults import dictzip, listzip
 ## Load in variables and ftn from my other libs
-from pysamtools import samnames, samtypes, dictzip, loadref, getmatchsum, listzip
+from biotools import samnames, samtypes, loadref, getmatchsum
 ## Bring in return site ftn form to bedp 
 from filtering import returnsite
 ## Load in params
@@ -90,7 +92,7 @@ def makeflagdf(df):
 def makechromdict(inrefpath):
     if type(inrefpath) == str:
         ## If we the refeerenc has an fai index or is a refi index 
-        if pathexists(inrefpath+'.fai') or (inrefpath.split('.') == 'fai'):
+        if isfile(inrefpath+'.fai') or (inrefpath.split('.') == 'fai'):
             ## Load in the chromosome dataframe
             chrdf = pd.read_csv(inrefpath+'.fai',sep='\t',header=None)[[0]]
             ## Format chromosome names into a list 

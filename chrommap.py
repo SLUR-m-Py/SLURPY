@@ -8,7 +8,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Load in functions and variables from defaults
 from defaults import fileexists, readtable, readann
 ## Bring in chrom df from py-sam tools
-from pysamtools import chromdf
+from biotools import chromdf
 ## Load in sep from params 
 from parameters import hicsep, aligndir
 

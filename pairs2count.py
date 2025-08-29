@@ -12,8 +12,11 @@ This program was produced under U.S. Government contract 89233218CNA000001 for L
 All rights in the program are reserved by Triad National Security, LLC, and the U.S. Department of Energy/National Nuclear Security Administration. 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
+## Bring in mat plot lib and other plotting funcions 
+from matplotlib import pyplot as plt
 ## Bring in sys, and other mods  and getcwd
-import sys, pandas as pd, numpy as np    
+import sys, argparse, pandas as pd, numpy as np, seaborn as sns
+
 ## Bring in exists 
 from os.path import exists
 ## Load in current wd 
@@ -21,10 +24,10 @@ from os import getcwd
 ## append path path
 sys.path.append(getcwd()) 
 
-## Bring in mat plot lib and other plotting funcions 
-from matplotlib import pyplot as plt
-## Load in mods
-import seaborn as sns 
+## Load in ftns from total count 
+from totalcount import sumcounts, getjson
+## Load in paraamters from slurpy mods hic sep, and dir
+from parameters import hicsep, Z_help, chunksize, atac_help, diagdir
 
 ## Ftn for calculating inter score 
 def intscore(df,ci,cj,N,c1='Rname1',c2='Rname2') -> float:
@@ -109,9 +112,6 @@ def countunused(inpath:str,chunksize:int) -> dict:
 def formatp(p:float) -> str:
     return "{:.2f}".format(100*p)
 
-## Load in ftns from total count 
-from totalcount import sumcounts, getjson
-
 ## Set the help messages
 i_help = "The path to an input bedpe file from SLURM.py."
 w_help = "Genomic bin size (bp) for calculating distance decay. Default: 10000 bp."
@@ -126,13 +126,8 @@ span        = 5
 interc      = mycols[:-1]
 debugging   = False
 
-## Load in paraamters from slurpy mods hic sep, and dir
-from parameters import hicsep, Z_help, chunksize, atac_help, diagdir
-
-## If the script is envoked 
-if __name__ == "__main__":
-    ## Bring in argparse
-    import argparse
+## Write ftn for for parsing arguments
+def parse_args():
     ## call a parser
     parser = argparse.ArgumentParser(description='Calcualtes inter-chromosomal scores and intra-chromosomal distance decay.')
     ## Add arguments
@@ -141,9 +136,13 @@ if __name__ == "__main__":
     parser.add_argument("-s", dest="S", type=int, required=False, help=s_help, metavar="n", default=span)
     parser.add_argument("-c", dest="C", type=int, required=False, help=Z_help, metavar='n', default=chunksize)
     parser.add_argument("--atac-seq",             dest="atac",      help = atac_help,     action = 'store_true')
-
     ## Set inputs
-    inputs = parser.parse_args()
+    return parser.parse_args()
+
+## If the script is envoked 
+if __name__ == "__main__":
+    ## Set inputs
+    inputs = parse_args()
     
     ## Set inputs
     inpath    = inputs.I        ## Set input path

@@ -148,9 +148,6 @@ if __name__ == "__main__":
     ## Load in peaks
     peaks = loadnarrowpeak(peak_path).dropna(axis=1,how='all')
 
-    ## Print the head if in debug mode
-    #print(peaks.head()) if debug else None 
-
     ## Gather the peak chromlist
     peak_chrlist = list(np.unique(peaks.Chrom))
 

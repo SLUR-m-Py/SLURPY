@@ -9,7 +9,6 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 from shutil import rmtree
 ## Laod in defaults 
 from parameters import splitsdir, hicdir, bedtmpdir, checkerdir
-
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
 ## If the library is called as an executable
 if __name__ == "__main__":

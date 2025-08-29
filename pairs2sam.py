@@ -12,14 +12,12 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Load in mods 
 import pandas as pd, sys, argparse
-
 ## Load in current wd 
-from os import getcwd
+from os import getcwd, remove
 ## append path path
 sys.path.append(getcwd()) 
-
 ## Bring in defaults
-from defaults import submitter, fileexists, remove
+from defaults import submitsbatch, fileexists
 ## Load in parameters and in directories
 from parameters import ST, slurpydir, debugdir
 """
@@ -156,7 +154,7 @@ if __name__ == "__main__":
         ## Format bam command 
         bamcommand = f'samtools view -@ {threads} -b {outpt_path} | samtools sort - -@ {threads} --write-index -o {bam_path}'
         ## Submit to os 
-        submitter(bamcommand)
+        submitsbatch(bamcommand,returnid=False)
 
         ## If the bam path exisits, remove the sam file
         remove(outpt_path)  if fileexists(bam_path) else None 

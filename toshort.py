@@ -14,8 +14,6 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## bring in mods
 import dask.dataframe as dd, pandas as pd, argparse
-## Load in exists
-from defaults import fileexists
 ## Load in parameters, like chunk size, and directories 
 from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help, hicsep, macs3dir
 """
@@ -124,45 +122,37 @@ if __name__ == "__main__":
     if to_bed:
         ## Check shift and size to extend are non zero
         assert shift_size, "ERROR: Shift size must be non-zero!"
-        assert extendsize,  "ERROR: Extension size must be non-zero!"
+        assert extendsize, "ERROR: Extension size must be non-zero!"
 
-        ## Forma the output path 
+        ## Format the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1].split(".bed")[0]}.bed' 
-        ## if the output path has been made, pass this section
-        if not fileexists(output_path):
-            ## Open with chunking 
-            with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
-                ## Iterate thru chunks 
-                for i,chunk in enumerate(chunks):
-                    ## Format chunks 
-                    chunk1 = formatbed(chunk,rpos1,shift_size,extendsize)
-                    chunk2 = formatbed(chunk,rpos1,shift_size,extendsize,strand='-')
+        ## Open with chunking 
+        with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
+            ## Iterate thru chunks 
+            for i,chunk in enumerate(chunks):
+                ## Format chunks 
+                chunk1 = formatbed(chunk,rpos1,shift_size,extendsize)
+                chunk2 = formatbed(chunk,rpos1,shift_size,extendsize,strand='-')
 
-                    ## Concat new chunks and sort values 
-                    chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
-                    ## Save out the chunk
-                    chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
-        else:
-            print("INFO: File %s exists -- skipping."%output_path)
+                ## Concat new chunks and sort values 
+                chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
+                ## Save out the chunk
+                chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## If in macs 3 mode 
     elif to_bedpe:
          ## Forma the output path 
         output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
-        ## if the output path has been made, pass this section
-        if not fileexists(output_path):
-            ## Open with chunking 
-            with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
-                ## Iterate thru chunks 
-                for i,chunk in enumerate(chunks):
+        ## Open with chunking 
+        with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
+            ## Iterate thru chunks 
+            for i,chunk in enumerate(chunks):
 
-                    ## Assign the left and right chunk 
-                    chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
-                    chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
-                    ## Save out the chunk
-                    chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
-        else:
-            print("INFO: File %s exists -- skipping."%output_path)
+                ## Assign the left and right chunk 
+                chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
+                chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
+                ## Save out the chunk
+                chunk[['Rname1','Left','Right']].to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
 
     ## Otherwise make pairs if make pairs is past
     elif makepairs:

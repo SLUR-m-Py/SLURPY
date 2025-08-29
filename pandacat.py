@@ -20,12 +20,12 @@ Los Alamos, NM 87545
 croth@lanl.gov
 """
 ## -------------------------------------------------- MOD LOADING ----------------------------------------------- ## 
-## Bring in file size
-from os.path import getsize, exists
-## Load in reset ftn 
-from defaults import reset, slurpydir
+## Load in reset ftn and file exists ftn 
+from defaults import fileexists, reset
 ## Bring in hutil
 import shutil, argparse
+## Load in slurpy dir 
+from parameters import slurpydir
 
 ## Ftn for calling pandacat for concatonating
 def pandacat(infiles:list, outfile:str, rmheader=False, sortpaths=False) -> tuple:
@@ -59,7 +59,7 @@ def concatonation(inputs:list,output:str,noheader:bool) -> bool:
         ## close the outfile 
         outfile.close()
     ## Return the output file path boolean 
-    return exists(output)
+    return fileexists(output)
 
 ## Set the script sescription
 pandadesc = "Concatonates a series of input pandas dataframes as text files (ingnoring header on all but first)."
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     k = reset([outputfile])
 
     ## Check that we have actual data files 
-    inpaths = [f for f in inpaths if (exists(f) and getsize(f))]
+    inpaths = [f for f in inpaths if fileexists(f)]
 
     ## Concatonate the input paths 
     assert (concatonation(inpaths,outputfile,removeheader) if len(inpaths) else True), "ERROR: Unable to concatonate files!"

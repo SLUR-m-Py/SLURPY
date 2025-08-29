@@ -33,9 +33,8 @@ import json, sys
 from os import getcwd
 ## append path path
 sys.path.append(getcwd()) 
-
-## Load in sortg glob ftn 
-from defaults import sortglob
+## Load in defaults
+from defaults import sortglob 
 
 ## Get the total data counts 
 def gettotal(data) -> int: 

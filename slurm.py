@@ -47,9 +47,9 @@ count_mod = ''
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in vars from parameter space
 from parameters import * 
-## Load in ftns from other libraries
-from pysamtools import checksam, writetofile
-## Load in panda cat ftn
+## Load inftns from tools
+from biotools import *
+## Load in panda cat 
 from pandacat import pandacat
 ## Load in bwa master
 from bwatobedpe import bwamaster
@@ -57,23 +57,27 @@ from bwatobedpe import bwamaster
 from filtermaster import filtermaster
 ## Load in bedpe to sam
 from pairs2sam import bedpetosam
+## Load in ftn from os path
+from os.path import exists, basename
+## laod in os
+from os import remove, getcwd
+## Load in time
+import time, argparse
+## Bring in defautls
+from defaults import writetofile, sbatch, ifprint, basenoext
 
 ## Define help messages
 R_help = R_help%h_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
 ##      FUNCTION DEFINING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## Load in ftns from defaluts
-from defaults import basename, getsamplename, reportname, fastcut, fastdry, ifprint
-
 ## Ftn for formating fastp command to filter and split reads
 def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',z=4) -> tuple:
     """Formats calls to fastp given input fastq files."""
     ## Set variable names 
-    r1_bn    = basename(r1).split('.fastq')[0]               ##      Generate basename of first read 
-    r2_bn    = basename(r2).split('.fastq')[0]               ##      Generate basename of second read 
+    r1_bn    = basenoext(r1)                                 ##      Generate basename of first read 
+    r2_bn    = basenoext(r2)                                 ##      Generate basename of second read 
     temp1    = f'{splitsdir}/{r1_bn}{toremoveend}'           ##      Format the first temp file for splits to be remove
     temp2    = f'{splitsdir}/{r2_bn}{toremoveend}'           ##      Format the second temp file for splits to be remove 
     single1  = f'{splitsdir}/{r1_bn}{singleend}'             ##      Make singleton file from first split 
@@ -115,12 +119,9 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     ## Set the java command for the passed juicer jar file 
     prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
               f'{slurpydir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
-
     ## Return the pre and report
     return prestr, report
 
-## Load in arg parser
-import argparse
 ## Write ftn for parsing args 
 def parse_args():
     ## Make the parse
@@ -334,11 +335,9 @@ if __name__ == "__main__":
 
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in ftns from defalut
-    from defaults import pathexists, patchclean, fileexists
     ## Check that the fastq and reference path exists
-    assert pathexists(fastqdir), fastqserror
-    assert pathexists(reference_path), noref_path%reference_path 
+    assert exists(fastqdir), fastqserror
+    assert exists(reference_path), noref_path%reference_path 
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
     assert checksam(), not_sam_err 
     ## Reformat clean boolean if clean was passed from restart
@@ -356,7 +355,7 @@ if __name__ == "__main__":
 
     ## Check if we have a jarpath
     if jarpath:
-        assert fileexists(jarpath), "ERROR: The given jarpath %s could not be found! Please check path the given path and try again."%jarpath
+        assert exists(jarpath), "ERROR: The given jarpath %s could not be found! Please check path the given path and try again."%jarpath
         ## Set othe booleans 
         toshort    = True 
         make_mcool = False
@@ -373,7 +372,7 @@ if __name__ == "__main__":
         feature_space = False
     ## Check is a path the give feature space 
     if feature_space:
-        assert fileexists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
+        assert exists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -410,7 +409,7 @@ if __name__ == "__main__":
         ## Iterate over the controls inputs 
         for chip_con in chip_control:
             ## Check they exist 
-            assert fileexists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
+            assert exists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
     
     ## Reset experiment mode 
     if atac_seq:
@@ -432,8 +431,6 @@ if __name__ == "__main__":
 
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in defluats 
-    from defaults import confirmreset
     ## Format group dirs 
     grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir,checkerdir] + ([macs3dir] if ((atac_seq or chip_control) and not skippeaks) else [])
     ## If there is a hard reset passed 
@@ -443,10 +440,6 @@ if __name__ == "__main__":
 
     ##      MORE MODULE LOADING (and time stamp setting)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in the list dir ftn 
-    from os import getcwd as gcwd
-    ## Load in time mod
-    import time 
     ## Set the unique time stamp
     stamp = time.time()
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -454,12 +447,10 @@ if __name__ == "__main__":
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in ftns for directory and run name 
-    from defaults import setrunname, makedirectories, sortglob, remove
     ## Let the user know we are making directories 
     print(directormaking)
     ## Get the current working dir
-    the_cwd = gcwd()
+    the_cwd = getcwd()
     ## If the run name is none
     run_name = setrunname(run_name,the_cwd)
     ## Make the directories 
@@ -471,8 +462,6 @@ if __name__ == "__main__":
 
     ##      WRITING OUT PARAMS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in ftn from defaluts
-    from defaults import writeparams
     ## Write out params 
     writeparams(f'{experi_mode}.py',run_name,stamp,inputs)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -500,8 +489,6 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set index error
     index_error = index_error%reference_path
-    ## Load in bwaix check
-    from defaults import isbwaix
     ## Assert our truth
     assert isbwaix(reference_path),index_error
     
@@ -516,8 +503,6 @@ if __name__ == "__main__":
 
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Bring in get fastqs fromd efaluts
-    from defaults import getfastqs, sortfastq
     ## Inform user we are formating jobs
     print(formatingfastq)
     ## Gather the fastqs 
@@ -533,8 +518,6 @@ if __name__ == "__main__":
 
     ##      SAMPLE NAME MAKING AND HANDELING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in sbatch from defaults
-    from defaults import sbatch
     ## iterate thru the pairs 
     for fastqix, fastrow in in_fastqs.iterrows():
         ## Split off the row values from our sorted dataframe 
@@ -864,8 +847,6 @@ if __name__ == "__main__":
     ## 
     ##      PIPELINE COMMAND SUBMISSION TO SLURM    
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Bring in commmand control, fastp submitter, and submit depends
-    from defaults import commandcontrol, submitfastp, submitdependency
     ##      A) RESTARTING                          
     ## Call the command dataframe, remove previous logs if hard reset was passed 
     command_files, was_hard_reset = commandcontrol(command_files,hardreset,hic_pipeline,rerun)
@@ -940,6 +921,5 @@ if __name__ == "__main__":
     ## Save out the command files, once for patching to other command, and a time stamped one
     command_files.to_csv(f'{debugdir}/command.file.csv', index=False)
     command_files.to_csv(f'{debugdir}/command.file.{stamp}.csv', index=False)
-
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## End of file 

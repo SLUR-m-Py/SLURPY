@@ -26,7 +26,9 @@ desc = "Concats, sorts, and removes duplicates from input bedpe files representi
 ## Bring in params and dirs
 from parameters import ST, hicsep, save_help, Z_help, chunksize, bedtmpdir
 ## Load in from defaults
-from defaults import sortglob, remove
+from defaults import sortglob
+## Load in remove
+from os import remove
 ## Set debuging and run local variabels 
 debuging, runlocal = False, False 
 ## Load in subprocess 

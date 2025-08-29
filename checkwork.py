@@ -22,7 +22,8 @@ croth@lanl.gov
 ## -------------------------------------------------------------------- ##
 ##      MODULE LOADING 
 ## Bring in sorted glob 
-from defaults import sortglob, getfilesize
+from defaults import sortglob, fileexists
+## Load in debug dir 
 from parameters import debugdir
 ## bring in numpy 
 import numpy as np 
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     ## Bring in the error logs 
     all_error_logs = sortglob(f'./{debugdir}/*.log')
     ## Filter the error logs for those with text only within them
-    error_logs = np.array([k for k in all_error_logs if getfilesize(k)])
+    error_logs = np.array([k for k in all_error_logs if fileexists(k)])
     ## Gather the sizes 
     error_counts = np.array([checkforerror(k) for k in error_logs])
     warns_counts = np.array([getwarnings(k) for k in error_logs])

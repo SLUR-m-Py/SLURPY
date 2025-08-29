@@ -11,9 +11,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, getfilesize, remove
-## Load in write to file from pysam tools 
-from pysamtools import writetofile, listzip, ifprint
+from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprint, writetofile
 ## Load input vars from params
 from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## load in sleep
@@ -22,6 +20,10 @@ from time import sleep
 from numpy import tile, arange
 ## Bring in argparse and set parser
 import argparse
+## Load in file size from os path
+from os.path import getsize
+## load in remove
+from os import remove
 
 ## Set opttions for line count and step in pipelien 
 line_count  = 5000
@@ -62,7 +64,7 @@ def sizecheck(read1,read2) -> list:
     ## Iterat thru the read pairs 
     for r1,r2 in listzip(read1,read2):
         ## If either is zero 
-        if (getfilesize(r1) == 0) | (getfilesize(r2) == 0):
+        if (getsize(r1) == 0) | (getsize(r2) == 0):
             ## Print a warning 
             print("WARNING: the given number of read pairs from %s or %s was zero."%(r1,r2))
         else:

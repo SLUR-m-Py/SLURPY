@@ -12,15 +12,15 @@ from matplotlib import pyplot as plt
 ## Bring in pandas, numpy, seaborn 
 import pandas as pd, numpy as np, seaborn as sns 
 ## Bring in sortglob
-from defaults import sortglob, submitter, dictzip
+from defaults import submitsbatch, sortglob, dictzip
 
 ## Set memory sclae
 memory_dict = dictzip(['GB','MB','KB'],[1,1/(10**3),1/(10**6)])
-
-## Set job id 
+## Set job id and other strings
 by_jobid = 'Job ID: '
+mem_str  = 'Memory Utilized: '
 
-## Ftn for gathering job ids from bwa and filter submitter 
+## Ftn for gathering job ids from bwa and filter submissions 
 def subjobids(inpath) -> list[int]:
     ## iniate ids
     ids = []
@@ -35,9 +35,6 @@ def subjobids(inpath) -> list[int]:
     ## Return ids 
     return ids 
 
-## Set the memory utlized str 
-mem_str = 'Memory Utilized: '
-
 ## Ftn for parsing a seff report
 def parseseff(inreport) -> str: 
     mem = ''
@@ -51,7 +48,7 @@ def parseseff(inreport) -> str:
 ## Ftn for getting utilized memory from slurm's seff command
 def getmemory(jobid:int) -> str:
     ## Gather the used mem 
-    return parseseff(submitter(f'seff {jobid}')) if jobid else '0 KB'
+    return parseseff(submitsbatch(f'seff {jobid}',returnid=False)) if jobid else '0 KB'
 
 ## if the script is envoked
 if __name__ == "__main__":

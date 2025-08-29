@@ -26,8 +26,8 @@ import time, sys, pandas as pd, json
 from os.path import getctime
 ## Load in date and time
 from datetime import datetime
-## load in write to file from our pysamtools 
-from pysamtools import writetofile
+## load in write to file 
+from defaults import writetofile
 ## Load in sort glbo 
 from defaults import sortglob
 ## load in log dir

@@ -16,13 +16,14 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 verbose = False 
 ## Load in mods 
 import sys, pandas as pd, numpy as np, seaborn as sns, argparse 
+## Bring in matplotlib
+from matplotlib import pyplot as plt 
 ## Load in current wd 
 from os import getcwd
 ## append path path
 sys.path.append(getcwd()) 
-
-## Bring in matplotlib
-from matplotlib import pyplot as plt 
+## Load in narrow peak 
+from pymacs3 import loadnarrowpeak
 
 ## define ftn for turning off spoines
 def spinesoff(inax):
@@ -52,9 +53,6 @@ def loadgtf(inpath:str,slimdown=True,id=True) -> pd.DataFrame:
         gtf['GeneID'] = gtf.Attribute.apply(geneid) 
     ## REturn gtf obj
     return gtf 
-
-## Load in narrow peak 
-from pymacs3 import loadnarrowpeak
 
 ## Set the description and help messages 
 desc = 'Annotates peaks from input narrowPeak file with gene and genomic regions (taken from a gtf file).'

@@ -12,9 +12,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, sbatch, submitsbatch, fileexists, remove
-## Load in write to file from pysam tools 
-from pysamtools import writetofile
+from defaults import fileexists, sortglob, sbatch, submitsbatch, writetofile
 ## Load in params
 from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel, comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 ## load in sleep
@@ -23,6 +21,10 @@ from time import sleep
 from bwatobedpe import reportcheck, vectortile, hic_flag
 ## Load in argparse
 import argparse
+## Bring in remove
+from os import remove
+## Load in help messages
+from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 
 ## Set stage in piepline
 pix = 2
@@ -41,9 +43,6 @@ def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:i
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     ## Return the 
     return [command+'\n'], report 
-
-## Load in help messages
-from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 
 ## Set description of sub script and help messages 
 filtdescr  = 'The submission script of filterbedpe across sample paritions'
