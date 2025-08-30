@@ -114,10 +114,7 @@ def isbwaix(inref:str, indexends = ['amb', 'ann', 'bwt', 'pac', 'sa']) -> int:
     ## Check to make sure the reference exists
     assert fileexists(inref), "ERROR: Unable to locate input reference file on path: %s"%inref
     ## Check if each of these files exist: amb, ann, bwt, pac and sa
-    sums = [fileexists(inref+'.'+fe) for fe in indexends]
-    for s in sums:
-        print(s)
-    return sum(sums) == len(indexends)
+    return sum([fileexists(inref+'.'+fe) for fe in indexends]) == len(indexends)
 
 ## Ftn for the begining of a call to fastp
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:

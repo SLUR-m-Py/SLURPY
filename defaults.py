@@ -68,7 +68,7 @@ def makelist(input):
 def fileexists(filepath:str) -> bool:
     """Checks the existance and size of an input file (foodstuffs)."""
     ## Via os, check if the path to "food" exists and meets our size threshold
-    return exists(filepath) and getsize(filepath)
+    return exists(filepath) and (getsize(filepath)>0)
 
 ## Ftn for reseting file
 def reset(infiles:list) -> list:
