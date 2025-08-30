@@ -189,7 +189,7 @@ fastqserror = "ERROR: Unable to detect a fastqs directory holding fastq files!"
 missingfqs  = "ERROR: No fastq.gz files were detected!"
 not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
 noref_path  = "ERROR: We could not find the provided input path -- %s -- of the reference file!"
-index_error = "ERROR: We could not detect an index associated with the input reference path: %s.\nINFO: Index the reference (bwa index) and try again."
+index_error = "ERROR: We could not detect an index associated with the input reference path: %s\nINFO: Index the reference (bwa index) and try again."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 slurpy_descr = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
