@@ -319,9 +319,9 @@ if __name__ == "__main__":
     ## If human reference 
     reference_path = t2t_refpath if ist2t else reference_path
     feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
-
     ## If vero was pass
     reference_path = vero_refpath if isvero else reference_path
+    print(reference_path)
 
     ## Set bwa master partition to mpi (FOR ROTH only)
     bwa_partition   = 'gpu,fast,mpi,tb' if ist2t or isvero else partition
