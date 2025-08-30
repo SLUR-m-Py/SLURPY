@@ -41,6 +41,7 @@ hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic'
 ## Join pipeline names by commas
 h_pipe = ', '.join(hic_pipeline) 
 inhic = True 
+peakcalling = not inhic
 count_mod = ''
 ## 
 ##      MODULE LOADING and VARIABLE SETTING 
