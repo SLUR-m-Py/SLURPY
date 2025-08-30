@@ -32,7 +32,7 @@ from datetime import datetime
 ## Load in os
 from os import makedirs, remove
 ## Load in get size 
-from os.path import getsize
+from os.path import getsize, exists
 ## Load in SeqIO
 from Bio import SeqIO
 
@@ -114,7 +114,10 @@ def isbwaix(inref:str, indexends = ['amb', 'ann', 'bwt', 'pac', 'sa']) -> int:
     ## Check to make sure the reference exists
     assert fileexists(inref), "ERROR: Unable to locate input reference file on path: %s"%inref
     ## Check if each of these files exist: amb, ann, bwt, pac and sa
-    return sum([fileexists(inref+'.'+fe) for fe in indexends]) == len(indexends)
+    sums = [fileexists(inref+'.'+fe) for fe in indexends]
+    for s in sums:
+        print(s)
+    return sum(sums) == len(indexends)
 
 ## Ftn for the begining of a call to fastp
 def fastcut(i:str, I:str, o:str, O:str, r:str, n:int) -> tuple:
