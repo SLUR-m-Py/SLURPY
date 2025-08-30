@@ -186,7 +186,7 @@ def parse_args():
     parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False, metavar = 'bp')
     parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False, metavar = 'bp')
     parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False, metavar = 'BEDPE')
-    parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=None,       required=False, metavar = c_metavar, nargs='+')
+    parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=[],         required=False, metavar = c_metavar, nargs='+')
     parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False)
     parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False)
 
@@ -390,7 +390,7 @@ if __name__ == "__main__":
         skippeaks     = True 
     
     ## Check if we are in atac seq mode    
-    if atac_seq or chip_control:
+    if atac_seq or len(chip_control):
         keep_dovetail = True
         inhic         = False
         enzymelib     = 'none'
@@ -405,7 +405,7 @@ if __name__ == "__main__":
         broadpeak = '--broad' if ifbroad else ''
 
     ## Check our control files if they were passed 
-    if chip_control:
+    if len(chip_control):
         assert (type(chip_control) == list) and (type(chip_control[0]) == str), 'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
         ## Iterate over the controls inputs 
         for chip_con in chip_control:
@@ -417,7 +417,7 @@ if __name__ == "__main__":
         experi_mode = 'atac'
     if rna_seq:
         experi_mode = 'rnas'
-    elif chip_control:
+    elif len(chip_control):
         experi_mode = 'chip'
     else: ## Set the hardset hic mode 
         experi_mode = 'hic'
