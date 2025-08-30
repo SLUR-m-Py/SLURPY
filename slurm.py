@@ -312,6 +312,9 @@ if __name__ == "__main__":
     ## Reset reference with presets if we are running as Cullen Roth (These can be edited if you are not me :-))
     ist2t  = (reference_path.lower() == 't2t')
     isvero = (reference_path.lower() == 'vero')
+    print(ist2t)
+    print(t2t_refpath)
+    print(reference_path)
 
     ## If human reference 
     reference_path = t2t_refpath if ist2t else reference_path
