@@ -1,4 +1,4 @@
-## Function for the SLUR(M)-py pipeline and scritps
+#!/usr/bin/env python
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -8,14 +8,25 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## ----------------------------- v 8.0.0 ------------------------------ ## 
 ##   BIOTOOLS: Python functions for Working with biological data
 ## -------------------------------------------------------------------- ##
+"""
+Written by:
+
+Cullen Roth, Ph.D.
+
+Postdoctoral Research Associate
+Genomics and Bioanalytics (B-GEN)
+Los Alamos National Laboratory
+Los Alamos, NM 87545
+croth@lanl.gov
+"""
 ## Load in defaults
 from defaults import basename, sortglob, listzip, fileexists, basenoext, makelist, submitsbatch, ifprint, dictzip
 ## Load in parameters
-from parameters import slurpydir, debugdir, runlocal, fakejobid
+from parameters import slurpydir, debugdir, runlocal, fakejobid, macs3dir, g_help
 ## Load in rm tree
 from shutil import rmtree
 ## Load in sys
-import sys, pysam, pandas as pd 
+import sys, pysam, pandas as pd, argparse
 ## Brin in datetime
 from datetime import datetime
 ## Load in os
@@ -35,7 +46,7 @@ samtypes = [  str,   int,   str,    int,  int,    str,    str,    int,   int,   
 def getsamv(com='samtools --version') -> str:
     """Gathers the version of samtools as a string."""
     ## Returns the output of samools version
-    return submitsbatch(com,returnid=False).split('\n')[0].split(' ')[-1]
+    return submitsbatch(com,returnid=False)[0].split(' ')[-1]
 
 ## Write ftn for spliting and making an int
 def splitint(x,sep='.') -> list[int]:
@@ -297,4 +308,137 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent:list, tim
             command_df.loc[m,'JobID'] = fakejobid + m if (debug and runlocal) else submitsbatch(intext)
     ## Return submitted sbatchs 
     return subsbatchs
-## EOF 
+
+## reformat the input bed names 
+def formatbymode(inbedpe:str,mode:str) -> list: 
+    ## Inaite list, return the new file locations 
+    return f'{macs3dir}/{basenoext(inbedpe)}.{mode.lower()}' 
+
+## Ftn for formating values 
+def formatval(valname,val) -> str:
+    """Formats and returns the named parameter and its value for a call to macs3."""
+    ## Format the named value
+    return f' --{valname} {val} ' if val else ' '
+
+## Write ftn for calling macs3 with atac seq data
+def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=[],shiftsize=0,extendsize=0,maxgap=0,minlen=0,keepdups='all',nolambda=False,broad=False,summits=False,outdir=f'./{macs3dir}') -> list[str]: 
+    """Formats a call to the macs3 callpeak function for a run of the slurpy pipeline (n) on input bedpe file, using the input genome size (g), maximum gap (ml), and minimum peak length (ml)."""
+    ## Format the no model paramater
+    nomodel   = ' --nomodel '  if extendsize or shiftsize else ' '
+    nolambda  = ' --nolambda ' if nolambda else ' '
+    ## Format the borad option and call sumits opt
+    isborad   = ' --broad ' if broad else ' '
+    call_sums = ' --call-summits ' if summits else ' '
+    ## Reformat controls
+    if len(incontrols):
+        ## make the input controls into bed format 
+        short_controls = [f'{slurpydir}/toshort.py --{mode.lower()} -i {control} -s {shiftsize} -e {extendsize}\n' for control in incontrols]
+        ## Repath the input controls
+        controls = '-c ' + ' '.join([formatbymode(control,mode) for control in incontrols])
+    else:
+        short_controls = []
+        controls = ''
+
+    ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
+    macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
+                 f'macs3 callpeak -t {formatbymode(bedpe,mode)} {controls}{formatval('keep-dup',keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval('max-gap',maxgap)}{formatval('min-length',minlen)}{call_sums}{nomodel}2>> {report}\n', 
+                 f'{slurpydir}/myecho.py Finished calling peaks in {formatbymode(bedpe,mode)} with macs3 {report}\n']
+    ## Return the macs coms 
+    return short_controls + macs_coms
+
+## Set the narrow peak names
+peaknames = ['Chrom','Start','End','Name','Score','Strand','Fold_change','-log10pvalue','-log10qvalue','Sumpos']
+
+## Write ftn for loading in narrow peak file
+def loadnarrowpeak(path,peakcols = peaknames,sep='\t') -> pd.DataFrame:
+    """Loads in a narrow peak file from macs3."""
+    ## Load in narrow peak file and return 
+    return pd.read_csv(path,sep=sep,header=None,names=peakcols)
+
+## Set description of this library and scirpt
+description = 'Calculates the fraction of reads within peaks from input bedpe and narrow peaks files.'
+dplace = 4
+
+## Set extension dict 
+exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
+
+## Set help messages
+b_help = "Path to input bedpe file."
+p_help = "Path to input peak (BED) files from macs3."
+s_help = "Path and name of output diagnostic statistics."
+d_help = "Decimal place used to calcualte and save statistics (Default: %s)."%dplace
+
+## Define ftn for parsing variables
+def parse_args():
+    ## Set parser
+    parser = argparse.ArgumentParser(description=description)
+    ## Add optional arguments
+    parser.add_argument("-b",   dest="b",   required=True,    type=str,   help=b_help                   )
+    parser.add_argument("-p",   dest="p",   required=True,    type=str,   help=p_help                   )
+    parser.add_argument("-s",   dest="s",   required=False,   type=str,   help=s_help,    default=None  )  
+    parser.add_argument("-g",   dest="g",   required=False,   type=int,   help=g_help,    default=False )
+    parser.add_argument("-d",   dest="d",   required=False,   type=int,   help=d_help,    default=dplace)
+    ## Parse the arguments
+    return parser.parse_args()
+
+## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
+## If the library is called as an executable
+if __name__ == "__main__":
+    ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
+    args = parse_args()
+    ## Load in mods like dask dataframes 
+    import dask.dataframe as dd 
+
+    ## ---------------------------------------- VARIABLE SETTING ---------------------------------------------------- ## 
+    ## Gather inputs 
+    bedpe_path, peak_path, save_path, genomesize,  dplace = args.b, args.p, args.s, args.g, args.d, 
+
+    ## Gather the file extension
+    file_end = bedpe_path.split('.')[-1]
+    ## Set column names 
+    col_names = ['Chrom','Left','Right']
+    col_names = col_names if (file_end == 'bedpe') else (col_names + ['Strand'])
+
+    ## Load in dask 
+    bedpe = dd.read_csv(bedpe_path,sep='\t',names=col_names,header=None)
+
+    ## Calc total
+    total = bedpe.Chrom.count().compute()
+
+    ## Gather the extenstion of the input file
+    extension = peak_path.split('.')[-1]
+
+    ## Load in narrow peak path, initate read count, and drop ducpliates to unique peaks 
+    narrow          = loadnarrowpeak(peak_path,sep=exten_dict[extension])
+    narrow['Reads'] = 0
+    peaks           = narrow[['Chrom','Start','End','Reads']].drop_duplicates()
+
+    ## Count the number of reads in peaks for each chromosome 
+    for chrom,cdf in peaks.groupby('Chrom'):
+        ## Set the tmporary creads df for this chromosome 
+        creads = bedpe[(bedpe.Chrom==chrom)].compute()
+
+        ## Iterate thru the cdf 
+        for i,row in cdf.iterrows():
+            ## Set the read count for each 
+            peaks.loc[i,'Reads'] = creads[(creads.Left <= row.End) & (creads.Right >= row.Start)].Chrom.count()
+    
+    ## Calculate statists like the fript score, the number of peaks and sumits 
+    fripscore = peaks.Reads.sum()/total
+    bp        = (peaks.End - peaks.Start).sum()
+    nsummits  = narrow.Chrom.count()
+    npeaks    = peaks.Chrom.count()
+    
+    ## Iniate and fill in list for peak info 
+    peak_info = [peak_path.split('/')[-1],total,nsummits,npeaks,fripscore,bp]
+    ## Format into a df
+    peak_info = pd.DataFrame(peak_info,index=['Peak File','Fragments','Summits','Peaks','FRiP','BP']).T
+    ## IF genome size was givven
+    if genomesize:
+        ## Calculate the perecnt genome
+        peak_info['Percent'] = 100*peak_info.BP/genomesize
+    ## round the peak data
+    peak_info = peak_info.round(dplace)
+    ## Save the peak info
+    peak_info.to_csv(save_path,index=False,float_format=f'%.{dplace}f')
+## End of file 

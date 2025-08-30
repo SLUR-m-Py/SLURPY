@@ -23,7 +23,7 @@ from os import getcwd
 ## append path path
 sys.path.append(getcwd()) 
 ## Load in narrow peak 
-from pymacs3 import loadnarrowpeak
+from biotools import loadnarrowpeak
 
 ## define ftn for turning off spoines
 def spinesoff(inax):

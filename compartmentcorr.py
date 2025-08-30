@@ -23,7 +23,7 @@ croth@lanl.gov
 ## Import fanc, sys, nupy and and padns 
 import fanc, numpy as np, pandas as pd, argparse
 ## Load in narrow peak file 
-from pymacs3 import loadnarrowpeak
+from biotools import loadnarrowpeak
 ## Bring in matplot lib 
 from matplotlib import pyplot as plt
 ## Load in statmodels 

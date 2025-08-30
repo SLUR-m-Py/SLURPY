@@ -760,8 +760,8 @@ if __name__ == "__main__":
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         elif peakcalling:
-            ## Bring in pymacs3 functions
-            from pymacs3 import peakattack
+            ## Bring in peaks functions
+            from biotools import peakattack
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the name of the output peaks,  output bed or bedpe file
@@ -771,7 +771,7 @@ if __name__ == "__main__":
             macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,
                                         shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,
                                         broad=broadpeak,summits=callsummits) +\
-                                        [f'{slurpydir}/pymacs3.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
+                                        [f'{slurpydir}/biotools.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
                                          f'{slurpydir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
                                         ([f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
                                          f'{slurpydir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else [])
