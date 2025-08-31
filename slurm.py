@@ -187,8 +187,9 @@ def parse_args():
     parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False, metavar = 'bp')
     parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False, metavar = 'BEDPE')
     parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=[],         required=False, metavar = c_metavar, nargs='+')
-    parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False)
-    parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False)
+    parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False, type=int)
+    parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False, type=int)
+    parser.add_argument("--max-number-chroms",    dest="maxnc",       help = maxnc_help,    default=max_nchrom, required=False, type=int)
 
     ## RNA-seq and other vairables 
     parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
@@ -276,6 +277,7 @@ if __name__ == "__main__":
     chip_control    = inputs.c              ##     Set the input controls for chip experiments
     max_gap         = inputs.maxgap         ##     Max gap in used in MACS3    
     min_len         = inputs.minlen         ##     Min lenght of peaks in MACS3
+    max_nchrom      = inputs.maxnc          ##     Max number of chromosomes 
 
     ## Set RNA-seq like vars 
     rna_seq         = inputs.rnas           ##     Boolean flag to run in rna-seq mode 
@@ -480,6 +482,8 @@ if __name__ == "__main__":
     chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes,not make_mcool)
     ## Calculate chrlist
     nchrom = len(chrlist)
+    ## Set chromosome cut off
+    assert nchrom < max_nchrom, nchrom_err%(nchrom,max_nchrom)
     ## Print if there are fewer than ten
     print('INFO: Running on -> %s'%' '.join(chrlist)) if (nchrom < 10) else None
     print('INFO: Processing %s chromosomes from list.'%nchrom)

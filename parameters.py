@@ -66,6 +66,7 @@ xmemory      = 49152         ##     Sets the memory used by juicer pre command
 nice         = 10**8         ##     Set the nice parameter 
 nparallel    = 24            ##     Number of jobs to run in parallele 
 max_dist     = 0             ##     Maximum distance allowed for paired end mapping
+max_nchrom   = 200           ##     Maximum number of chromosomes allowed to parse
 binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C analysis 
                 2000000,
                 1000000,
@@ -139,6 +140,7 @@ pairs_help = "Convert final output to pairs format defined by the 4DNucleome con
 inter_help = "Flag to return only inter-chromosomal contacts"
 hicex_help = "Flag to run stricter intra-fragment filtering."
 save_help  = 'Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.'
+maxnc_help = "Total number of allowed chromosomes to parse and process from fasta file. Must be lower than %s to avoid over submitting jobs to SLURM."%max_nchrom
 
 ## MACS3 specific variables
 shift_size   = 75
@@ -190,6 +192,7 @@ missingfqs  = "ERROR: No fastq.gz files were detected!"
 not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
 noref_path  = "ERROR: We could not find the provided input path -- %s -- of the reference file!"
 index_error = "ERROR: We could not detect an index associated with the input reference path: %s\nINFO: Index the reference (bwa index) and try again."
+nchrom_err  = "ERROR: The number of chromosmes (%s) in the passed reference file are larger than the allowed number (%s)! Consider passing the -G argument or using a more complete reference. You can also increase the --max-number-chroms argument."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 slurpy_descr = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
