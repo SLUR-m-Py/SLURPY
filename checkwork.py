@@ -106,6 +106,16 @@ def logsvslog(n) -> str:
 ## -------------------------------------------------------------------- ##
 ## If the script is envoked by name 
 if __name__ == "__main__":
+    ## Check if the checks and splits match
+    ## GAther counts of fastq splits,  bwa checks, bedpe checks
+    nsplits       = len(sortglob(f'./{splitsdir}/*_R1_*fastq.gz'))
+    nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
+    nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
+
+    ## Print error to screen
+    assert nbwa_checks < nsplits,   'ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits)
+    assert nbedpe_checks < nsplits, 'ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits)
+
     ## Check if we have an argument
     if len(sys.argv) > 1:
         ## Gather the input param
@@ -158,15 +168,6 @@ if __name__ == "__main__":
         warns_counts = np.array([getwarnings(k) for k in error_logs])
         unfin_counts = np.array([unfinished(k) for k in error_logs])
         ## -------------------------------------------------------------------- ##
-        ## Check if the checks and splits match
-        ## GAther counts of fastq splits,  bwa checks, bedpe checks
-        nsplits       = len(sortglob(f'./{splitsdir}/*_R1_*fastq.gz'))
-        nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
-        nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
-
-        ## Print error to screen
-        ifprint('ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits),nbwa_checks < nsplits, )
-        ifprint('ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits),nbedpe_checks < nsplits, )
 
         ## -------------------------------------------------------------------- ##
         ##      CHECK ERROR STATUS
