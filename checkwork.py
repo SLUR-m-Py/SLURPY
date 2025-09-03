@@ -24,7 +24,7 @@ croth@lanl.gov
 ## Load in rm treat 
 from shutil import rmtree, copyfileobj
 ## Bring in sorted glob 
-from defaults import sortglob, fileexists
+from defaults import sortglob, fileexists, submitsbatch, readtable
 ## Load in debug dir 
 from parameters import debugdir, splitsdir, hicdir, bedtmpdir, checkerdir, comsdir, macs3dir, aligndir, diagdir
 ## bring in numpy 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         param = sys.argv[1].lower()
         ## decide what we are doing
         ## Cleaning
-        if param.startswith('c'): ## Iterate thru the directoris and remove them if clean was passed
+        if param.startswith('cl'): ## Iterate thru the directoris and remove them if clean was passed
             [rmtree(direct,ignore_errors=True) for direct in directories]
         ## Zipping
         elif param.startswith('g') or ('zip' in param):
@@ -121,6 +121,27 @@ if __name__ == "__main__":
         ## Resetting
         elif param.startswith('r') or param.startswith('q') or ('reset' in param) or ('quick' in param):
             [rmtree(d,ignore_errors=True) for d in [debugdir, splitsdir, hicdir, bedtmpdir, checkerdir, comsdir, macs3dir, aligndir, diagdir]]
+        ## Cancle the jobs
+        elif param.startswith('can') or ('cancel' in param):
+            ## Set command file path 
+            job_file = f'./{debugdir}/command.file.csv'
+            ## Load in job file 
+            jobs = readtable(job_file,header=0)
+            ## Gather job ids
+            jobids = jobs[(jobs.Operation!='bwaix')].JobID.tolist()
+
+            ## Make iterater
+            i = 0
+            ## Iterate thrut he job ids and canclse them
+            for job in jobids:
+                try:
+                    submitsbatch(f'scancel {job}',returnid=False)
+                    i += 1
+                except Exception as error:
+                    print(error)
+
+            ## Print the nubmer of jobs canned
+            print("INFO: Cancelled %s jobs assoiated with this directory."%i)
         ## Otherwise
         else:
             print('WARNING: Arguments were passed but no action was taken.')
