@@ -139,7 +139,7 @@ mcool_help = "Flag to make an mcool file with cooler."
 pairs_help = "Convert final output to pairs format defined by the 4DNucleome consortium."
 inter_help = "Flag to return only inter-chromosomal contacts"
 hicex_help = "Flag to run stricter intra-fragment filtering."
-save_help  = 'Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.'
+save_help  = 'Flag to not save out duplicate read pairs to file.'
 maxnc_help = "Total number of allowed chromosomes to parse and process from fasta file. Must be lower than %s to avoid over submitting jobs to SLURM."%max_nchrom
 
 ## MACS3 specific variables

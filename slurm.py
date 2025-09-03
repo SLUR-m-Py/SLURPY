@@ -195,7 +195,7 @@ def parse_args():
     parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
     parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
     parser.add_argument("--skipdedup",            dest="skipdedup",  help = mark_help,     action = ST)
-    parser.add_argument("--save-dups",            dest="save",       help = save_help,     action = ST)
+    parser.add_argument("--dont-save-dups",       dest="save",       help = save_help,     action = ST)
     parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
     parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
     parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     xmemory         = inputs.xmx            ##     Amount of memory passed to juicer pre command 
     binsizes        = inputs.S              ##     Bins / resolutions used in hi-c analysis 
     max_dist        = inputs.m              ##     Maximum distance of paired end reads
-    feature_space   = inputs.gxg            ##     Path to a gff or bed file used in g x g interaction matrix / df 
+    #feature_space   = inputs.gxg            ##     Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes          ##     List of nodes 
     slurm_mem       = inputs.slurmem        ##     Amount of memory setting in SLURM
     
@@ -320,7 +320,7 @@ if __name__ == "__main__":
 
     ## If human reference 
     reference_path = t2t_refpath if ist2t else reference_path
-    feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
+    #feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
     ## If vero was pass
     reference_path = vero_refpath if isvero else reference_path
     print(reference_path)
@@ -373,11 +373,11 @@ if __name__ == "__main__":
         toshort   = False
 
     ## Set feature space to a boolean var, needed to make my settings work 
-    if feature_space == 'none':
-        feature_space = False
+    #if feature_space == 'none':
+    feature_space = False
     ## Check is a path the give feature space 
-    if feature_space:
-        assert exists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
+    #if feature_space:
+    #    assert exists(feature_space), "ERROR: The given features data %s could not be found! Please check the given path and try agian."%feature_space
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -622,7 +622,7 @@ if __name__ == "__main__":
             ## SEt the report name
             hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -z {chunksize}' + (' ' if skipduplicates else f' -d {hicdup_out} ') + ('--save-dups' if keep_dups else '')]
+            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -z {chunksize}' + (' ' if skipduplicates else f' -d {hicdup_out} ') + ('--save-dups' if not keep_dups else '')]
 
             ## make deduplication file name
             hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
@@ -679,15 +679,16 @@ if __name__ == "__main__":
         if inhic:  
             if feature_space:
                 ## Iterate over chromosome list 
-                for i,coi in enumerate(chrlist):
-                    ## Set the report, commands, and gxg script file name 
-                    gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                    gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
-                    gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
-                    ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
-                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
-                    ## Append to command list for calling/submission later 
-                    command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
+                #for i,coi in enumerate(chrlist):
+                #    ## Set the report, commands, and gxg script file name 
+                #    gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
+                #    gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                #    gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
+                #    ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
+                #    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
+                #    ## Append to command list for calling/submission later 
+                #    command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
+                pass 
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
             ## BEDPE TO SHORT or PAIRS
