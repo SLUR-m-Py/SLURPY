@@ -174,6 +174,7 @@ peaks_help    = "A boolean flag to skip peak calling via macs3."
 short_help    = "A boolean flag to convert output bedpe file to short format for hic creation with juicer pre. Defaults to True if the juicer jarpath (-J) is specificed."
 tosam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools."
 tobam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools."
+wgs_help      = "Passing this flag will run SLUR(M)-py in whole-genome sequencing (wgs) mode, parsing paired-end reads as if from wgs experiments."
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 

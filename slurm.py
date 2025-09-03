@@ -199,6 +199,7 @@ def parse_args():
     parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
     parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
     parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
+    parser.add_argument("--wgs",                  dest="wgs",        help = wgs_help,      action = ST)
 
     ## Set the paresed values as inputs
     return parser.parse_args() 
@@ -281,6 +282,7 @@ if __name__ == "__main__":
 
     ## Set RNA-seq like vars 
     rna_seq         = inputs.rnas           ##     Boolean flag to run in rna-seq mode 
+    wgs_seq         = inputs.wgs            ##     Boolean flag to run in wgs seq mode
     sfastp          = inputs.sfast          ##     Flag to skip fastp filtering 
     skipduplicates  = inputs.skipdedup      ##     Boolean to mark duplicates       
     keep_dups       = inputs.save           ##     Boolean flag to save out duplicates once identified
@@ -405,6 +407,15 @@ if __name__ == "__main__":
 
         ## Set the broad pkeack
         broadpeak = '--broad' if ifbroad else ''
+
+    ## set wgs mode 
+    if wgs_seq:
+        keep_dovetail = True
+        inhic         = False
+        enzymelib     = 'none'
+        count_mod     = '--atac-seq'
+        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
+        peakcalling   = False 
 
     ## Check our control files if they were passed 
     if len(chip_control):
@@ -841,7 +852,7 @@ if __name__ == "__main__":
         ## Format command to remove uneedeed files 
         remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
-        remove_comm = [f'{slurpydir}/remove.py {bedtmpdir} {splitsdir} {hicdir} {checkerdir}\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.bedpe\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.short\n', f'{slurpydir}/gzipy.py ./{aligndir}/*.valid.pairs\n']
+        remove_comm = [f'{slurpydir}/checkwork.py clean\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.bedpe\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.short\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.valid.pairs\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes) + remove_comm, debug)
         ## Append the clean up command to file
