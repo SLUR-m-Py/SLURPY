@@ -113,8 +113,8 @@ if __name__ == "__main__":
     nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
 
     ## Print error to screen
-    assert nbwa_checks < nsplits,   'ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits)
-    assert nbedpe_checks < nsplits, 'ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits)
+    assert nbwa_checks >= nsplits,   'ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits)
+    assert nbedpe_checks >= nsplits, 'ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits)
 
     ## Check if we have an argument
     if len(sys.argv) > 1:
