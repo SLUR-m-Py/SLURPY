@@ -20,9 +20,9 @@ Los Alamos, NM 87545
 croth@lanl.gov
 """
 ## Load in defaults
-from defaults import basename, sortglob, listzip, fileexists, basenoext, makelist, submitsbatch, ifprint, dictzip
+from defaults import basename, sortglob, listzip, fileexists, basenoext, makelist, submitsbatch, ifprint, dictzip, readtable, readann
 ## Load in parameters
-from parameters import slurpydir, debugdir, runlocal, fakejobid, macs3dir, g_help
+from parameters import slurpydir, debugdir, runlocal, fakejobid, macs3dir, g_help, hicsep, aligndir
 ## Load in rm tree
 from shutil import rmtree
 ## Load in sys
@@ -376,19 +376,6 @@ def bam_to_bed(bam_path: str,bed_path: str,min_mapq: int = 0,include_secondary: 
         allow_interchrom: if True, keep pairs mapped to different chromosomes (default False)
         require_proper_pair: if True, keep only SAM-flag 'properly paired' (default False)
     """
-    ## Initlize outlines
-    """
-    Convert a paired-end BAM to a fragment-level BED6.
-
-    Args:
-        bam_path: input BAM (indexed not required; works streaming with until_eof)
-        bed_path: output BED
-        min_mapq: minimum MAPQ to keep a read/pair
-        include_secondary: keep secondary alignments (default False)
-        include_supplementary: keep supplementary alignments (default False)
-        allow_interchrom: if True, keep pairs mapped to different chromosomes (default False)
-        require_proper_pair: if True, keep only SAM-flag 'properly paired' (default False)
-    """
     ## Open the bam file for reading 
     bam = pysam.AlignmentFile(bam_path, "rb")
     ## Open the output bed path
@@ -448,6 +435,55 @@ def bam_to_bed(bam_path: str,bed_path: str,min_mapq: int = 0,include_secondary: 
     ## Close the bam 
     bam.close()
     pass 
+
+## Set defalut messaging
+chromgathering = 'INFO: Gathering chromosomes for processing...' 
+
+## Set ftn for gathering chromosome map
+def gathering(path_to_ref,path_to_chrom,list_exclude:list,jarorcool:bool) -> tuple:
+    """Formats a map of the refernece genome, which includes chromosome names and lengths"""
+    ## print to screen
+    print(chromgathering)
+    ## Set seperation
+    outsep = hicsep if jarorcool else '\t'
+    ## Set fai path
+    ann_path = path_to_ref + '.ann'
+    ## Set new path to chrom
+    newpath_to_chrom = aligndir + '/' + path_to_ref.split('/')[-1].split('.fa')[0] + '.txt'
+    ## If a path of chrom file was passed and exists 
+    if path_to_chrom and fileexists(path_to_chrom): 
+        ## Set the list of chromosomes 
+        chrbed = readtable(path_to_chrom)
+
+    elif fileexists(ann_path) and (not path_to_chrom):
+        ## Patch path
+        path_to_chrom = newpath_to_chrom
+        ## Load in the fai file fromt he reference 
+        chrbed = readann(ann_path)
+        ## SAve out the bed file 
+        chrbed[[0,1]].to_csv(path_to_chrom,sep=outsep,index=False,header=False)
+
+    ## Make a dataframe of the files 
+    else: ## Bring in the list of chromosomes from the fasta file
+        ## Patch chrom 
+        path_to_chrom = newpath_to_chrom
+        ## IF, the path to chrom form the reference file path already exists 
+        if fileexists(path_to_chrom):
+            chrbed = readtable(path_to_chrom)
+        else:
+            ## Gather tupes of chromosome ids and lengths 
+            chrbed = chromdf(path_to_ref)
+            ## Save out the chrbed as an .txt file for next time or further analysis 
+            chrbed.to_csv(path_to_chrom,sep=outsep,index=False,header=False)
+      
+    ## Gather the list of chromosomes from first column from the chr bed df
+    chrlist = chrbed[0].tolist()
+    ## Remove mito and other unwanted chromosomes
+    chrlist = [c for c in chrlist if (c not in list_exclude)]
+    ## Calcualte the genome size 
+    gsize = chrbed[(chrbed[0].isin(chrlist))][1].sum()
+    ## Return the chromosome list and genomesize
+    return chrlist, gsize, path_to_chrom 
 
 ## Set help messages
 b_help = "Path to input bedpe file."

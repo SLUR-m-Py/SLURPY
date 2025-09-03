@@ -483,10 +483,6 @@ if __name__ == "__main__":
 
     ##      CHROMOSOME GATHERING 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Load in more mods
-    from chrommap import gathering, chromgathering
-    ## Gather chromosomes and inform the user we are gathering chromosomes
-    print(chromgathering)
     ## Expand exlcude list to include mitochondria contig
     excludes.append(mito)
     ## Gather a list of chromosomes 
@@ -777,8 +773,6 @@ if __name__ == "__main__":
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         elif peakcalling:
-            ## Bring in peaks functions
-            from biotools import peakattack
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the name of the output peaks,  output bed or bedpe file
