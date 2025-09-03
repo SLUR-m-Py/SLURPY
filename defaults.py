@@ -145,34 +145,4 @@ def readann(inpath:str) -> list:
     lengths = [int(l[1]) for l in newlines[2::2]]
     ## Format and return a dataframe
     return pd.DataFrame(list(zip(contigs,lengths)))
-
-## Ftn for commenting out command lines for debuging
-def debuglines(intxt:list) -> list: 
-    ## Initilizse new lines and counter
-    newlines = []
-    ## Iterate thru the input txt lines 
-    for l in intxt:
-        ## If the first chracter is already a comment like #SBATCH
-        if (l[0] == '#'): 
-            newlines.append(l)
-        ## If it is an echo statment, leave it as is 
-        elif (l.split(' ')[0]=='echo'):
-            newlines.append('sleep 10\n'+l)
-        elif (l.split(' ')[0]=='myecho.py'):
-            newlines.append('sleep 10\n'+l)
-        else: ## Othewise, comment out the lines 
-            newlines.append('##'+l)
-    ## Return the commented out lines 
-    return newlines 
-
-## Ftn to write to file
-def writetofile(inpath:str,intxt:list,debug:bool,mode='w') -> str:
-    """Opens a file to write lines to file."""
-    ## Modify the input text lines if in debug mode
-    intxt = debuglines(intxt) if debug else intxt
-    ## Open the input path and write out to file 
-    with open(inpath,mode) as ofile:
-        ofile.writelines(intxt)
-    ## Return the path
-    return inpath
 ## EOF 

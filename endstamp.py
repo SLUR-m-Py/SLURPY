@@ -27,7 +27,7 @@ from os.path import getctime
 ## Load in date and time
 from datetime import datetime
 ## load in write to file 
-from defaults import writetofile
+from myecho import writetofile
 ## Load in sort glbo 
 from defaults import sortglob
 ## load in log dir

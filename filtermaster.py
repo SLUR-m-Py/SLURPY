@@ -12,7 +12,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Bring in ftns and variables from defaluts 
-from defaults import fileexists, sortglob, sbatch, submitsbatch, writetofile
+from defaults import fileexists, sortglob, sbatch, submitsbatch
 ## Load in params
 from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel, comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
 ## load in sleep
@@ -25,6 +25,8 @@ import argparse
 from os import remove
 ## Load in help messages
 from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
+## Bring in write to file
+from myecho import writetofile
 
 ## Set stage in piepline
 pix = 2

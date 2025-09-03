@@ -11,7 +11,7 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Bring in ftns and variables from defaluts 
-from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprint, writetofile
+from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprint
 ## Load input vars from params
 from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## load in sleep
@@ -24,6 +24,8 @@ import argparse
 from os.path import getsize
 ## load in remove
 from os import remove
+## Bring in myecho
+from myecho import writetofile
 
 ## Set opttions for line count and step in pipelien 
 line_count  = 5000
