@@ -32,7 +32,7 @@ from datetime import datetime
 ## Load in os
 from os import makedirs, remove
 ## Load in get size 
-from os.path import getsize, exists
+from os.path import getsize
 ## Load in SeqIO
 from Bio import SeqIO
 
@@ -361,6 +361,93 @@ dplace = 4
 
 ## Set extension dict 
 exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
+
+## Function for converting bam to bed
+def bam_to_bed(bam_path: str,bed_path: str,min_mapq: int = 0,include_secondary: bool = False,include_supplementary: bool = False,allow_interchrom: bool = False,require_proper_pair: bool = False, chunksize:int = 10000):
+    """
+    Convert a paired-end BAM to a fragment-level BED6.
+
+    Args:
+        bam_path: input BAM (indexed not required; works streaming with until_eof)
+        bed_path: output BED
+        min_mapq: minimum MAPQ to keep a read/pair
+        include_secondary: keep secondary alignments (default False)
+        include_supplementary: keep supplementary alignments (default False)
+        allow_interchrom: if True, keep pairs mapped to different chromosomes (default False)
+        require_proper_pair: if True, keep only SAM-flag 'properly paired' (default False)
+    """
+    ## Initlize outlines
+    """
+    Convert a paired-end BAM to a fragment-level BED6.
+
+    Args:
+        bam_path: input BAM (indexed not required; works streaming with until_eof)
+        bed_path: output BED
+        min_mapq: minimum MAPQ to keep a read/pair
+        include_secondary: keep secondary alignments (default False)
+        include_supplementary: keep supplementary alignments (default False)
+        allow_interchrom: if True, keep pairs mapped to different chromosomes (default False)
+        require_proper_pair: if True, keep only SAM-flag 'properly paired' (default False)
+    """
+    ## Open the bam file for reading 
+    bam = pysam.AlignmentFile(bam_path, "rb")
+    ## Open the output bed path
+    with open(bed_path, "w") as out:
+        ## Iterate thrut he file 
+        for r in bam.fetch(until_eof=True):
+            # Basic pairing & filtering
+            if not r.is_paired:
+                continue
+            if require_proper_pair and not r.is_proper_pair:
+                continue
+            if r.is_unmapped or r.mate_is_unmapped:
+                continue
+            if r.is_secondary and not include_secondary:
+                continue
+            if r.is_supplementary and not include_supplementary:
+                continue
+            if r.is_qcfail or r.is_duplicate:
+                continue
+            if r.mapping_quality < min_mapq:
+                continue
+            if (r.reference_id != r.next_reference_id) and not allow_interchrom:
+                continue
+
+            # Count each template once: use read1 only
+            if not r.is_read1:
+                continue
+
+            tlen = r.template_length
+            # TLEN of 0 or nonsense: skip
+            if tlen == 0:
+                continue
+
+            # Compute fragment bounds from TLEN and read position
+            # pysam is 0-based, end is exclusive.
+            if tlen > 0:
+                start = r.reference_start
+                end = start + tlen
+            else:
+                end = r.reference_end  # exclusive
+                start = end + tlen     # since tlen is negative
+
+            # Sanity check/order
+            if start > end:
+                start, end = end, start
+            if start < 0:
+                start = 0
+            if end <= start:
+                continue
+
+            chrom = bam.get_reference_name(r.reference_id)
+            #name = r.query_name
+            #score = r.mapping_quality
+            #strand = '-' if r.is_reverse else '+'
+            ## Write the liens 
+            out.write(f"{chrom}\t{start}\t{end}")#\t{name}\t{score}\t{strand}\n")
+    ## Close the bam 
+    bam.close()
+    pass 
 
 ## Set help messages
 b_help = "Path to input bedpe file."

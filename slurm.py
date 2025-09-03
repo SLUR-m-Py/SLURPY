@@ -894,7 +894,7 @@ if __name__ == "__main__":
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'gxg',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if feature_space else []) 
     ##
     ##      5B) SUBMITTING CONVERSION FROM BEDPE to JUICER SHORT 
-    ## Submit the toshort.py command 
+    ## Submit the toshort command 
     sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs or get_inter) else []) 
     ##
     ##      5C) Hi-C FILE CREATION 

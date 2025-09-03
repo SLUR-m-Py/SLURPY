@@ -14,6 +14,8 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## bring in mods
 import dask.dataframe as dd, pandas as pd, argparse
+## loadin bam to bed converter
+from biotools import bam_to_bed
 ## Load in parameters, like chunk size, and directories 
 from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help, hicsep, macs3dir
 """
@@ -116,16 +118,25 @@ if __name__ == "__main__":
         assert not getinter, inter_intra_error
 
     ## Check path
-    assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
+    #assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
+
+    ## Add the conditon of bam extension
+    if input_path.split('.')[-1] == 'bam':
+        ## SEt output name
+        output_path  = f'{macs3dir}/{input_path.split("/")[-1].split(".bam")[0]}.bedpe' 
+        ## Call bam to bed ftn 
+        bam_to_bed(input_path,output_path)
+        ## PRint to screen
+        print("Finished converting input bam file (%s) to macs3 bedpe format (%s)."%(input_path,output_path))
 
     ## IF this is an atac-seq sample 
-    if to_bed:
+    elif to_bed:
         ## Check shift and size to extend are non zero
         assert shift_size, "ERROR: Shift size must be non-zero!"
         assert extendsize, "ERROR: Extension size must be non-zero!"
 
         ## Format the output path 
-        output_path = f'{macs3dir}/{input_path.split('/')[-1].split(".bed")[0]}.bed' 
+        output_path = f'{macs3dir}/{input_path.split("/")[-1].split(".bed")[0]}.bed' 
         ## Open with chunking 
         with pd.read_csv(input_path,sep=hicsep,usecols=rpos1+rpos2,chunksize=chunksize) as chunks:
             ## Iterate thru chunks 
@@ -138,11 +149,13 @@ if __name__ == "__main__":
                 chunk = pd.concat([chunk1,chunk2]).sort_values(new_cols)
                 ## Save out the chunk
                 chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
+        ## Pirnt to screen 
+        print("Finished converting input bedpe file (%s) to bed (%s)."%(input_path,output_path))
 
     ## If in macs 3 mode 
     elif to_bedpe:
          ## Forma the output path 
-        output_path = f'{macs3dir}/{input_path.split('/')[-1]}' 
+        output_path = f'{macs3dir}/{input_path.split("/")[-1]}' 
         ## Open with chunking 
         with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
             ## Iterate thru chunks 
@@ -165,7 +178,7 @@ if __name__ == "__main__":
         df[pairs_cols].to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
 
         ## Print to log
-        print("Finished converting input bedpe file (%s) to pairs format."%output_path)
+        print("Finished converting input bedpe file (%s) to pairs format (%s)."%(input_path,output_path))
     else:
         ## SEt output path
         output_path = input_path.split(file_end)[0] + '.short' 
@@ -184,5 +197,5 @@ if __name__ == "__main__":
         df[short_cols[:-1]].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
 
         ## Print to log
-        print("Finished converting input bedpe file (%s) to short format."%output_path)
+        print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path))
 ## End of file 
