@@ -160,9 +160,9 @@ if __name__ == "__main__":
         ## -------------------------------------------------------------------- ##
         ## Check if the checks and splits match
         ## GAther counts of fastq splits,  bwa checks, bedpe checks
-        nsplits       = len(sortglob(f'./{splitsdir}*_R1_*fastq.gz'))
-        nbwa_checks   = len(sortglob(f'./{checkerdir}*.bwa.log'))
-        nbedpe_checks = len(sortglob(f'./{checkerdir}*.bedpe.log'))
+        nsplits       = len(sortglob(f'./{splitsdir}/*_R1_*fastq.gz'))
+        nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
+        nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
 
         ## Print error to screen
         ifprint('ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits),nbwa_checks < nsplits, )
