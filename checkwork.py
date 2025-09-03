@@ -103,19 +103,23 @@ def unfinished(inpath:str) -> bool:
 ## Ftn for defining logs name
 def logsvslog(n) -> str:
     return 'logs' if n > 1 else 'log'
-## -------------------------------------------------------------------- ##
-## If the script is envoked by name 
-if __name__ == "__main__":
-    ## Check if the checks and splits match
+
+## Ftn for checking splits
+def checksplits():
     ## GAther counts of fastq splits,  bwa checks, bedpe checks
     nsplits       = len(sortglob(f'./{splitsdir}/*_R1_*fastq.gz'))
     nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
     nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
-
     ## Print error to screen
-    assert nbwa_checks >= nsplits,   'ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits)
-    assert nbedpe_checks >= nsplits, 'ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits)
+    ifprint('ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits), nbwa_checks < nsplits)
+    ifprint('ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits), nbedpe_checks < nsplits)
+    pass 
 
+## -------------------------------------------------------------------- ##
+## If the script is envoked by name 
+if __name__ == "__main__":
+    ## Check if the checks and splits match
+    checksplits()
     ## Check if we have an argument
     if len(sys.argv) > 1:
         ## Gather the input param
