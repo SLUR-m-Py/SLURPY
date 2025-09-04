@@ -280,14 +280,14 @@ INFO: Good news everyone! No errors were detected in this run.
 After a completed run of SLUR(M)-py, large, temporary files can be removed using the same [checkwork.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/checkwork.py) script but by passing "clean" as an input (shown below).
 ```
 ## Remove large files.
-./SLURPY/cleanup.py clean
+./SLURPY/checkwork.py clean
 ```
 
 ### Reseting a run
 If a run of slur(m)-py needs to be removed, say so it may be rerun from the raw fastq files, the same [checkwork.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/checkwork.py) script will completely reset the working directory by passing "reset" as an input (shown below).
 ```
 ## Remove large files.
-./SLURPY/cleanup.py reset
+./SLURPY/checkwork.py reset
 ```
 
 ### Caluclating a memory profile
