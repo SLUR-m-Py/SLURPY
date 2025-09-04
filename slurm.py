@@ -59,7 +59,7 @@ from filtermaster import filtermaster
 ## Load in bedpe to sam
 from pairs2sam import bedpetosam
 ## Load in ftn from os path
-from os.path import exists, basename
+from os.path import exists, basename, isdir
 ## laod in os
 from os import remove, getcwd
 ## Load in time
@@ -132,6 +132,8 @@ def parse_args():
 
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
+    ## Add default arguments
+    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = ''           )
     parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
     parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
     parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
@@ -221,6 +223,7 @@ if __name__ == "__main__":
     reference_path  = inputs.r              ##     Set path to the reference genome
 
     ## Set default vairables              
+    path_to_fastqs  = inputs.fq             ##     Set the path to the input fastqs, if non was passed, assumes they are at the level of the call to slurpy
     splitsize       = inputs.F              ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
     threadn         = inputs.T              ##     Set the number of parallel runs of bwa 
     partitions      = inputs.P              ##     Set the partition 
@@ -339,11 +342,16 @@ if __name__ == "__main__":
     filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
     ##      INITILIZATION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+    ## Modify the fastq dir
+    if isdir(path_to_fastqs):
+        fastqdir = path_to_fastqs
+    else:
+        print("WANRING: Unable to find given fastq directory: %s\n\tDefaulting to %s"%(path_to_fastqs,fastqdir))
+    
     ## Check that the fastq and reference path exists
-    assert exists(fastqdir), fastqserror
+    assert isdir(fastqdir), fastqserror
     assert exists(reference_path), noref_path%reference_path 
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
     assert checksam(), not_sam_err 

@@ -99,8 +99,8 @@ refmetavar = './path/to/reference.fasta'
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      HELP MESSAGES 
 ## Set help messages for input and default variables 
-e_help = "The type of epigenomic expeirment (for exmale ATAC or Hi-C) used to generate sequenced pair-end reads (options include wgs, atac, chip, or hic)."
 r_help = "Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment." 
+fqhelp = "Path to the directory holding zipped, paired-end seqeuncing data in fastq.gz format."
 F_help = "The approximate number of reads per split made by fastp on input fastq files. Default is: %s."%splitsize
 T_help = "The number of threads used across all applications of the run (fastp, bwa, dask.dataframes). Default is: %s."%threads 
 f_help = "The number of threads used in fastp to split input fastq files. Default is: %s. Note: must be an even multiple of the number of splits."%fastpthreads
