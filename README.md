@@ -1,5 +1,5 @@
 # SLUR(M)-PY
-[SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.biorxiv.org/content/10.1101/2024.05.18.594827v2)
+[SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.biorxiv.org/content/10.1101/2024.05.18.594827v3)
 
 ## Setting up the computing environment
 SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.10.13) for a linex OS on a high-performance computing cluster. 
@@ -99,12 +99,13 @@ mv juicer_tools_1.22.01.jar ./SLURPY
 ```
 
 ## Checking the python environment 
-Once within the slrupy directory, run the environment checking script, [modcheck.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/modcheck.py).
+Once within the slrupy directory, we can check if the computing environment has all the needed python libraries using the [myecho.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/myecho.py) script.
 
 ```
 ## Activate the computing environment
-conda activate bioenv 
-python modcheck.py
+conda activate bioenv
+## Check all our needed python libs are there
+python myecho.py
 ```
 
 If the environment was created successfully the script will run to completion and print the following:
@@ -151,12 +152,13 @@ conda activate bioenv
 ## Start a run of the slurpy pipeline, providing a fasta file of a reference genome
 ./SLURPY/slurm.py -r /path/to/reference/file.fasta
 
-## Call the help menu for hic.py 
+## Call the help menu to see all the arugments and parameters
 $ ./SLURPY/slurm.py -h
-usage: slurm.py [-h] -r ./path/to/reference.fasta [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n] [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP]
-                [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-J ./path/to/juicer.jar] [-xmx 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-m 1000] [-gtf ./path/to/my.gff] [--nodelist NODES [NODES ...]] [--memory 40G]
-                [--restart] [--nomerge] [--force] [--debug] [--clean] [--nocount] [--toshort] [--pairs] [--mcool] [--hicexplorer] [--inter-only] [--atac-seq] [--broad] [--skipmacs3] [--nolambda] [--nomodel] [--call-summits] [--shift-size bp]
-                [--extend-size bp] [--macs-mode BEDPE] [-c ./path/to/control.bam [./path/to/control.bam ...]] [--max-gap MAXGAP] [--max-length MINLEN] [--rna-seq] [--skipfastp] [--skipdedup] [--save-dups] [--dedovetail] [--sam] [--bam]
+usage: slurm.py [-h] -r ./path/to/reference.fasta [--fastq ./path/to/fastqs] [-F 10000000 [10000000 ...]] [-T n] [-P tb gpu fast [tb gpu fast ...]] [-M chrM] [-X chrX, chrY ... [chrX, chrY ... ...]] [-Q 30] [-R step] [-a 666666] [-N n]
+                [-j n] [-f 8] [-t 8] [-b 8] [-B ,-5SMP] [-n name] [-E bp] [-L MboI] [-Z n] [-G ./path/to/list.tsv] [-J ./path/to/juicer.jar] [-xmx 49152] [-S 25000, 10000, ... [25000, 10000, ... ...]] [-m 1000]
+                [--nodelist NODES [NODES ...]] [--memory 40G] [--restart] [--nomerge] [--force] [--debug] [--clean] [--nocount] [--toshort] [--pairs] [--mcool] [--hicexplorer] [--inter-only] [--atac-seq] [--broad] [--skipmacs3]
+                [--nolambda] [--nomodel] [--call-summits] [--shift-size bp] [--extend-size bp] [--macs-mode BEDPE] [-c ./path/to/control.bam [./path/to/control.bam ...]] [--max-gap MAXGAP] [--max-length MINLEN]
+                [--max-number-chroms MAXNC] [--rna-seq] [--skipfastp] [--skipdedup] [--dont-save-dups] [--dedovetail] [--sam] [--bam] [--wgs]
 
 A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.
 
@@ -164,6 +166,8 @@ options:
   -h, --help            show this help message and exit
   -r ./path/to/reference.fasta, --refix ./path/to/reference.fasta
                         Path to input reference referecne (in .fasta or .fa format) with an assoicated (.fai) bwa index to use for alignment.
+  --fastq ./path/to/fastqs, --fq ./path/to/fastqs
+                        Path to the directory holding zipped, paired-end seqeuncing data in fastq.gz format.
   -F 10000000 [10000000 ...], --fastp-splits 10000000 [10000000 ...]
                         The approximate number of reads per split made by fastp on input fastq files. Default is: 10000000.
   -T n, --threads n     The number of threads used across all applications of the run (fastp, bwa, dask.dataframes). Default is: 8.
@@ -186,7 +190,7 @@ options:
   -t 8, --dask-threads 8
                         The number of threads used in calls to functions and calculations with pandas and dask dataframes. Default is: 8.
   -b 8, --bwa-threads 8
-                        The number of threads used per bwa alignment on split input fastq files. Default is: 8.
+                        Path to input bedpe file.
   -B ,-5SMP, --bwa-options ,-5SMP
                         A comma starting and seperated list (no spaces) of options (and their values) for the bwa mem algorithm (for example ,-t,2,-k,10,-y,5,-S). See bwa mem for help and a list of options.
   -n name, --run-name name
@@ -194,8 +198,8 @@ options:
   -E bp, --error-distance bp
                         Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is 25000. These pairs are also marked for dangling ends and self-circles.
   -L MboI, --library MboI
-                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is Arima. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but
-                        checks for restriction sites and dangling ends will be skipped.
+                        The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is Arima. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also
+                        allowed, but checks for restriction sites and dangling ends will be skipped.
   -Z n, --chunksize n   Number of rows loaded into pandas at a time. Default is: 950000. WARNING: while increasing could speed up pipeline it could also cause memeory issues.
   -G ./path/to/list.tsv, --genomelist ./path/to/list.tsv
                         Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header.
@@ -207,8 +211,6 @@ options:
                         Space seperated list of chromosome resolutions (i.e. bin sizes) for .hic files. Default: 2500000 2000000 1000000 750000 500000 250000 200000 100000 75000 50000 25000 10000 5000
   -m 1000, --max-dist 1000
                         Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter.
-  -gtf ./path/to/my.gff, --features ./path/to/my.gff
-                        The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes.
   --nodelist NODES [NODES ...]
                         Space seperated list of nodes to run jobs on.
   --memory 40G          The max amount of memory (for e.g. 4OG) passed to SLURM sbatch processes. If set, this value is applied acorss all subprocesses. Default: None
@@ -233,16 +235,19 @@ options:
   --extend-size bp      Size (in bp) to extend (5' to 3') read position for peak analysis in MACS3 (exmale 150 bp). Only used when --nomodel is passed. Default: 150
   --macs-mode BEDPE     Mode and file type for peak calling with MACS3. Options include BED or BEDPE. Default: BEDPE
   -c ./path/to/control.bam [./path/to/control.bam ...], --controls ./path/to/control.bam [./path/to/control.bam ...]
-                        Path to control or input bam/bedpe files used in ChIP-seq experiments.
+                        Path to control or input files used in ChIP-seq experiments. Must be a .bam file or a .bedpe file or processed via SLUR(M)-py.
   --max-gap MAXGAP      Max gap between peaks called in MACS3.
   --max-length MINLEN   Minimum length of peaks called in MACS3.
+  --max-number-chroms MAXNC
+                        Total number of allowed chromosomes to parse and process from fasta file. Must be lower than 200 to avoid over submitting jobs to SLURM.
   --rna-seq             Preset mode to run in RNA-seq analysis mode.
   --skipfastp           Flag to skip initial quality control and filtering with fastp (i.e. only split reads).
   --skipdedup           Pass this flag to skip marking and removing duplicates. Default behavior is false (conduct duplicate marking).
-  --save-dups           Flag to find and save out duplicate read pairs to file. This will increase memory load and runtime.
+  --dont-save-dups      Flag to not save out duplicate read pairs to file.
   --dedovetail          Boolean flag to remove dovetailed paired-end reads (paired reads with overlapping mapped coordiantes) from analsyis (Default: is not to remove these).
   --sam                 Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools.
   --bam                 Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools.
+  --wgs                 Passing this flag will run SLUR(M)-py in whole-genome sequencing (wgs) mode, parsing paired-end reads as if from wgs experiments.
 ```
 ### For ATAC-seq experiments
 To call the peaks.py script within the slurpy pipeline to analyze an ATAC-seq experiment and save output to .bam format:
@@ -271,11 +276,18 @@ INFO: Good news everyone! No errors were detected in this run.
         <3
 ```
 
-### Cleaning up old files
-After a completed run of SLUR(M)-py, large, temporary files can be removed using the [cleanup.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/cleanup.py) script.
+### Cleaning up old files after a completed run
+After a completed run of SLUR(M)-py, large, temporary files can be removed using the same [checkwork.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/checkwork.py) script but by passing "clean" as an input (shown below).
 ```
 ## Remove large files.
-./SLURPY/cleanup.py
+./SLURPY/cleanup.py clean
+```
+
+### Reseting a run
+If a run of slur(m)-py needs to be removed, say so it may be rerun from the raw fastq files, the same [checkwork.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/checkwork.py) script will completely reset the working directory by passing "reset" as an input (shown below).
+```
+## Remove large files.
+./SLURPY/cleanup.py reset
 ```
 
 ### Caluclating a memory profile
@@ -284,14 +296,4 @@ SLUR(M)-py has two arguments to control RAM usage, the “--memory”  and the �
 ```
 ## Call the memory profile script, no arguments are needed. 
 ./SLURPY/memoryprofile.py
-```
-
-### Estimating open (A) and closed (B) chromatin compartments. 
-To further assist in the analysis of Hi-C data, we have written a submodule to calculate the genome-wide compartment scores (named [compartmentscores.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/compartments.py)) from an input .hic file. This submodule of SLUR(M)-py automates a call to the pythonic software [FAN-C](https://fan-c.readthedocs.io/en/latest/index.html). From the .hic file, FAN-C calculates (per chromosome) the eigenvalues representing the open (positive value) and closed (negative value) chromatin compartments and returns them as a .csv file. By default, these chromatin compartment scores are calculated every 100 Kb, but this resolution can be augmented at the command line via user input to [compartmentscores.py](https://github.com/SLUR-m-Py/SLURPY/blob/main/compartments.py). 
-
-In addition to a .hic file, the compartment score module requires the path to the reference genome (in .fasta or .fa format) used in the construction of the input .hic file. This file is needed to calculate binned GC content along a chromosome, which in turn is used by FAN-C to correctly orient the compartment scores; specifically, eigenvalues are multiplied by negative one per chromosome to align compartment assignments (A or B) across the genome (see the [FAN-C documentation](https://fan-c.readthedocs.io/en/latest/api/analyse/compartments.html) for details). 
-
-```
-## Call the compartments script on a Hi-C file with a binsize of 50 kb, exclude chromosome Y. 
-./SLURPY/compartmets.py -i ./path/to/example.hic -f ./path/to/genome.fasta -b 50000 -x chrY
 ```
