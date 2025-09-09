@@ -25,7 +25,7 @@ from os import getcwd
 sys.path.append(getcwd()) 
 
 ## Load in ftns from total count 
-from totalcount import sumcounts, getjson
+from endstamp import sumcounts, getjson
 ## Load in paraamters from slurpy mods hic sep, and dir
 from parameters import hicsep, Z_help, chunksize, atac_help, diagdir
 
@@ -159,9 +159,9 @@ if __name__ == "__main__":
     outpath = outname+'.csv'
 
     ## Gather total counts if they exist, set sjon paths and calc totals 
-    fastp_paths = getjson(diagdir)
-    print(f'WARNING: Unable to find fastp logs in {diagdir}!') if not len(fastp_paths) else None 
-    pairs_totals = sumcounts(fastp_paths) if len(fastp_paths) else 0
+    fastp_paths = getjson()
+    print(f'WARNING: Unable to find fastp logs!') if not len(fastp_paths) else None 
+    pairs_totals = sumcounts(fastp_paths)/2 if len(fastp_paths) else 0
 
     ## Set paths of duplicates and notused
     not_used_path   = inpath.replace(split_on,'.notused.')

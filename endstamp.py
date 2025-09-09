@@ -33,6 +33,10 @@ from defaults import sortglob
 ## load in log dir
 from parameters import debugdir, diagdir
 
+## Ftn for getting json by path
+def getjson(wildcard=f'./{diagdir}/fastp/*fastp.*.0.json'):
+    return sortglob(wildcard)
+
 ## Ftn for reading in json
 def loadjson(jsonpath):
     # Open the JSON file in read mode
@@ -45,8 +49,16 @@ def loadjson(jsonpath):
 def gettotal(data) -> int: 
     return int(data['summary']['before_filtering']['total_reads'])
 
+## Get those passing filtered
 def getfiltered(data) -> int: 
     return int(data['summary']['after_filtering']['total_reads'])
+
+## Sum counts 
+def sumcounts(inpaths:list,filtered=False) -> int: 
+    if filtered:
+        return int(sum([getfiltered(loadjson(flog)) for flog in inpaths]))
+    else:
+        return int(sum([gettotal(loadjson(flog)) for flog in inpaths]))
 
 ## If the script is envoked 
 if __name__ == "__main__":
@@ -93,10 +105,12 @@ if __name__ == "__main__":
 
 
     ## Check inital (zeroth) fastp logs for total
-    initial_fastp_logs = sortglob(f'./{diagdir}/*fastp.*.0.json') 
-    ## Calculate total read pairs 
-    total_counts = int(sum([gettotal(loadjson(fastlog)) for fastlog in initial_fastp_logs])/2)
-    fastp_lost   = int(sum([gettotal(loadjson(fastlog)) - getfiltered(loadjson(fastlog)) for fastlog in initial_fastp_logs])/2)
+    initial_fastp_logs = getjson() #sortglob(f'./{diagdir}/fastp/*fastp.*.0.json') 
+    ## Calculate total reads, those lost by fastp 
+    total_reads  = sumcounts(initial_fastp_logs)
+    fastp_lost   = (total_reads - sumcounts(initial_fastp_logs,filtered=True))/2
+    total_counts = total_reads/2 
+
    
     ## Transpose and add fastp counts
     newmap = newmap.T
