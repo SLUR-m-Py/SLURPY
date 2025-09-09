@@ -107,10 +107,13 @@ def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts
     ## Call the fast dry command and format the remove command 
     dry, throwout = fastdry(r1,r2,report), f'rm {temp1} {temp2}\n'
     ## Format the mv commands for the html and json
-    mv_fastp = f'mkdir -p {diagdir}/fastp\nmv {fastp_json0} {diagdir}/fastp/\nmv {fastp_html0} {diagdir}/fastp/\n'
+    mv_fastp = [f'mkdir -p {diagdir}/fastp\n',f'mv {fastp_json0} {diagdir}/fastp/\n',f'mv {fastp_html0} {diagdir}/fastp/\n']
 
     ## Return the comands depenent aupon if we are spliting or filtering, and the reprot 
-    return [just_split,dry,mv_fastp] if ishic else [initial_filtering,split_filtered,throwout,dry,mv_fastp], report
+    if ishic:
+        return [just_split,dry] + mv_fastp, report
+    else:
+        return [initial_filtering,split_filtered,throwout,dry] + mv_fastp, report
 
 ## Ftn for calling juicer's pre command
 def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str,pix:str) -> tuple:
