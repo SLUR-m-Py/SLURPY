@@ -206,7 +206,7 @@ def sortfastq(infastq:list,splitsizes:list):
     ## Sort values by size and reset index 
     tmp = tmp.sort_values('Size1').reset_index(drop=True)
     ## Modify split sizzes 
-    splitsizes = [splitsizes[0] for s in range(tmp.shape[0])] if (len(splitsizes) < tmp.shape[0]) else splitsizes
+    splitsizes = [splitsizes[0] for s in range(tmp.shape[0])] if (len(splitsizes) != tmp.shape[0]) else splitsizes
     ## Add a sorted list to splitsize to match size of fastqs 
     tmp['Splitsize'] = sorted([int(s)*4 for s in splitsizes])
     ## Return tmp

@@ -315,7 +315,16 @@ if __name__ == "__main__":
         daskthreads     = threadn           ##     Number of threads in dask 
 
     ## Reset paortions into a comma joined list
-    partition = ','.join(partitions)
+    new_parts = []
+    for part in partitions:
+        for p in part.split():
+            for c in p.split(','):
+                if len(c):
+                    new_parts.append(c)
+
+    ## Make a single commo sepereated string
+    partition = ','.join(new_parts)
+
 
     ##      ROTH SETTINGS
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
