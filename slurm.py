@@ -133,7 +133,7 @@ def parse_args():
     ## Add the required argument
     parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
     ## Add default arguments
-    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = ''           )
+    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = fastqdir     )
     parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
     parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
     parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
@@ -337,7 +337,7 @@ if __name__ == "__main__":
     feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
     ## If vero was pass
     reference_path = vero_refpath if isvero else reference_path
-    print(reference_path)
+    #print(reference_path)
 
     ## Set bwa master partition to mpi (FOR ROTH only)
     bwa_partition   = 'gpu,fast,mpi,tb' if ist2t or isvero else partition
