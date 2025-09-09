@@ -355,6 +355,11 @@ if __name__ == "__main__":
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Modify the fastq dir
     if isdir(path_to_fastqs):
+        ## If it isn't a relaive path and the last character is a forward slash
+        if path_to_fastqs != './' and (path_to_fastqs[-1] == '/'):
+            ## Remove the extra forward slash
+            path_to_fastqs = path_to_fastqs[:-1]
+        ## Set the path to the fastqs
         fastqdir = path_to_fastqs
     else:
         print("WANRING: Unable to find given fastq directory: %s\n\tDefaulting to %s"%(path_to_fastqs,fastqdir))
