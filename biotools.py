@@ -361,7 +361,7 @@ description = 'Calculates the fraction of reads within peaks from input bedpe an
 dplace = 4
 
 ## Set extension dict 
-exten_dict = dict(zip(['csv','tsv','narrowPeak','bed','txt'],[',','\t','\t','\t',' ']))
+exten_dict = dict(zip(['csv','tsv','broadPeak','narrowPeak','bed','txt'],[',','\t','\t','\t','\t',' ']))
 
 ## Function for converting bam to bed
 def bam_to_bed(bam_path: str,bed_path: str,min_mapq: int = 0,include_secondary: bool = False,include_supplementary: bool = False,allow_interchrom: bool = False,require_proper_pair: bool = False, chunksize:int = 10000):
