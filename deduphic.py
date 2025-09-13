@@ -69,9 +69,8 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args()
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
+## Ftn for deduping
+def main():
     ## Set the paresed values as inputs
     inputs = parse_args()
 
@@ -89,6 +88,11 @@ if __name__ == "__main__":
     input_wc =  f'*{filebackend}' if runlocal else f'{bedtmpdir}/*{filebackend}'
     ## Bring in paths by wild card
     input_paths = sortglob(input_wc)
+    ## If no input paths were passed
+    if not len(input_paths):
+        print("INFO: No input files were detected for chromosome files: %s"%input_wc)
+        print("Finished")
+        return 
     ## Check our work 
     print(input_paths) if debuging else None 
 
@@ -218,4 +222,9 @@ if __name__ == "__main__":
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## Print to log
     print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s into %s"%(filebackend,output_path))
+    
+## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
+## if the script is envoked
+if __name__ == "__main__":
+    main()
 ## End of file 

@@ -421,7 +421,7 @@ if __name__ == "__main__":
         skippeaks     = True 
     
     ## Check if we are in atac seq mode    
-    if atac_seq or len(chip_control):
+    if atac_seq or len(chip_control) or ifbroad:
         keep_dovetail = True
         inhic         = False
         enzymelib     = 'none'
@@ -431,9 +431,6 @@ if __name__ == "__main__":
 
         ## Set peakcalling boolean 
         peakcalling = (not skippeaks)
-
-        ## Set the broad pkeack
-        broadpeak = '--broad' if ifbroad else ''
 
     ## set wgs mode 
     if wgs_seq:
@@ -808,7 +805,7 @@ if __name__ == "__main__":
             ## Format the command to macs3
             macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,
                                         shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,
-                                        broad=broadpeak,summits=callsummits) +\
+                                        broad=ifbroad,summits=callsummits) +\
                                         [f'{slurpydir}/biotools.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
                                          f'{slurpydir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
                                         ([f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
