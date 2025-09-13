@@ -340,7 +340,8 @@ def peakattack(bedpe:str,n:str,report:str,mode:str,gsize='hs',incontrols=[],shif
         controls = ''
 
     ## Format the conversion commands to the bedpe, the macs3 callpeak command, and the echo command 
-    macs_coms = [f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
+    macs_coms = [f'mkdir -p {macs3dir}\n',
+                 f'{slurpydir}/toshort.py --{mode.lower()} -i {bedpe} -s {shiftsize} -e {extendsize}\n',
                  f'macs3 callpeak -t {formatbymode(bedpe,mode)} {controls}{formatval("keep-dup",keepdups)}-B --SPMR{nolambda}-n {n}{isborad}-g {gsize} -f {mode} --outdir {outdir}{formatval("max-gap",maxgap)}{formatval("min-length",minlen)}{call_sums}{nomodel}2>> {report}\n', 
                  f'{slurpydir}/myecho.py Finished calling peaks in {formatbymode(bedpe,mode)} with macs3 {report}\n']
     ## Return the macs coms 

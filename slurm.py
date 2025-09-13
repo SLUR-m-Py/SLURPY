@@ -470,7 +470,7 @@ if __name__ == "__main__":
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Format group dirs 
-    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir,checkerdir] + ([macs3dir] if ((atac_seq or chip_control) and not skippeaks) else [])
+    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir,checkerdir] + ([macs3dir] if peakcalling else [])
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -800,7 +800,7 @@ if __name__ == "__main__":
             ## Format the macs3 call report name
             macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the name of the output peaks,  output bed or bedpe file
-            peak_path   = f'{macs3dir}/{sample_name}_peaks.narrowPeak'
+            peak_path   = f'{macs3dir}/{sample_name}_peaks.broadPeak' if ifbroad else f'{macs3dir}/{sample_name}_peaks.narrowPeak'
             outbed_file = f'{macs3dir}/{sample_name}*.valid.{macs3mode.lower()}'
             ## Format the command to macs3
             macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,
