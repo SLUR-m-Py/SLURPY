@@ -107,7 +107,7 @@ def logsvslog(n) -> str:
 ## Ftn for checking splits
 def checksplits():
     ## GAther counts of fastq splits,  bwa checks, bedpe checks
-    nsplits       = len(sortglob(f'./{splitsdir}/*_R1_*fastq.gz'))
+    nsplits       = len([r for r in sortglob(f'./{splitsdir}/*_R1_*fastq.gz') if not (('singletons.' in r) or ('failed.' in r))])
     nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
     nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
     ## Print error to screen
