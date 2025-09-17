@@ -115,9 +115,8 @@ def checksplits():
     ifprint('ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits), nbedpe_checks < nsplits)
     pass 
 
-## -------------------------------------------------------------------- ##
-## If the script is envoked by name 
-if __name__ == "__main__":
+## -------------------------- MAIN FTN --------------------------- ##
+def main():
     ## Check if the checks and splits match
     checksplits()
     ## Check if we have an argument
@@ -226,4 +225,8 @@ if __name__ == "__main__":
 
         else: ## Otherwise, print to screen 
             print("INFO: Good news everyone! No errors were detected in this run.\n\t:-)\n\t<3")
+
+## If the script is envoked by name 
+if __name__ == "__main__":
+    main()
 ## End of file 

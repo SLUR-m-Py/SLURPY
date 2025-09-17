@@ -154,9 +154,8 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args()
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
+## Define main
+def main():
     ## SEt inputs
     inputs = parse_args()
 
@@ -537,4 +536,8 @@ if __name__ == "__main__":
     [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
     ## print to log
     print("Finished filtering and splitting bedpe file: %s"%bedpe_path)
+
+## if the script is envoked
+if __name__ == "__main__":
+    main()
 ## End of file 

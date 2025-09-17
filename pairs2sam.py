@@ -44,8 +44,8 @@ def formatsam(df:pd.DataFrame) -> pd.DataFrame:
     k2.columns = k1.columns 
     return pd.concat([k1,k2],axis=0).sort_values('Qname1').reset_index(drop=True)
 
-def makesam(inpath:str,fend:str) -> str:
-    return inpath.split(fend)[0]+ '.sam'
+## Ftn making sam file path 
+def makesam(inpath:str,fend:str) -> str: return inpath.split(fend)[0]+ '.sam'
 
 ## Ftn for renaming files
 def makeout(inpath:str) -> str:
@@ -57,10 +57,8 @@ def makeout(inpath:str) -> str:
         outpath = inpath + '.sam'
     return outpath
 
-## Ftn for correcting path
-def correctpath(inpath:str,outpath) -> str:
-    ## REturn outpath
-    return outpath if outpath else makeout(inpath)
+## Ftn for correcting path, return the output path 
+def correctpath(inpath:str,outpath) -> str: return outpath if outpath else makeout(inpath)
 
 ## Set load error message
 loaderror = 'ERROR: The input genome map (%s) was not a tab or space deliminated map of the genome, with two columns representing the chromosome names and lengths!'
@@ -78,10 +76,8 @@ def loadmap(inpath:str) -> pd.DataFrame:
     ## Return gmap
     return gmap 
 
-## Ftn for makign header
-def samheader(df:pd.DataFrame) -> list:
-    ## Gather a chromosome list form genome map (df), zip and format header lines 
-    return [f'@SQ\tSN:{c}\tLN:{l}\n' for c,l in zip(df[0].tolist(),df[1].tolist())]
+## Ftn for makign header, gather a chromosome list form genome map (df), zip and format header lines 
+def samheader(df:pd.DataFrame) -> list: return [f'@SQ\tSN:{c}\tLN:{l}\n' for c,l in zip(df[0].tolist(),df[1].tolist())]
 
 ## Ftn for calling this scrpt
 def bedpetosam(inpath:str,genomepath:str,threads:int,tobam:bool,sname:str,pix=5) -> tuple:
@@ -107,8 +103,8 @@ def parse_args():
     ## Parse the inputs from parser obj 
     return parser.parse_args()
 
-## If the script is envoked 
-if __name__ == "__main__":
+## Define the main ftn
+def main():
     ## Parse the inputs from parser obj 
     inputs = parse_args()
 
@@ -164,4 +160,8 @@ if __name__ == "__main__":
     out_file_name = bam_path.split('/')[0] if tobam else outpt_path.split('/')[0]
     ## Print to log we are finished
     print(f'Finished bedpe pairs file conversion ({ins_file_name}) to {out_file_name}')
+
+## If the script is envoked 
+if __name__ == "__main__":
+    main()
 ## End of file 

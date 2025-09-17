@@ -83,9 +83,8 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args()
 
-## ------------------------------------------------------ BODY of MAIN EXECUTABLE --------------------------------------------------------- ##
-## If the script is called 
-if __name__ == "__main__":
+## Define main ftn 
+def main():
     ## Set the paresed values as inputs
     inputs = parse_args()
 
@@ -109,16 +108,16 @@ if __name__ == "__main__":
 
     ## Sort the input files 
     inpaths = sorted(inpaths) if sorting else inpaths
-
     ## Remove the previous output file it is exists
     k = reset([outputfile])
-
     ## Check that we have actual data files 
     inpaths = [f for f in inpaths if fileexists(f)]
-
     ## Concatonate the input paths 
-    assert (concatonation(inpaths,outputfile,removeheader) if len(inpaths) else True), "ERROR: Unable to concatonate files!"
-                    
+    assert (concatonation(inpaths,outputfile,removeheader) if len(inpaths) else True), "ERROR: Unable to concatonate files!"           
     ## print to log
     print('Finished concatenation of %s input files to %s.'%(len(inpaths),outputfile))
+
+## If the script is called 
+if __name__ == "__main__":
+    main()
 ## End of file 

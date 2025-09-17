@@ -587,7 +587,7 @@ if __name__ == "__main__":
         ## Call the bwa master command
         bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
-        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,library=enzymelib,forced=force,nodelist=nodes,bwaopts=bwa_opts,memory=slurm_mem)
+        bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,forced=force,nodelist=nodes,bwaopts=bwa_opts,memory=slurm_mem)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=bwanodes) + bwa_master_commands, debug)
         ## Append to command fil

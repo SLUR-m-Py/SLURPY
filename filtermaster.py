@@ -32,8 +32,7 @@ from myecho import writetofile
 pix = 2
 
 ## Ftn for formating / joinign a list 
-def formatinput(inlist) -> str:
-    return ' '.join([str(x) for x in inlist])
+def formatinput(inlist) -> str: return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
 def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False,memory=None) -> tuple[list[str], str]:
@@ -83,9 +82,8 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args()
 
-## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
-## if the script is envoked
-if __name__ == "__main__":
+## define main ftn 
+def main():
     ## Set the paresed values as inputs
     inputs = parse_args()
 
@@ -112,7 +110,6 @@ if __name__ == "__main__":
     hicexplorer = inputs.hicexp     ## Flag to run filtering in hicexplorer mode
     memory      = inputs.mem        ## SLURM memory limit 
     
-
     ## Bring in bedpe paths, calc len
     bedpe_paths = sortglob(f'{bedtmpdir}/*.{sample_name}.bedpe')
     nbedpe = len(bedpe_paths)
@@ -178,4 +175,8 @@ if __name__ == "__main__":
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(nbedpe,sample_name))
+
+## if the script is envoked
+if __name__ == "__main__":
+    main()
 ## EOF 

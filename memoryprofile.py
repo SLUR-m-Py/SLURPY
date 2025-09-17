@@ -50,9 +50,8 @@ def getmemory(jobid:int) -> str:
     ## Gather the used mem 
     return parseseff(submitsbatch(f'seff {jobid}',returnid=False)) if jobid else '0 KB'
 
-## if the script is envoked
-if __name__ == "__main__":
-
+## Defin main
+def main():
     ## Load in command files
     command_file_paths = sortglob(f'./{debugdir}/command.file.*.csv')
     ## Iterate thru the command file
@@ -104,4 +103,8 @@ if __name__ == "__main__":
     plt.savefig(out_path.replace('.csv','.png'),dpi=150,bbox_inches='tight')
     ## Print we have completed this
     print('Finished calculating memory usage.')
+
+## if the script is envoked
+if __name__ == "__main__":
+    main()
 ## EOF 

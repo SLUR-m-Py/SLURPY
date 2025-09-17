@@ -32,20 +32,16 @@ line_count  = 5000
 pix         = 1     
 
 ## Ftn for checkign if single 
-def issingle(r:str)-> bool:
-    return '.singletons.' in r.lower()
+def issingle(r:str)-> bool: return '.singletons.' in r.lower()
 
 ## Ftn for checking if failed in 
-def isfailed(r:str) -> bool:
-    return '.failed.' in r.lower() 
+def isfailed(r:str) -> bool: return '.failed.' in r.lower() 
 
 ## Dftn for getting read1
-def getread1(wc:str) -> list:
-    return [r for r in sortglob(wc) if not (issingle(r) or isfailed(r))]
+def getread1(wc:str) -> list: return [r for r in sortglob(wc) if not (issingle(r) or isfailed(r))]
 
 ## Ftn for defining read two
-def formatread2(firstreads:list) -> list:
-    return ['_R2_'.join(r.split('_R1_')) for r in firstreads]
+def formatread2(firstreads:list) -> list: return ['_R2_'.join(r.split('_R1_')) for r in firstreads]
 
 ## Def for checkign report 
 def reportcheck(reportpath) -> bool:
@@ -75,15 +71,13 @@ def sizecheck(read1,read2) -> list:
     return read_pairs
 
 ## Ftn for tiling jobs
-def vectortile(k,n):
-    return tile(arange(k)+1,n)
+def vectortile(k,n): return tile(arange(k)+1,n)
 
 ## Ftn for formating the bwa master 
-def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,library=None,forced=False,nodelist=None,bwaopts='',memory=None) -> tuple[list[str], str]:
+def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,forced=False,nodelist=None,bwaopts='',memory=None) -> tuple[list[str], str]:
     ## Format command to the bwatobedpe.py 
     command = f'{slurpydir}/bwatobedpe.py -s {sname} -r {refpath} -b {threads} -c {cwd} -P {partition} -N {nice} -l {linecount} -j {njobs}' \
-            + (f' -L {library}' if library else '') + (' --debug' if debug else '') \
-            + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') \
+            + (' --debug' if debug else '') + (' --force' if forced else '') + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') \
             + (' -B %s'%bwaopts if len(bwaopts) else '') + (' --memory %s'%memory if memory else '')
     ## Format report 
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
@@ -109,7 +103,6 @@ def parse_args():
     parser.add_argument("-c", "--cwd",            dest="c",     type=str,  required=True,  help = c_help, metavar = './the/cwd'                          )
     parser.add_argument("-b", "--bwa-threads",    dest="b",     type=int,  required=False, help = b_help, metavar = bwathreads,   default = bwathreads   )
     parser.add_argument("-P", "--partition",      dest="P",     type=str,  required=False, help = P_help, metavar = 'tb',         default = 'tb'         ) 
-    parser.add_argument("-L", "--library",        dest="L",     type=str,  required=False, help = L_help, metavar = 'MboI',       default = lib_default  )
     parser.add_argument("-l", "--line-count",     dest="l",     type=int,  required=False, help = l_help, metavar = 'n',          default = line_count   )
     parser.add_argument("-N", "--nice",           dest="N",     type=int,  required=False, help = N_help, metavar = 'n',          default = nice         )
     parser.add_argument("-j", "--njobs",          dest="j",     type=int,  required=False, help = j_help, metavar = 'n',          default = nparallel    )
@@ -123,21 +116,17 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args() 
 
-##      MAIN SCRIPT & ARGUMENT PARSING 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## If the script is envoked by name 
-if __name__ == "__main__":
+## MAIN SCRIPT & ARGUMENT PARSING 
+def main():
     ## Set the paresed values as inputs
     inputs = parse_args() 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    
     ## Set inputs 
     sample_name  = inputs.s         ## Set sample name
     ref_path     = inputs.r         ## Path to reference file
     thread_count = inputs.b         ## Number of threads
     the_cwd      = inputs.c         ## The cwd
     partitions   = inputs.P         ## Paritions to run nodes on 
-    library      = inputs.L         ## Library used in hic construcition
     line_count   = inputs.l         ## Number of lines to parse from file
     nice         = inputs.N         ## Nice parameter, "Its nice to be nice"
     nparallel    = inputs.j         ## Number of parallel bwa jobs to run 
@@ -190,7 +179,7 @@ if __name__ == "__main__":
 
         ## format the command to bwa mem 
         bwa_coms = [f'refpath={ref_path}\n',
-                    f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {library} {outfile} {line_count}\n',
+                    f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
         ## If we are not forcing the run, then check if it exists
@@ -229,4 +218,9 @@ if __name__ == "__main__":
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(nreads,sample_name))
+
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## If the script is envoked by name 
+if __name__ == "__main__":
+    main()
 ## EOF 

@@ -13,8 +13,6 @@ from os.path import isfile
 from defaults import dictzip, listzip
 ## Load in variables and ftn from my other libs
 from biotools import samnames, samtypes, loadref, getmatchsum
-## Bring in return site ftn form to bedp 
-from filtering import returnsite
 ## Load in params
 from parameters import hicsep
 
@@ -53,9 +51,7 @@ def getfields(inline,count=0) -> list:
     return [sept[i] for i in range(count)] if count else sept
 
 ## Ftn for returning bool if the alignment is chimeric
-def ischimeric(line) -> bool: 
-    ## REturn the boolean check 
-    return 'SA' == getfields(line)[-1].split(':')[0]
+def ischimeric(line) -> bool: return 'SA' == getfields(line)[-1].split(':')[0]
 
 ## Ftn for making mapped list into a dataframe 
 def makedf(mapped:list,totypes:list):
@@ -73,9 +69,7 @@ def splitcigar(s,strand):
     return l if strand else l[::-1]
 
 ## Ftn for getting set of of flags from df
-def getflags(df):
-    ## Return list of flags 
-    return list(set(df['Flag']))
+def getflags(df) -> list: return list(set(df['Flag']))
 
 ## Ftn for adding alignment flags to sam df
 def makeflagdf(df):
@@ -252,8 +246,7 @@ def appenddf(df:pd.DataFrame,outpath:str,toappend:bool,thesep=hicsep) -> None:
     pass 
 
 ## Ftn for returning the match coutn in a cigar str
-def matchcount(cig:str) -> int:
-    return cig.count('M')
+def matchcount(cig:str) -> int: return cig.count('M')
 
 ## Ftn for post filtering recroeds 
 def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):  #,enzymelib:str,error_dist:int,frag_size:int,refseqio:str):
@@ -332,13 +325,11 @@ def postfilter(inmapping:pd.DataFrame,outdfpath:str,chrdict:dict,toappend:bool):
     pass 
 
 ## ------------------------ MAIN SCRIPT ------------------------------ ## 
-## If the script is envoked by name 
-if __name__ == "__main__":
+def main():
     ## GAther input variabels 
     ref_path   = sys.argv[1]
-    library    = sys.argv[2]
-    outfile    = sys.argv[3]
-    line_count = int(sys.argv[4])
+    outfile    = sys.argv[2]
+    line_count = int(sys.argv[3])
 
     ## Set the sam name 
     samname    = outfile.split('/')[-1].split('.bedpe')[0]
@@ -346,14 +337,10 @@ if __name__ == "__main__":
     ## Initiate lists 
     filt_lines = []
     lastc      = []
-    i          = 0
-    c          = 0 
+    i,c        = 0,0
 
     ## Format the chromosome dictionary from ref object
     chromdict = makechromdict(ref_path)
-
-    ## set dandling ends
-    restriction_sites, dangling_ends = returnsite(library)
 
     ## Go thru stand input 
     for line in sys.stdin:
@@ -398,4 +385,8 @@ if __name__ == "__main__":
         postfilter(tomap,outfile,chromdict,toappend=bool(c)) #,enzyme_lib,errorsize,min_frag_s,refpath)
     ## PRint to log 
     print("Finished parsing %s inputs from %s to %s"%(i,samname,outfile))
+
+## If the script is envoked by name 
+if __name__ == "__main__":
+    main()
 ## EOF

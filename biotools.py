@@ -506,8 +506,7 @@ def parse_args():
     return parser.parse_args()
 
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
-## If the library is called as an executable
-if __name__ == "__main__":
+def main():
     ## ------------------------------------------- PARSER SETTING ---------------------------------------------------- ## 
     args = parse_args()
     ## Load in mods like dask dataframes 
@@ -565,4 +564,8 @@ if __name__ == "__main__":
     peak_info = peak_info.round(dplace)
     ## Save the peak info
     peak_info.to_csv(save_path,index=False,float_format=f'%.{dplace}f')
+
+## If the library is called as an executable
+if __name__ == "__main__":
+    main()
 ## End of file 

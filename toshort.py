@@ -52,12 +52,10 @@ intra_help          = "Return only intra-chromosomal contacts from a bedpe file.
 inter_intra_error   = "ERROR: Both the boolean flags of inter-only and intra-only were passed when only one may be ture!"
 
 ## Def ftn for taking left size of the fragment 
-def rowleft(row) -> int:
-    return int(sorted(row)[1] - 1) 
+def rowleft(row) -> int: return int(sorted(row)[1] - 1) 
 
 ## Def ftn for taking right size of the fragment 
-def rowright(row) -> int:
-    return int(sorted(row)[2] + 1)
+def rowright(row) -> int: return int(sorted(row)[2] + 1)
 
 ## Set position columns used in bedpe transformation 
 pos_cols = ['Rname1','Pos1','Pos2','End1','End2']
@@ -68,6 +66,7 @@ rpos2 = ['Rname2','Pos2','End2','Seqrev2']
 ## Set the list of new column names from above 
 new_cols = ['Chrom','Left','Right','Strand']
 
+## Ftn to format bed
 def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.DataFrame:
     ## Gather the chromosome, left, and right position of read one or 2
     bed = df[old].copy()
@@ -80,6 +79,7 @@ def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.Da
     ## Retunr bed 
     return bed 
 
+## Define parser for argument gathering
 def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
@@ -96,8 +96,8 @@ def parse_args():
     ## Set the paresed values as inputs
     return parser.parse_args()
     
-## If the script is envoked 
-if __name__ == "__main__":
+## Define main
+def main():
     ## Set the paresed values as inputs
     inputs = parse_args()
 
@@ -198,4 +198,8 @@ if __name__ == "__main__":
 
         ## Print to log
         print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path))
+
+## If the script is envoked 
+if __name__ == "__main__":
+    main()
 ## End of file 

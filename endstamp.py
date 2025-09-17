@@ -34,8 +34,7 @@ from defaults import sortglob
 from parameters import debugdir, diagdir
 
 ## Ftn for getting json by path
-def getjson(wildcard=f'./{diagdir}/fastp/*fastp.*.0.json'):
-    return sortglob(wildcard)
+def getjson(wildcard=f'./{diagdir}/fastp/*fastp.*.0.json') -> list: return sortglob(wildcard)
 
 ## Ftn for reading in json
 def loadjson(jsonpath):
@@ -46,12 +45,10 @@ def loadjson(jsonpath):
     return json_data
 
 ## Get the total data counts 
-def gettotal(data) -> int: 
-    return int(data['summary']['before_filtering']['total_reads'])
+def gettotal(data) -> int: return int(data['summary']['before_filtering']['total_reads'])
 
 ## Get those passing filtered
-def getfiltered(data) -> int: 
-    return int(data['summary']['after_filtering']['total_reads'])
+def getfiltered(data) -> int: return int(data['summary']['after_filtering']['total_reads'])
 
 ## Sum counts 
 def sumcounts(inpaths:list,filtered=False) -> int: 
@@ -60,22 +57,20 @@ def sumcounts(inpaths:list,filtered=False) -> int:
     else:
         return int(sum([gettotal(loadjson(flog)) for flog in inpaths]))
 
-## If the script is envoked 
-if __name__ == "__main__":
+## Define main
+def main():
     ## ------------------------------------------ Input Variables ------------------------------------------ ##
     ## Gather the file name, the start time stamp from input and calculate the end time stamp 
     filename,sstamp,estamp = sys.argv[1], float(sys.argv[2]), time.time()
 
-    ## Format the start time stamp 
+    ## Format the start and end time stamps
     dt0 = datetime.fromtimestamp(sstamp)
-
-    ## Format the end time stamp
     dt2 = datetime.fromtimestamp(estamp)
 
     ## Gather logs from dir
     fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
 
-    ## Format tiem stamp from fastp log if we find one 
+    ## Format time stamp from fastp log if we find one 
     dt1 = datetime.fromtimestamp(getctime(fastp_log[0])) if len(fastp_log) else dt0 
 
     ## Calculate delta of time stamps and then the approx run time
@@ -103,7 +98,6 @@ if __name__ == "__main__":
     ## Reet column name
     newmap['Mapping'] = [v.split('INFO: ')[-1] for v in newmap.Mapping.tolist()]
 
-
     ## Check inital (zeroth) fastp logs for total
     initial_fastp_logs = getjson() #sortglob(f'./{diagdir}/fastp/*fastp.*.0.json') 
     ## Calculate total reads, those lost by fastp 
@@ -111,7 +105,6 @@ if __name__ == "__main__":
     fastp_lost   = (total_reads - sumcounts(initial_fastp_logs,filtered=True))/2
     total_counts = total_reads/2 
 
-   
     ## Transpose and add fastp counts
     newmap = newmap.T
     newmap['fastp'] = ['Fastp',fastp_lost]
@@ -138,7 +131,10 @@ if __name__ == "__main__":
 
     ## Save out new map
     newmap.to_csv(outfilename,index=False)
-
     ## Print to log
     print("Finished our SLUR(M)-py!")
-    ## End of file 
+
+## If the script is envoked 
+if __name__ == "__main__":
+    main()
+## End of file 

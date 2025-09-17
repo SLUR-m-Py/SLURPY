@@ -41,7 +41,7 @@ def intscore(df,ci,cj,N,c1='Rname1',c2='Rname2') -> float:
     return round(N_ij/(N *(N_i/N) * (N_j/N)),4)
 
 ## Ftn for counting interchormosomeal scores between chromosomes
-def interscoring(df,chrlist) -> pd.DataFrame:
+def interscoring(df,chrlist,intercounts) -> pd.DataFrame:
     ## Initiate inter score df 
     inter_score_df = pd.DataFrame(index=chrlist,columns=chrlist,dtype=float)
     ## Iterate thru the chromosomes 
@@ -50,7 +50,7 @@ def interscoring(df,chrlist) -> pd.DataFrame:
             ## If the chromosomes are not equal and we are going left to right. 
             if (c1 != c2) and (j>i):
                 ## Calc the inter -chrom score 
-                ics = intscore(df,c1,c2,ninter)
+                ics = intscore(df,c1,c2,intercounts)
 
                 ## Place score in df between c1 and c2 and their mirror pos
                 inter_score_df.loc[c1,c2] = ics
@@ -139,8 +139,8 @@ def parse_args():
     ## Set inputs
     return parser.parse_args()
 
-## If the script is envoked 
-if __name__ == "__main__":
+## Def main ftn
+def main():
     ## Set inputs
     inputs = parse_args()
     
@@ -318,7 +318,7 @@ if __name__ == "__main__":
         rintra = round(nintra/ntotal,4)
 
         ## Calcluat the inter chromosomal scores
-        inter_score_df = interscoring(inter_counts,chrlist)
+        inter_score_df = interscoring(inter_counts,chrlist,ninter)
 
         ## save the inter scores, counts, and distance decay to csvs givin outpath 
         inter_score_df.to_csv(outpath,index=True,header=True)
@@ -415,4 +415,8 @@ if __name__ == "__main__":
         plt.savefig(outname.replace(inter_save,'.profile')+'.png',dpi=150,bbox_inches='tight')
     ## Print we are finished
     print('Finished counting paired end reads.')
-    ## EOF      
+
+## If the script is envoked 
+if __name__ == "__main__":
+    main()
+## EOF      

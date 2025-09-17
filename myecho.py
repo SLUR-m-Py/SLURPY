@@ -88,8 +88,7 @@ conda install numpy pandas matplotlib seaborn ipython pysam samtools macs3 bwa
 pip install macs3
 """
 ## ----------------------------------------------- MAIN EXECUTABLE --------------------------------------------------- ## 
-## If the library is called as an executable
-if __name__ == "__main__":
+def main():
     ## If we are doing a check
     if (len(sys.argv) > 1):
         ## Set the output message and output file 
@@ -112,7 +111,7 @@ if __name__ == "__main__":
         ## Load pandas, numpy and seaborn 
         import pandas as pd, numpy as np, seaborn as sns 
         ## Load in system, json, time, argparese and subprocess 
-        import sys, json, time, argparse, subprocess
+        import json, time, argparse, subprocess
         ## Loadin checksam
         from biotools import checksam
         ## Bring in dask 
@@ -121,4 +120,8 @@ if __name__ == "__main__":
         assert checksam(), 'ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again.\n'
         ## Print to screen that this ran
         print("INFO: Modules loaded correctly.\nINFO: We are ready to run slurpy!")
+
+## If the library is called as an executable
+if __name__ == "__main__":
+    main()
 ## End of file 
