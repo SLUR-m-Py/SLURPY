@@ -91,6 +91,7 @@ O_help = "Path of output sam file. If not given taken from input .bedpe file."
 B_help = "Boolean flag to convert sam to bam."
 T_help = "Thread count for sam to bam conversion."
 
+## Define ftn for parssign arguments
 def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = description)

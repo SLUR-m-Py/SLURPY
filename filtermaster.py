@@ -18,7 +18,7 @@ from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, wa
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwatobedpe import reportcheck, vectortile, hic_flag
+from bwatobedpe import vectortile, hic_flag
 ## Load in argparse
 import argparse
 ## Bring in remove
@@ -27,6 +27,8 @@ from os import remove
 from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 ## Bring in write to file
 from myecho import writetofile
+## Bring in finished check
+from checkwork import unfinished
 
 ## Set stage in piepline
 pix = 2
@@ -142,7 +144,7 @@ def main():
         ## If we are not forcing the run, then check if it exists
         if not forced:
             ## If the report exists and has alredy been run, just skip
-            if fileexists(filter_repo) and fileexists(filter_file) and reportcheck(filter_repo):
+            if fileexists(filter_repo) and fileexists(filter_file) and unfinished(filter_repo):
                 print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
                 ## Reformat the commands
                 filter_coms = [filter_coms[-1]]

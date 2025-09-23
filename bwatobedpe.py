@@ -26,6 +26,8 @@ from os.path import getsize
 from os import remove
 ## Bring in myecho
 from myecho import writetofile
+## Bring in unfinished
+from checkwork import unfinished
 
 ## Set opttions for line count and step in pipelien 
 line_count  = 5000
@@ -42,18 +44,6 @@ def getread1(wc:str) -> list: return [r for r in sortglob(wc) if not (issingle(r
 
 ## Ftn for defining read two
 def formatread2(firstreads:list) -> list: return ['_R2_'.join(r.split('_R1_')) for r in firstreads]
-
-## Def for checkign report 
-def reportcheck(reportpath) -> bool:
-    finished = False 
-    if fileexists(reportpath):
-        with open(reportpath,'r') as infile:
-            for l in infile:
-                if 'finished' in l.lower():
-                    finished = True
-                    break
-            infile.close()
-    return finished
 
 ## Write ftn to check filesize fo fastq
 def sizecheck(read1,read2) -> list: 
@@ -185,7 +175,7 @@ def main():
         ## If we are not forcing the run, then check if it exists
         if not forced:
             ## If the report exists and has alredy been run, just skip
-            if fileexists(outfile) and fileexists(bwa_repo) and reportcheck(bwa_repo):
+            if fileexists(outfile) and fileexists(bwa_repo) and unfinished(bwa_repo):
                 print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
                 ## REformat coms so its just the check 
                 bwa_coms = [bwa_coms[-1]]
