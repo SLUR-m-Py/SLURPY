@@ -13,7 +13,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprint
 ## Load input vars from params
-from parameters import refmetavar, bwathreads, lib_default, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
+from parameters import refmetavar, bwathreads, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
 ## load in sleep
 from time import sleep
 ## Bring in tile and arange 

@@ -233,10 +233,9 @@ def main(executive_dir:str=slurpydir,
     ##      CORRECT SPLIT / Chunksize
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     max_splitsize = max([int(s) for s in splitsize])
-    if chunksize > max_splitsize:
-        ## Reset chunksize
-        chunksize = int(round(max_splitsize/3,0))
-        print("INFO: Reseting chunksize (Z) to: %s"%chunksize)
+    chunk_check   = (chunksize > max_splitsize)
+    chunksize = int(round(max_splitsize/3,0)) if chunk_check else chunksize
+    ifprint("INFO: Reseting chunksize (Z) to: %s"%chunksize,chunk_check)
 
     ##      PRESET Thread counts
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -343,8 +342,6 @@ def main(executive_dir:str=slurpydir,
     ## Check if we are mapping RNA-seq reads
     if rna_seq:
         experi_mode   = 'rna-seq'
-        enzymelib     = 'none'
-        max_dist      = 0
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         print("INFO: Processing RNA-seq sample.")
 
@@ -362,7 +359,6 @@ def main(executive_dir:str=slurpydir,
         else:
             experi_mode = 'atac-seq'
         ## SEt hic vars to false and none 
-        enzymelib     = 'none'
         max_dist      = max_dist if max_dist else 1000
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         peakcalling   = not skippeaks
@@ -370,7 +366,6 @@ def main(executive_dir:str=slurpydir,
         
     ## set wgs mode 
     elif wgs_seq:
-        enzymelib     = 'none'
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         print("INFO: Processing sample from whole-genome sequencing.")
 
@@ -381,6 +376,9 @@ def main(executive_dir:str=slurpydir,
         count_mode    = ''
         ## Moved to trigger if statment correctly
         print("INFO: Running analysis with the %s Hi-C library."%enzymelib)
+
+    ## Redefine enzymatic lib
+    enzymelib = 'none' if not inhic else enzymelib
 
     ## Reset shift and extention size 
     shift_size,extendsize = (shift_size,extendsize) if nomodel else (0,0)
