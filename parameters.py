@@ -95,6 +95,14 @@ g_metavar  = 'bp'
 refmetavar = './path/to/reference.fasta'  
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+## Set pipeline of hic analysis ## NOTE defined after defaults import 
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic' ,'macs3','sam','count','clean']
+##                  0        1      2        3       4      5a      5b      5c      5d      5e     6B      6C
+## Join pipeline names by commas
+h_pipe = ', '.join(hic_pipeline) 
+inhic = True 
+peakcalling = not inhic
+count_mod = ''
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      HELP MESSAGES 
@@ -125,7 +133,7 @@ x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command. Default 
 A_help = "The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes."
 a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination."
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
-R_help = "Step within the pipeline to re-run from. Options include: %s"
+R_help = "Step within the pipeline to re-run from. Options include: %s"%h_pipe
 m_help = "Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter."
 j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: %s"%nparallel
 
