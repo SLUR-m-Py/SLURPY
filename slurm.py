@@ -1,4 +1,33 @@
 #!/usr/bin/env python
+from parameters import * 
+## Load inftns from tools
+from biotools import *
+## Load in panda cat 
+from pandacat import pandacat
+## Load in bwa master
+from bwatobedpe import bwamaster
+## Load in filter master
+from filtermaster import filtermaster
+## Load in bedpe to sam
+from pairs2sam import bedpetosam
+## Load in ftn from os path
+from os.path import exists, basename, isdir
+## laod in os
+from os import remove, getcwd
+## Load in time
+import time, argparse
+## Bring in defautls
+from defaults import sbatch, ifprint, basenoext
+## Load in write to file
+from myecho import writetofile
+## Set pipeline of hic analysis ## NOTE defined after defaults import 
+hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic' ,'macs3','sam','count','clean']
+##                  0        1      2        3       4      5a      5b      5c      5d      5e     6B      6C
+## Join pipeline names by commas
+h_pipe = ', '.join(hic_pipeline) 
+inhic = True 
+peakcalling = not inhic
+count_mod = ''
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -35,42 +64,12 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 ##      SET PIPELINES
 ## 
 ## HIC
-## Set pipeline of hic analysis ## NOTE defined after defaults import 
-hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic' ,'macs3','sam','count','clean']
-##                  0        1      2        3       4      5a      5b      5c      5d      5e     6B      6C
-## Join pipeline names by commas
-h_pipe = ', '.join(hic_pipeline) 
-inhic = True 
-peakcalling = not inhic
-count_mod = ''
+
 ## 
 ##      MODULE LOADING and VARIABLE SETTING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## Load in vars from parameter space
-from parameters import * 
-## Load inftns from tools
-from biotools import *
-## Load in panda cat 
-from pandacat import pandacat
-## Load in bwa master
-from bwatobedpe import bwamaster
-## Load in filter master
-from filtermaster import filtermaster
-## Load in bedpe to sam
-from pairs2sam import bedpetosam
-## Load in ftn from os path
-from os.path import exists, basename, isdir
-## laod in os
-from os import remove, getcwd
-## Load in time
-import time, argparse
-## Bring in defautls
-from defaults import sbatch, ifprint, basenoext
-## Load in write to file
-from myecho import writetofile
 
-## Define help messages
-R_help = R_help%h_pipe
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ##      FUNCTION DEFINING
@@ -128,24 +127,27 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     ## Return the pre and report
     return prestr, report
 
+## Define help messages
+R_help = R_help%h_pipe
+
 ## Write ftn for parsing args 
 def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description = slurpy_descr)
 
     ## Add the required argument
-    parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
+    parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help,         metavar = refmetavar                                     ) 
     ## Add default arguments
-    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = fastqdir     )
-    parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
-    parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
-    parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
-    parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
-    parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
-    parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
-    parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
-    parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
-    parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
+    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp,         metavar = './path/to/fastqs',     default = fastqdir     )
+    parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help,         metavar = splitsize,              default = [splitsize]  )
+    parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help,         metavar = 'n',                    default = 0            )
+    parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help,         metavar = 'tb gpu fast',          default = parts        ) 
+    parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help,         metavar = mito,                   default = mito         )
+    parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help,         metavar = 'chrX, chrY ...',       default = []           )
+    parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help,         metavar = map_q_thres,            default = map_q_thres  )
+    parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help%help,    metavar = 'step',                 default = None         )
+    parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help,         metavar = fakejobid,              default = 0            )
+    parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help,         metavar = 'n',                    default = nice         )
 
     ## Set number of threads across software 
     parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel    )
