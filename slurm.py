@@ -1,7 +1,16 @@
 #!/usr/bin/env python
-from parameters import * 
-## Load inftns from tools
-from biotools import *
+## Load in parase args ftn, optional variables, and reference paths 
+from parameters import slurpy_args, hic_options, hic_pipeline, samthreads, t2t_refpath, t2t_gtfpath, vero_refpath
+## Load in directoris
+from parameters import fastqdir, splitsdir, diagdir, slurpydir, debugdir, aligndir, comsdir, bedtmpdir, hicdir, macs3dir, checkerdir
+## Load in ftns from bio tools for formating calls to fastp
+from biotools import fastcut, reportname, fastdry, getsamplename, sortfastq
+## Load in ftn from bio tools for writing files and submittting jobs 
+from biotools import commandcontrol, submitdependency, submitfastp, writeparams
+## Load in other ftn from bio tools 
+from biotools import peakattack, isbwaix, sortglob, setrunname, gathering
+## Load in ftns from biotools for formating paths, directories, and reseting
+from biotools import makedirectories, checksam, patchclean, confirmreset
 ## Load in panda cat 
 from pandacat import pandacat
 ## Load in bwa master
@@ -14,13 +23,12 @@ from pairs2sam import bedpetosam
 from os.path import exists, basename, isdir
 ## laod in os
 from os import remove, getcwd
-## Load in time
-import time, argparse
 ## Bring in defautls
 from defaults import sbatch, ifprint, basenoext
 ## Load in write to file
 from myecho import writetofile
-
+## Load in time
+import time
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -54,33 +62,27 @@ squeue -u croth | grep 'croth' | grep gpu | grep "(DependencyNeverSatisfied)" | 
 
  --nodelist c1003 c1004 c1005 c1006 c0823 c0825 c0825
 """
-##      SET PIPELINES
-## 
-## HIC
-
-## 
-##      MODULE LOADING and VARIABLE SETTING 
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-## Load in vars from parameter space
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ##      FUNCTION DEFINING
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+## Define options for fastpeel ftn
+fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
+
 ## Ftn for formating fastp command to filter and split reads
-def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',z=4) -> tuple:
+def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options:str=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',z=4, fastp_splits_dir=splitsdir,diagnos=diagdir) -> tuple:
     """Formats calls to fastp given input fastq files."""
     ## Set variable names 
     r1_bn    = basenoext(r1)                                 ##      Generate basename of first read 
     r2_bn    = basenoext(r2)                                 ##      Generate basename of second read 
-    temp1    = f'{splitsdir}/{r1_bn}{toremoveend}'           ##      Format the first temp file for splits to be remove
-    temp2    = f'{splitsdir}/{r2_bn}{toremoveend}'           ##      Format the second temp file for splits to be remove 
-    single1  = f'{splitsdir}/{r1_bn}{singleend}'             ##      Make singleton file from first split 
-    single2  = f'{splitsdir}/{r2_bn}{singleend}'             ##      Make singleton file from second split 
-    split1   = f'{splitsdir}/{basename(r1)}'                 ##      Set the first split name
-    split2   = f'{splitsdir}/{basename(r2)}'                 ##      Create the second split name 
+    temp1    = f'{fastp_splits_dir}/{r1_bn}{toremoveend}'           ##      Format the first temp file for splits to be remove
+    temp2    = f'{fastp_splits_dir}/{r2_bn}{toremoveend}'           ##      Format the second temp file for splits to be remove 
+    single1  = f'{fastp_splits_dir}/{r1_bn}{singleend}'             ##      Make singleton file from first split 
+    single2  = f'{fastp_splits_dir}/{r2_bn}{singleend}'             ##      Make singleton file from second split 
+    split1   = f'{fastp_splits_dir}/{basename(r1)}'                 ##      Set the first split name
+    split2   = f'{fastp_splits_dir}/{basename(r2)}'                 ##      Create the second split name 
     report   = reportname(getsamplename(r1),'fastp',i=pix)   ##      Format the report name
-    failed   = f'{splitsdir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
+    failed   = f'{fastp_splits_dir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
     ## Format commands if filtering, then splitting is being performed
     ## Call the first run of fastp, json, and json are also returend
     fastp_header0, fastp_json0, fastp_html0 = fastcut(r1,r2,temp1,temp2,report,0)
@@ -99,7 +101,7 @@ def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts
     ## Call the fast dry command and format the remove command 
     dry, throwout = fastdry(r1,r2,report), f'rm {temp1} {temp2}\n'
     ## Format the mv commands for the html and json
-    mv_fastp = [f'mkdir -p {diagdir}/fastp\n',f'mv {fastp_json0} {diagdir}/fastp/\n',f'mv {fastp_html0} {diagdir}/fastp/\n']
+    mv_fastp = [f'mkdir -p {diagnos}/fastp\n',f'mv {fastp_json0} {diagnos}/fastp/\n',f'mv {fastp_html0} {diagnos}/fastp/\n']
 
     ## Return the comands depenent aupon if we are spliting or filtering, and the reprot 
     if ishic:
@@ -108,7 +110,7 @@ def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options=fastp_opts
         return [initial_filtering,split_filtered,throwout,dry] + mv_fastp, report
 
 ## Ftn for calling juicer's pre command
-def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str,pix:str) -> tuple:
+def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, bins:list, genomepath:str,pix:str, exdir=slurpydir) -> tuple:
     """
     java -Xmx49152m -Xms49152m -jar $jarpath pre -j 5 -r 500000,250000,200000,150000,100000,50000,25000,10000,5000,1000 $1 ${1}.hic $2
     """
@@ -116,99 +118,35 @@ def juicerpre(intxt:str, outhic:str, Xmemory:int, jarfile:str, threadcount:int, 
     report = reportname(outhic+'.bam','hic.pre',i=pix)
     ## Set the java command for the passed juicer jar file 
     prestr = ['java -Xmx%sm -Xms%sm -jar %s pre -j %s -r %s %s %s %s\n'%(Xmemory,Xmemory,jarfile,threadcount,','.join(map(str,bins)),intxt,outhic,genomepath),
-              f'{slurpydir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
+              f'{exdir}/myecho.py Finished formating Hi-C contacts into a .hic file on path: {outhic} {report}\n']
     ## Return the pre and report
     return prestr, report
-
-## Write ftn for parsing args 
-def parse_args():
-    ## Make the parse
-    parser = argparse.ArgumentParser(description = slurpy_descr)
-
-    ## Add the required argument
-    parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
-    ## Add default arguments
-    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = fastqdir     )
-    parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
-    parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
-    parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
-    parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
-    parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
-    parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
-    parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
-    parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
-    parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
-
-    ## Set number of threads across software 
-    parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel    )
-    parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
-    parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
-    parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
-    parser.add_argument("-B", "--bwa-options",    dest="B",       type=str,  required=False, help = B_help, metavar = hic_options,            default = hic_options  )
-
-    ## Set values for Hi-C analysis 
-    parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
-    parser.add_argument("-E", "--error-distance", dest="E",       type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
-    parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
-    parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
-    parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
-    parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
-    parser.add_argument("-xmx", "--Xmemory",      dest="xmx",     type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
-    parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
-    parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
-    #parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
-    parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
-    parser.add_argument("--memory",               dest="slurmem", type=str,  required=False, help = slurmem_help, metavar='40G',              default = None         )
-
-    ## Set Pipeline boolean blags 
-    parser.add_argument("--restart",              dest="restart",   help = restart_help,   action = ST)
-    parser.add_argument("--nomerge",              dest="merge",     help = merge_help,     action = ST)
-    parser.add_argument("--force",                dest="force",     help = force_help,     action = ST)
-    parser.add_argument("--debug",                dest="debug",     help = debug_help,     action = ST)
-    parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
-    parser.add_argument("--nocount",              dest="count",     help = count_help,     action = ST)
-
-    ## Set Hi-C related boolean flags 
-    parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
-    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,     action = ST)
-    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,     action = ST)
-    parser.add_argument("--hicexplorer",          dest="hicexp",    help = hicex_help,     action = ST)
-    parser.add_argument("--inter-only",           dest="inter",     help = inter_help,     action = ST)
-    
-    ## Set ATAC-seq specifict
-    parser.add_argument("--atac-seq",             dest="atac",        help = atac_help,     action = ST)
-    parser.add_argument("--broad",                dest="broad",       help = broad_help,    action = ST)
-    parser.add_argument("--skipmacs3",            dest="peaks",       help = peaks_help,    action = ST)
-    parser.add_argument("--nolambda",             dest="nolambda",    help = lambda_help,   action = ST)
-    parser.add_argument("--nomodel",              dest="nomodel",     help = nomodel_help,  action = ST)
-    parser.add_argument("--call-summits",         dest="summits",     help = summits_help,  action = ST)
-    parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False, metavar = 'bp')
-    parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False, metavar = 'bp')
-    parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False, metavar = 'BEDPE')
-    parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=[],         required=False, metavar = c_metavar, nargs='+')
-    parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False, type=int)
-    parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False, type=int)
-    parser.add_argument("--max-number-chroms",    dest="maxnc",       help = maxnc_help,    default=max_nchrom, required=False, type=int)
-
-    ## RNA-seq and other vairables 
-    parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
-    parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
-    parser.add_argument("--skipdedup",            dest="skipdedup",  help = mark_help,     action = ST)
-    parser.add_argument("--dont-save-dups",       dest="save",       help = save_help,     action = ST)
-    parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
-    parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
-    parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
-    parser.add_argument("--wgs",                  dest="wgs",        help = wgs_help,      action = ST)
-
-    ## Set the paresed values as inputs
-    return parser.parse_args() 
     
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      MAIN SCRIPT & ARGUMENT PARSING 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-def main():
-    ## Bring in argparse and set parser
-    inputs = parse_args()
+def main(executive_dir:str=slurpydir,
+         fastqs_dir:str=fastqdir,
+         fastpsplits_dir:str=splitsdir,
+         alignment_dir:str=aligndir, 
+         commands_dir:str=comsdir,
+         logs_dir:str=debugdir,
+         diagnostics_dir:str=diagdir,
+         bedpe_dir:str=bedtmpdir,
+         hic_dir:str=hicdir,
+         peaks_dir:str=macs3dir,
+         checks_folder:str=checkerdir,
+         bwa_options:str=hic_options,
+         samtools_ncpu:int=samthreads,
+         human_reference:str=t2t_refpath,
+         human_gtf:str=t2t_gtfpath,
+         vero_reference:str=vero_refpath,
+         pipeline_steps:list=hic_pipeline,
+         inhic:bool=False,
+         peakcalling:bool=False):
+    
+    ## Set inputs from parser
+    inputs = slurpy_args()
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
    
     ##      PASS ARGUMENTS & SET VARIABLES 
@@ -238,7 +176,7 @@ def main():
     ## Set variables for Hi-C                
     run_name        = inputs.n              ##     The name of the samples 
     error_dist      = inputs.E              ##     Distance in bp to check hi-C contacts for errors 
-    enzymelib       = inputs.L              ##     Restriction-enzymelib used in Hi-C prep 
+    enzymelib       = inputs.L              ##     Restriction-enzyme library used in Hi-C prep 
     chunksize       = inputs.Z              ##     Chunk size (row number) to load in with pandas 
     pathtochrom     = inputs.G              ##     Path to list of chromosomes to use 
     jarpath         = inputs.J              ##     Path to juicer jar file 
@@ -267,7 +205,7 @@ def main():
     ## MACS3 related vars
     atac_seq        = inputs.atac           ##     Boolean flag to run in atac-seq mode 
     ifbroad         = inputs.broad          ##     Boolean to activate broader peak calling in macs3 
-    skippeaks       = inputs.peaks          ##     Skips peak calling with macs3 
+    skippeaks       = inputs.peaks          ##     Skips peak calling with macs3 for atac-seq experiments
     nolambda        = inputs.nolambda       ##     Flag to skip local lambda control in macs3
     nomodel         = inputs.nomodel        ##     Flag to skip shifting model
     callsummits     = inputs.summits        ##     Flag to call summits in macs3
@@ -327,10 +265,10 @@ def main():
     isvero = (reference_path.lower() == 'vero')
 
     ## If human reference 
-    reference_path = t2t_refpath if ist2t else reference_path
-    feature_space  = t2t_gtfpath if (feature_space.lower()  == 't2t') else feature_space
+    reference_path = human_reference if ist2t else reference_path
+    feature_space  = human_gtf if (feature_space.lower()  == 't2t') else feature_space
     ## If vero was pass
-    reference_path = vero_refpath if isvero else reference_path
+    reference_path = vero_reference if isvero else reference_path
     #print(reference_path)
 
     ## Set bwa master partition to mpi (FOR ROTH only)
@@ -354,15 +292,15 @@ def main():
             ## Remove the extra forward slash
             path_to_fastqs = path_to_fastqs[:-1]
         ## Set the path to the fastqs
-        fastqdir = path_to_fastqs
+        fastqs_dir = path_to_fastqs
     else:
-        print("WANRING: Unable to find given fastq directory: %s\n\tDefaulting to %s"%(path_to_fastqs,fastqdir))
+        print("WANRING: Unable to find given fastq directory: %s\n\tDefaulting to %s"%(path_to_fastqs,fastqs_dir))
     
     ## Check that the fastq and reference path exists
-    assert isdir(fastqdir), fastqserror
-    assert exists(reference_path), noref_path%reference_path 
+    assert isdir(fastqs_dir), "ERROR: Unable to detect a fastqs directory holding fastq files!"
+    assert exists(reference_path), "ERROR: We could not find the provided input path -- %s -- of the reference file!"%reference_path 
     ## Check the versions of samtools, the user email is an email and the experiment mode is one we know
-    assert checksam(), not_sam_err 
+    assert checksam(), "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
     ## Reformat clean boolean if clean was passed from restart
     ifclean = patchclean(rerun,ifclean)
     ## Initilizse list for sbatch
@@ -403,65 +341,56 @@ def main():
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Check if we are mapping RNA-seq reads
     if rna_seq:
-        keep_dovetail = True
-        inhic         = False
+        experi_mode   = 'rna-seq'
         enzymelib     = 'none'
         max_dist      = 0
         count_mod     = '--atac-seq'
-        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
-        skippeaks     = True 
-    
+        bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
+        print("INFO: Processing RNA-seq sample.")
+
     ## Check if we are in atac seq mode    
-    if atac_seq or len(chip_control) or ifbroad:
-        keep_dovetail = True
-        inhic         = False
+    elif atac_seq or len(chip_control) or ifbroad:
+        ## Check our control files if they were passed 
+        if len(chip_control):
+            experi_mode = 'chrp-seq'
+            assert (type(chip_control) == list) and (type(chip_control[0]) == str), 'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
+            ## Iterate over the controls inputs 
+            for chip_con in chip_control:
+                ## Check they exist 
+                assert exists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
+            ## Otherwise it is an atac-seq 
+        else:
+            experi_mode = 'atac-seq'
+        ## SEt hic vars to false and none 
         enzymelib     = 'none'
         max_dist      = max_dist if max_dist else 1000
         count_mod     = '--atac-seq'
-        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
-
-        ## Set peakcalling boolean 
-        peakcalling = (not skippeaks)
-
+        bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
+        peakcalling   = not skippeaks
+        print("INFO: Processing ATAC-seq sample, calling peaks with MACS3.")
+        
     ## set wgs mode 
-    if wgs_seq:
-        keep_dovetail = True
-        inhic         = False
+    elif wgs_seq:
         enzymelib     = 'none'
         count_mod     = '--atac-seq'
-        bwa_opts      = ',-M' if (bwa_opts == hic_options) else bwa_opts
-        peakcalling   = False 
+        bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
+        print("INFO: Processing sample from whole-genome sequencing.")
 
-    ## Check our control files if they were passed 
-    if len(chip_control):
-        assert (type(chip_control) == list) and (type(chip_control[0]) == str), 'ERROR: Inputs for chip control are not a type we recognize (should be a list of strings)!'
-        ## Iterate over the controls inputs 
-        for chip_con in chip_control:
-            ## Check they exist 
-            assert exists(chip_con), f'ERROR: Bad path to bam file! Unable to locate input control for chip experiment: {chip_con}'
-    
-    ## Reset experiment mode 
-    if atac_seq:
-        experi_mode = 'atac'
-    if rna_seq:
-        experi_mode = 'rnas'
-    elif len(chip_control):
-        experi_mode = 'chip'
-    else: ## Set the hardset hic mode 
-        experi_mode = 'hic'
-
-    ## Moved to trigger if statment correctly
-    print("INFO: Running analysis with the %s Hi-C library."%enzymelib) if inhic else None 
+    else:
+        ## It is a Hi-C experiment
+        experi_mode   = 'hic'
+        inhic         = True 
+        ## Moved to trigger if statment correctly
+        print("INFO: Running analysis with the %s Hi-C library."%enzymelib)
 
     ## Reset shift and extention size 
     shift_size,extendsize = (shift_size,extendsize) if nomodel else (0,0)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Format group dirs 
-    grouped_dirs = [debugdir,aligndir,splitsdir,comsdir,diagdir,bedtmpdir,hicdir,checkerdir] + ([macs3dir] if peakcalling else [])
+    grouped_dirs = [logs_dir,alignment_dir,fastpsplits_dir,commands_dir,diagnostics_dir,bedpe_dir,hic_dir,checks_folder] + ([peaks_dir] if peakcalling else [])
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -477,7 +406,7 @@ def main():
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Let the user know we are making directories 
-    print(directormaking)
+    print('INFO: Making local directories.')
     ## Get the current working dir
     the_cwd = getcwd()
     ## If the run name is none
@@ -485,7 +414,7 @@ def main():
     ## Make the directories 
     makedirectories(grouped_dirs)
     ## Gather and remove the old command files, error, and output logs if they are there 
-    [remove(f) for f in sortglob(f'{comsdir}/*.sh') + sortglob(f'{debugdir}/*.err') + sortglob(f'{debugdir}/*.out')]
+    [remove(f) for f in sortglob(f'{commands_dir}/*.sh') + sortglob(f'{logs_dir}/*.err') + sortglob(f'{logs_dir}/*.out')]
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -504,6 +433,8 @@ def main():
     chrlist,genome_size,pathtochrom = gathering(reference_path,pathtochrom,excludes,not make_mcool)
     ## Calculate chrlist
     nchrom = len(chrlist)
+    ## Set error messave
+    nchrom_err = "ERROR: The number of chromosmes (%s) in the passed reference file are larger than the allowed number (%s)! Consider passing the -G argument or using a more complete reference. You can also increase the --max-number-chroms argument."
     ## Set chromosome cut off
     assert nchrom < max_nchrom, nchrom_err%(nchrom,max_nchrom)
     ## Print if there are fewer than ten
@@ -515,9 +446,9 @@ def main():
     ##      CHECK FOR A BWA INDEXING  
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set index error
-    index_error = index_error%reference_path
+    index_error = "ERROR: We could not detect an index associated with the input reference path: %s\nINFO: Index the reference (bwa index) and try again."
     ## Assert our truth
-    assert isbwaix(reference_path),index_error
+    assert isbwaix(reference_path),index_error%reference_path
     
     ## Format the command file and initilize sample names
     command_files, samplenames = [],[]
@@ -530,16 +461,10 @@ def main():
 
     ##      FASTQ GATHERING
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Inform user we are formating jobs
-    print(formatingfastq)
-    ## Gather the fastqs 
-    in_fastqs = getfastqs(fastqdir+'/*.fastq.gz')
-    ## Assert we have fastq files
-    assert len(in_fastqs), missingfqs
     ## Sort by fastq size
-    in_fastqs = sortfastq(in_fastqs,splitsize)
+    in_fastqs = sortfastq(fastqs_dir+'/*.fastq.gz',splitsize)
     ## Saveout the sizes to debug dir 
-    in_fastqs.to_csv(f'{debugdir}/fastq.sizes.csv',header=True,index=False)
+    in_fastqs.to_csv(f'{logs_dir}/fastq.sizes.csv',header=True,index=False)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -561,13 +486,13 @@ def main():
         ## Iniate pix at 0, set fastp command interface
         pix = 0
         ##  Set the the fastp command file name 
-        fastp_command_file =  f'{comsdir}/{pix}.fastp.{sample_name}.sh'  
+        fastp_command_file =  f'{commands_dir}/{pix}.fastp.{sample_name}.sh'  
         ##  Gather the fastp command and report 
         fastp_coms, fastp_repo = fastpeel(r1,r2,fastp_threads,sizeosplit,ishic=inhic or sfastp)
         ##  Write the command to file
         writetofile(fastp_command_file, sbatch(None,fastp_threads,the_cwd,fastp_repo,nice=1,nodelist=nodes,memory=slurm_mem) + fastp_coms, debug)
         ##  Append command to file
-        command_files.append((fastp_command_file,sample_name,experi_mode,hic_pipeline[pix],fastp_repo,0,''))
+        command_files.append((fastp_command_file,sample_name,experi_mode,pipeline_steps[pix],fastp_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
@@ -576,13 +501,13 @@ def main():
         ## Set the point of pipeline
         pix = 1
         ## Call the bwa master command
-        bwa_master_file = f'{comsdir}/{pix}.bwa.master.{sample_name}.sh'
+        bwa_master_file = f'{commands_dir}/{pix}.bwa.master.{sample_name}.sh'
         ## Gahter the bwa master command and report
         bwa_master_commands, bwa_master_repo = bwamaster(sample_name,reference_path,bwa_threads,the_cwd,partition,debug,nice,nparallel,forced=force,nodelist=nodes,bwaopts=bwa_opts,memory=slurm_mem)
         ## Write command to file
         writetofile(bwa_master_file, sbatch('bwa.master',1,the_cwd,bwa_master_repo,nice=nice,nodelist=bwanodes) + bwa_master_commands, debug)
         ## Append to command fil
-        command_files.append((bwa_master_file,sample_name,experi_mode,hic_pipeline[pix],bwa_master_repo,0,''))
+        command_files.append((bwa_master_file,sample_name,experi_mode,pipeline_steps[pix],bwa_master_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -591,13 +516,13 @@ def main():
         ## 2. Set the setp in pipeline and the new bedbe file name
         pix = 2
         ## Call the master filter command
-        filter_master_file = f'{comsdir}/{pix}.filter.bedpe.master.{sample_name}.sh'
+        filter_master_file = f'{commands_dir}/{pix}.filter.bedpe.master.{sample_name}.sh'
         ## Gather the filter master commadn and report
         filter_master_commands, filter_master_repo = filtermaster(sample_name,reference_path,the_cwd,excludes,chrlist,mapq,error_dist,daskthreads,enzymelib,partition,debug,nice,nparallel,forced=force,maxdist=max_dist,chunksize=chunksize,nodelist=nodes,dovetail=dedovetail,removeinter= not inhic,hicexplorer=hicexplorer,memory=slurm_mem)
         ## Write command to file
         writetofile(filter_master_file, sbatch('filter.bedpe.master',1,the_cwd,filter_master_repo,nice=nice,nodelist=filternodes) + filter_master_commands, debug)
         ## Append to command file
-        command_files.append((filter_master_file,sample_name,experi_mode,hic_pipeline[pix],filter_master_repo,0,''))
+        command_files.append((filter_master_file,sample_name,experi_mode,pipeline_steps[pix],filter_master_repo,0,''))
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
   
@@ -625,22 +550,22 @@ def main():
             valid_end = f'_valid_{chrom}.bedpe'
             ## Set start name for wildcard use to bring in inputs  to ftn 
             sample_start = valid_end if postmerging else f'{sample_name}' + valid_end
-            hiccat_out = f'{hicdir}/{sample_name}.valid.{chrom}.bedpe'
-            hicdup_out = f'{hicdir}/{sample_name}.duplicates.{chrom}.bedpe'
+            hiccat_out = f'{hic_dir}/{sample_name}.valid.{chrom}.bedpe'
+            hicdup_out = f'{hic_dir}/{sample_name}.duplicates.{chrom}.bedpe'
             ## Append to hic cat outs to preserve order 
             hiccats_outs.append(hiccat_out)
             hicdups_outs.append(hicdup_out)
             ## SEt the report name
-            hiccat_repo = reportname(sample_start,hic_pipeline[pix],i=pix)
+            hiccat_repo = reportname(sample_start,pipeline_steps[pix],i=pix)
             ## Set the command
-            hiccat_coms = [f'{slurpydir}/deduphic.py -b {sample_start} -o {hiccat_out} -z {chunksize}' + (' ' if skipduplicates else f' -d {hicdup_out} ') + ('--save-dups' if not keep_dups else '')]
+            hiccat_coms = [f'{executive_dir}/deduphic.py -b {sample_start} -o {hiccat_out} -z {chunksize}' + (' ' if skipduplicates else f' -d {hicdup_out} ') + ('--save-dups' if not keep_dups else '')]
 
             ## make deduplication file name
-            hiccat_file = f'{comsdir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
+            hiccat_file = f'{commands_dir}/{pix}.dedup.{sample_name}.valid.{chrom}.sh'
             ## Write the deduplicat command to file
             writetofile(hiccat_file, sbatch(hiccat_file,daskthreads,the_cwd,hiccat_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + hiccat_coms, debug)
             ## Append the deduplication command
-            command_files.append((hiccat_file,sample_name,experi_mode,hic_pipeline[pix],hiccat_repo,0,''))    
+            command_files.append((hiccat_file,sample_name,experi_mode,pipeline_steps[pix],hiccat_repo,0,''))    
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
         
@@ -650,14 +575,14 @@ def main():
         ## Set pipeline step 
         pix = 4
         ## Set start name for wildcard use to bring in inputs to ftn , the output file and the ouput report, set ouptu name  
-        unused_start  = [bedtmpdir + ('/*.notused.bedpe' if postmerging else f'/*.{sample_name}.notused.bedpe')]
+        unused_start  = [bedpe_dir + ('/*.notused.bedpe' if postmerging else f'/*.{sample_name}.notused.bedpe')]
         
         ## Set file names, concat the inputs, set output names, repor tnames, and files 
         hic_fileends   = ['notused','duplicates','valid']
         concat_inputs  = [unused_start,hicdups_outs,hiccats_outs[::-1]] ## Reverse this to match reverse above 
-        concat_outputs = [f'{aligndir}/{sample_name}.{f}.bedpe' for f in hic_fileends]
-        concat_reports = [reportname(f,hic_pipeline[pix],i=f'{pix}{a}') for a,f in zip(['A','B','C'],concat_outputs)]
-        concat_files   = [f'{comsdir}/{pix}.concat.{sample_name}.{f}.sh' for f in hic_fileends]
+        concat_outputs = [f'{alignment_dir}/{sample_name}.{f}.bedpe' for f in hic_fileends]
+        concat_reports = [reportname(f,pipeline_steps[pix],i=f'{pix}{a}') for a,f in zip(['A','B','C'],concat_outputs)]
+        concat_files   = [f'{commands_dir}/{pix}.concat.{sample_name}.{f}.sh' for f in hic_fileends]
 
         ## Iterate thru the zipped concat files 
         for (con_ins,con_out,con_rep,con_fil) in zip(concat_inputs,concat_outputs,concat_reports,concat_files):
@@ -666,7 +591,7 @@ def main():
             ## Write commands to file 
             writetofile(con_fil, sbatch(con_fil,1,the_cwd,con_rep,nice=nice,nodelist=nodes,memory=slurm_mem) + concat_coms, debug)
             ## append command to command file list
-            command_files.append((con_fil,sample_name,experi_mode,hic_pipeline[pix],con_rep,0,'')) 
+            command_files.append((con_fil,sample_name,experi_mode,pipeline_steps[pix],con_rep,0,'')) 
 
         ## Patch new cat file to next analysis step, must be the valid contacts/alignments 
         newcatfile = concat_outputs[-1]
@@ -693,8 +618,8 @@ def main():
                 for i,coi in enumerate(chrlist):
                     ## Set the report, commands, and gxg script file name 
                     gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                    gxg_commands = [f'{slurpydir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
-                    gxg_file     = f'{comsdir}/{pix}A.gxg.{i}.{sample_name}.sh'
+                    gxg_commands = [f'{executive_dir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                    gxg_file     = f'{commands_dir}/{pix}A.gxg.{i}.{sample_name}.sh'
                     ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
                     writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
                     ## Append to command list for calling/submission later 
@@ -709,9 +634,9 @@ def main():
                 ## make a report
                 short_repo = reportname(sample_name,'toshort',i=f'{pix}A')
                 ## Format the command
-                short_commands = [f'{slurpydir}/toshort.py -i {newcatfile}\n'] 
+                short_commands = [f'{executive_dir}/toshort.py -i {newcatfile}\n'] 
                 ## Set command file 
-                short_file = f'{comsdir}/{pix}B.toshort.{sample_name}.sh'
+                short_file = f'{commands_dir}/{pix}B.toshort.{sample_name}.sh'
                 ## Wriet the short command to file
                 writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
@@ -721,9 +646,9 @@ def main():
                 ## make a report
                 short_repo = reportname(sample_name,'inter.short',i=f'{pix}B')
                 ## Format the command
-                short_commands = [f'{slurpydir}/toshort.py --inter-only -i {newcatfile}\n'] 
+                short_commands = [f'{executive_dir}/toshort.py --inter-only -i {newcatfile}\n'] 
                 ## Set command file 
-                short_file = f'{comsdir}/{pix}B.inter.short.{sample_name}.sh'
+                short_file = f'{commands_dir}/{pix}B.inter.short.{sample_name}.sh'
                 ## Wriet the short command to file
                 writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
@@ -734,9 +659,9 @@ def main():
                 ## make a report
                 short_repo = reportname(sample_name,'pairs',i=f'{pix}B')
                 ## Format the command
-                short_commands = [f'{slurpydir}/toshort.py --pairs -i {newcatfile}\n'] 
+                short_commands = [f'{executive_dir}/toshort.py --pairs -i {newcatfile}\n'] 
                 ## Set command file 
-                short_file = f'{comsdir}/{pix}B.pairs.{sample_name}.sh'
+                short_file = f'{commands_dir}/{pix}B.pairs.{sample_name}.sh'
                 ## Wriet the short command to file
                 writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
@@ -754,7 +679,7 @@ def main():
                 ## Sort and saveout the the concatonated hic file 
                 jpre_coms, jpre_repo = juicerpre(shortfile,outhicpath,xmemory,jarpath,fastp_threads,binsizes,pathtochrom,f'{pix}C')
                 ## make concat file name
-                jpre_file = f'{comsdir}/{pix}C.juicerpre.{sample_name}.sh'
+                jpre_file = f'{commands_dir}/{pix}C.juicerpre.{sample_name}.sh'
                 ## Write the concat command to file
                 writetofile(jpre_file, sbatch(jpre_file,fastp_threads,the_cwd,jpre_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + jpre_coms, debug)
                 ## Append the concat command
@@ -772,12 +697,12 @@ def main():
                 outmcool = newpairsfile + '.mcool'
                 ## Set cooler report and file name 
                 coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
-                coolfile = f'{comsdir}/{pix}C.mcool.{sample_name}.sh'
+                coolfile = f'{commands_dir}/{pix}C.mcool.{sample_name}.sh'
                 ## Set cooler commands 
                 cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
                             f'cooler zoomify {outcool} -r {",".join(map(str,binsizes))} -o {outmcool}\n'
                             f'rm {outcool}\n',
-                            f'{slurpydir}/myecho.py Finished formating mcool file! {coolrepo}\n']
+                            f'{executive_dir}/myecho.py Finished formating mcool file! {coolrepo}\n']
                 ## Write the concat command to file
                 writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes,memory=slurm_mem) + cooler_coms, debug)
                 ## Append the concat command
@@ -789,18 +714,18 @@ def main():
         ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         elif peakcalling:
             ## Format the macs3 call report name
-            macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{comsdir}/{pix}D.macs3.{sample_name}.sh'
+            macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{commands_dir}/{pix}D.macs3.{sample_name}.sh'
             ## Format the name of the output peaks,  output bed or bedpe file
-            peak_path   = f'{macs3dir}/{sample_name}_peaks.broadPeak' if ifbroad else f'{macs3dir}/{sample_name}_peaks.narrowPeak'
-            outbed_file = f'{macs3dir}/{sample_name}*.valid.{macs3mode.lower()}'
+            peak_path   = f'{peaks_dir}/{sample_name}_peaks.broadPeak' if ifbroad else f'{peaks_dir}/{sample_name}_peaks.narrowPeak'
+            outbed_file = f'{peaks_dir}/{sample_name}*.valid.{macs3mode.lower()}'
             ## Format the command to macs3
             macs3_commands = peakattack(newcatfile,sample_name,macs3_report,macs3mode.upper(),gsize=genome_size,incontrols=chip_control,
                                         shiftsize=shift_size,extendsize=extendsize,maxgap=max_gap,minlen=min_len,nolambda=nolambda,
                                         broad=ifbroad,summits=callsummits) +\
-                                        [f'{slurpydir}/biotools.py -b {outbed_file} -p {peak_path} -s {diagdir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
-                                         f'{slurpydir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
-                                        ([f'{slurpydir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
-                                         f'{slurpydir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else [])
+                                        [f'{executive_dir}/biotools.py -b {outbed_file} -p {peak_path} -s {diagnostics_dir}/{sample_name}.frip.stats.csv -g {genome_size}\n',
+                                         f'{executive_dir}/myecho.py Finished calculating FRiP from macs3 {macs3_report}\n'] + \
+                                        ([f'{executive_dir}/annotator.py -i {peak_path} -g {feature_space} --plot\n',
+                                         f'{executive_dir}/myecho.py Finished annotating peaks {macs3_report}'] if feature_space else [])
             ## Write the macs3 commands to file
             writetofile(macs3_filename, sbatch(macs3_filename,1,the_cwd,macs3_report,memory=slurm_mem) + macs3_commands, debug)
             ## Append the macs3 command 
@@ -811,11 +736,11 @@ def main():
         ## 5E. If we are converting bedpe to sam or bam
         if tosam or tobam:
             ## Format the sam file name
-            sam_filename = f'{comsdir}/{pix}E.sam.{sample_name}.sh'
+            sam_filename = f'{commands_dir}/{pix}E.sam.{sample_name}.sh'
             ## format the commadn to pairs2sam
-            sam_commands, sam_report = bedpetosam(newcatfile,pathtochrom,samthreads,tobam,sample_name)
+            sam_commands, sam_report = bedpetosam(newcatfile,pathtochrom,samtools_ncpu,tobam,sample_name)
             ## Wriet the mac
-            writetofile(sam_filename, sbatch(sam_filename,samthreads,the_cwd,sam_report,memory=slurm_mem) + sam_commands, debug)
+            writetofile(sam_filename, sbatch(sam_filename,samtools_ncpu,the_cwd,sam_report,memory=slurm_mem) + sam_commands, debug)
             ## Append the sam command to command file list
             command_files.append((sam_filename,sample_name,experi_mode,'sam',sam_report,0,''))
 
@@ -827,9 +752,9 @@ def main():
     ## 6A. If the clean boolean or rerun vars were set 
     if counting:
         ## Format command to remove uneedeed files 
-        counting_sh   = f'{comsdir}/{pix}A.thecount.sh'             ##   Set the bash file name 
+        counting_sh   = f'{commands_dir}/{pix}A.thecount.sh'             ##   Set the bash file name 
         counting_repo = reportname(run_name,'thecount',i=f'{pix}A')   ##   Set the report 
-        counting_coms = [f'{slurpydir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
+        counting_coms = [f'{executive_dir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
         writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes) + counting_coms, debug)
         ## Append the clean up command to file
@@ -843,12 +768,12 @@ def main():
     ## 6B. Final timestamp, out clean up
     ## Format count commands 
     ## Set the timesampe assocaited file names 
-    timestamp_file   = f'{diagdir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
-    timestampsh      = f'{comsdir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
+    timestamp_file   = f'{diagnostics_dir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
+    timestampsh      = f'{commands_dir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}B')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
-    times_commands = [f'{slurpydir}/endstamp.py {timestamp_file} {stamp}\n',
-                      f'{slurpydir}/memoryprofile.py\n']
+    times_commands = [f'{executive_dir}/endstamp.py {timestamp_file} {stamp}\n',
+                      f'{executive_dir}/memoryprofile.py\n']
     ## Format the command file name and write to sbatch, we will always ask the timestamp to run even in debug mode 
     writetofile(timestampsh, sbatch(timestampsh,1,the_cwd,timestamp_repo,nice=1,nodelist=nodes) + times_commands, False)
     ## Append the timestamp command to file
@@ -860,9 +785,9 @@ def main():
     ## 6C. If the clean boolean or rerun vars were set 
     if ifclean or (rerun == 'clean'): 
         ## Format command to remove uneedeed files 
-        remove_sh   = f'{comsdir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
+        remove_sh   = f'{commands_dir}/{pix}C.cleanup.sh'             ##   Set the bash file name 
         remove_repo = reportname(run_name,'clean',i=f'{pix}C')   ##   Set the report 
-        remove_comm = [f'{slurpydir}/checkwork.py clean\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.bedpe\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.short\n', f'{slurpydir}/checkwork.py gzip ./{aligndir}/*.valid.pairs\n']
+        remove_comm = [f'{executive_dir}/checkwork.py clean\n', f'{executive_dir}/checkwork.py gzip ./{alignment_dir}/*.bedpe\n', f'{executive_dir}/checkwork.py gzip ./{alignment_dir}/*.short\n', f'{executive_dir}/checkwork.py gzip ./{alignment_dir}/*.valid.pairs\n']
         ## Format the command to clean up          
         writetofile(remove_sh, sbatch(remove_sh,1,the_cwd,remove_repo,nice=nice,nodelist=nodes) + remove_comm, debug)
         ## Append the clean up command to file
@@ -875,7 +800,7 @@ def main():
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ##      A) RESTARTING                          
     ## Call the command dataframe, remove previous logs if hard reset was passed 
-    command_files, was_hard_reset = commandcontrol(command_files,hardreset,hic_pipeline,rerun)
+    command_files, was_hard_reset = commandcontrol(command_files,hardreset,pipeline_steps,rerun)
     #print(command_files)
     ## 
     ##      0) SUBMITTING FASTP SPLITTING          
@@ -884,27 +809,27 @@ def main():
     ## 
     ##      1) SUBMITTING BWA ALIGNMENTS           
     ## Call the submit bwa ftn
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[1],hic_pipeline[0],stamp,bwa_partition,debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[1],pipeline_steps[0],stamp,bwa_partition,debug=debug)
     ##
     ##      2) SUBMITTING BEDPE FILTERING and SPLITTING
     ## Submit the bedpe filtering scirpt 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[2],hic_pipeline[1],stamp,filt_partition,debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[2],pipeline_steps[1],stamp,filt_partition,debug=debug)
     ##
     ##      3) SUBMITTING DEDUPLICATING AND SORTING 
     ## Submit the dedup and sort script 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[3],hic_pipeline[2],stamp,dedup_partition,debug=debug,group='Experiment' if postmerging else 'Sample')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[3],pipeline_steps[2],stamp,dedup_partition,debug=debug,group='Experiment' if postmerging else 'Sample')
     ##
     ##      4) SUBMITTING CONCATONATION 
     ## Submit the concatonation sciprt 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,hic_pipeline[4],hic_pipeline[3],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[4],pipeline_steps[3],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
     ##
     ##      5A) SUBMITTING Gene X Gene interaction script 
     ## Submit the g x g script
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'gxg',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if feature_space else []) 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'gxg',pipeline_steps[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if feature_space else []) 
     ##
     ##      5B) SUBMITTING CONVERSION FROM BEDPE to JUICER SHORT 
     ## Submit the toshort command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs or get_inter) else []) 
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'toshort',pipeline_steps[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (toshort or makepairs or get_inter) else []) 
     ##
     ##      5C) Hi-C FILE CREATION 
     ## Call the juicer pre command for hic file creation if jarpath was passed 
@@ -912,19 +837,19 @@ def main():
     ##
     ##      5D) PEAK CALLING w/ MACS3
     ## Call the peak calling command 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if peakcalling else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'macs3',pipeline_steps[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if peakcalling else [])
     ##
     ##      5E) SAM or BAM CONVERSION
     ## Call the sam conversion script 
-    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',hic_pipeline[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
+    sub_sbatchs = sub_sbatchs + (submitdependency(command_files,'sam',pipeline_steps[4],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample') if (tosam or tobam) else [])
     ##
     ##      6A) COUNTING COMMANDS
     ## Sumbit the count command 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',hic_pipeline[4],stamp,clean_partition,group='Experiment',debug=debug)
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'count',pipeline_steps[4],stamp,clean_partition,group='Experiment',debug=debug)
     ##   
     ##      6B) SUBMITTING TIME STOP COMMANDS 
     ## Submit time stamp 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',hic_pipeline[4:-1],stamp,time_partition,group='Experiment',debug=debug) 
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,'timestamp',pipeline_steps[4:-1],stamp,time_partition,group='Experiment',debug=debug) 
     ## 
     ##      6C) CLEAN UP COMMANDS 
     ## Submit the clean up command if the flag was passed 
@@ -935,7 +860,7 @@ def main():
     ##      SAVING OUT COMMAND FILE 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Write the sbatch commands
-    writetofile(f'{debugdir}/sbatch.log.txt',[l+'\n' for l in sub_sbatchs], False)
+    writetofile(f'{logs_dir}/sbatch.log.txt',[l+'\n' for l in sub_sbatchs], False)
     ## Calc number of jobs submitted
     njobstosub, njobssubbed = command_files[(command_files.Torun==0)].shape[0], len(sub_sbatchs)
     ## Check our work
@@ -945,8 +870,8 @@ def main():
     ## If zero jobs were submitted
     ifprint('WARNING: Zero jobs were submitted; If this was unexpected try running slurpy again, including --restart flag.',(njobssubbed==0))
     ## Save out the command files, once for patching to other command, and a time stamped one
-    command_files.to_csv(f'{debugdir}/command.file.csv', index=False)
-    command_files.to_csv(f'{debugdir}/command.file.{stamp}.csv', index=False)
+    command_files.to_csv(f'{logs_dir}/command.file.csv', index=False)
+    command_files.to_csv(f'{logs_dir}/command.file.{stamp}.csv', index=False)
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 ## If the script is envoked by name 

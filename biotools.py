@@ -198,7 +198,13 @@ def chromdf(inpath:str) -> list:
     return pd.DataFrame([(r.id,len(r.seq)) for r in SeqIO.parse(inpath,format='fasta')])
 
 ## Ftn for sorting fastq files by size
-def sortfastq(infastq:list,splitsizes:list):
+def sortfastq(infastq_path:str,splitsizes:list):
+    ## Inform user we are formating jobs
+    print('INFO: Formatting jobs and gathering fastqs.')
+    ## Load in fastqs
+    infastq = getfastqs(infastq_path)
+    ## Assert we have fastq files
+    assert len(infastq), "ERROR: No fastq.gz files were detected!"
     ## Format input fastq zipped list into df
     tmp = pd.DataFrame(infastq,columns=['Read1','Read2'])
     ## Gather sizes of fast

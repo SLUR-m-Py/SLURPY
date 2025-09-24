@@ -1,3 +1,5 @@
+## Bring inmods
+import argparse
 ## Set the run local var
 runlocal = False 
 """
@@ -81,11 +83,7 @@ binsizes     = [2500000,     ##     Set the binsizes of resolution for Hi-C anal
                   10000,
                   5000]
 
-## Define options for fastpeel ftn
-fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_adapter_trimming','--disable_quality_filtering','--disable_trim_poly_g']
-
-## Set list of experiments 
-explist = ['wgs','atac','chip','hic']
+## Set store tru var
 ST = 'store_true'
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      METAVARS
@@ -98,11 +96,6 @@ refmetavar = './path/to/reference.fasta'
 ## Set pipeline of hic analysis ## NOTE defined after defaults import 
 hic_pipeline  = ['fastp', 'bwa', 'filter','dedup','concat','gxg','toshort','hic' ,'macs3','sam','count','clean']
 ##                  0        1      2        3       4      5a      5b      5c      5d      5e     6B      6C
-## Join pipeline names by commas
-h_pipe = ', '.join(hic_pipeline) 
-inhic = True 
-peakcalling = not inhic
-count_mod = ''
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      HELP MESSAGES 
@@ -133,7 +126,7 @@ x_help = "Amount of Xmx and Xms memory passed to juicer\'s pre command. Default 
 A_help = "The path to a gff or bed file with a feature space (i.e. genes) to count gene x gene interactions. Must have columns named Chrom, Left, and Right specifying genomic coordiantes."
 a_help = "A SLURM job ID, used as a dependency, specifying all jobs in this run to start after succssful termination."
 N_help = "The SLURM nice parameter, an integer value lowering the job priority of submissions. Default is: %s"%nice
-R_help = "Step within the pipeline to re-run from. Options include: %s"%h_pipe
+R_help = "Step within the pipeline to re-run from. Options include: %s"%', '.join(hic_pipeline) 
 m_help = "Maximum allowed distance between intra-chromosomal pairs. Default is zero, setting will activate filter."
 j_help = "Number of bwa and filtering jobs allowed to run in parallel. Default: %s"%nparallel
 
@@ -183,28 +176,8 @@ short_help    = "A boolean flag to convert output bedpe file to short format for
 tosam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools."
 tobam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools."
 wgs_help      = "Passing this flag will run SLUR(M)-py in whole-genome sequencing (wgs) mode, parsing paired-end reads as if from wgs experiments."
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-##      INFO MESSAGES
-## Set messages printed to user 
-directormaking  = 'INFO: Making local directories.'
-formatingfastq  = 'INFO: Formatting jobs.'
-
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-##      ERROR MESSAGES
-## Write error messages
-fastqserror = "ERROR: Unable to detect a fastqs directory holding fastq files!"
-missingfqs  = "ERROR: No fastq.gz files were detected!"
-not_sam_err = "ERROR: The detected version of samtools is not greater than or equal to v 1.15.1!\nPlease update samtools and try again."
-noref_path  = "ERROR: We could not find the provided input path -- %s -- of the reference file!"
-index_error = "ERROR: We could not detect an index associated with the input reference path: %s\nINFO: Index the reference (bwa index) and try again."
-nchrom_err  = "ERROR: The number of chromosmes (%s) in the passed reference file are larger than the allowed number (%s)! Consider passing the -G argument or using a more complete reference. You can also increase the --max-number-chroms argument."
-
-## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-slurpy_descr = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ##      DIRECTORY NAMES 
@@ -221,4 +194,90 @@ bedtmpdir   = 'bedpe'                ##       Tempeory bedpe dir
 checkerdir  = 'checks'               ##       Temporary log to check for script outputs
 slurpydir   = './SLURPY'             ##       The script directory holding this file
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+
+## Set the descripton 
+slurpy_description = 'A SLURM Powered, Pythonic Pipeline, Performing Parallel Processing of Piared-end Sequenced Reads Prepaired from 3D Epigenomic Profiles.'
+
+## Write ftn for parsing args 
+def slurpy_args(descr=slurpy_description):
+    ## Make the parse
+    parser = argparse.ArgumentParser(description = descr)
+
+    ## Add the required argument
+    parser.add_argument("-r", "--refix",          dest="r",       type=str,  required=True,  help = r_help, metavar = refmetavar                                     ) 
+    ## Add default arguments
+    parser.add_argument("--fastq","--fq",         dest="fq",      type=str,  required=False, help = fqhelp, metavar = './path/to/fastqs',     default = fastqdir     )
+    parser.add_argument("-F", "--fastp-splits",   dest="F",       nargs='+', required=False, help = F_help, metavar = splitsize,              default = [splitsize]  )
+    parser.add_argument("-T", "--threads",        dest="T",       type=int,  required=False, help = T_help, metavar = 'n',                    default = 0            )
+    parser.add_argument("-P", "--partition",      dest="P",       nargs='+', required=False, help = P_help, metavar = 'tb gpu fast',          default = parts        ) 
+    parser.add_argument("-M", "--mtDNA",          dest="M",       type=str,  required=False, help = M_help, metavar = mito,                   default = mito         )
+    parser.add_argument("-X", "--exclude",        dest="X",       nargs='+', required=False, help = X_help, metavar = 'chrX, chrY ...',       default = []           )
+    parser.add_argument("-Q", "--map-threshold",  dest="Q",       type=int,  required=False, help = Q_help, metavar = map_q_thres,            default = map_q_thres  )
+    parser.add_argument("-R", "--rerun-from",     dest="R",       type=str,  required=False, help = R_help, metavar = 'step',                 default = None         )
+    parser.add_argument("-a", "--afterok",        dest="a",       type=int,  required=False, help = a_help, metavar = fakejobid,              default = 0            )
+    parser.add_argument("-N", "--nice",           dest="N",       type=int,  required=False, help = N_help, metavar = 'n',                    default = nice         )
+
+    ## Set number of threads across software 
+    parser.add_argument("-j", "--n-parallel",     dest="j",       type=int,  required=False, help = j_help, metavar = 'n',                    default = nparallel    )
+    parser.add_argument("-f", "--fastp-threads",  dest="f",       type=int,  required=False, help = f_help, metavar = fastpthreads,           default = fastpthreads )
+    parser.add_argument("-t", "--dask-threads",   dest="t",       type=int,  required=False, help = t_help, metavar = daskthreads,            default = daskthreads  )
+    parser.add_argument("-b", "--bwa-threads",    dest="b",       type=int,  required=False, help = b_help, metavar = bwathreads,             default = bwathreads   )
+    parser.add_argument("-B", "--bwa-options",    dest="B",       type=str,  required=False, help = B_help, metavar = hic_options,            default = hic_options  )
+
+    ## Set values for Hi-C analysis 
+    parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
+    parser.add_argument("-E", "--error-distance", dest="E",       type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
+    parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
+    parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
+    parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
+    parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )
+    parser.add_argument("-xmx", "--Xmemory",      dest="xmx",     type=int,  required=False, help = x_help, metavar = xmemory,                default = xmemory      )
+    parser.add_argument("-S", "--bin-sizes",      dest="S",       nargs='+', required=False, help = S_help, metavar = '25000, 10000, ...',    default = binsizes     )
+    parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
+    #parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
+    parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
+    parser.add_argument("--memory",               dest="slurmem", type=str,  required=False, help = slurmem_help, metavar='40G',              default = None         )
+
+    ## Set Pipeline boolean blags 
+    parser.add_argument("--restart",              dest="restart",   help = restart_help,   action = ST)
+    parser.add_argument("--nomerge",              dest="merge",     help = merge_help,     action = ST)
+    parser.add_argument("--force",                dest="force",     help = force_help,     action = ST)
+    parser.add_argument("--debug",                dest="debug",     help = debug_help,     action = ST)
+    parser.add_argument("--clean",                dest="clean",     help = clean_help,     action = ST)
+    parser.add_argument("--nocount",              dest="count",     help = count_help,     action = ST)
+
+    ## Set Hi-C related boolean flags 
+    parser.add_argument("--toshort",              dest="toshort",   help = short_help,     action = ST)
+    parser.add_argument("--pairs",                dest="makepairs", help = pairs_help,     action = ST)
+    parser.add_argument("--mcool",                dest="mcool",     help = mcool_help,     action = ST)
+    parser.add_argument("--hicexplorer",          dest="hicexp",    help = hicex_help,     action = ST)
+    parser.add_argument("--inter-only",           dest="inter",     help = inter_help,     action = ST)
+    
+    ## Set ATAC-seq specifict
+    parser.add_argument("--atac-seq",             dest="atac",        help = atac_help,     action = ST)
+    parser.add_argument("--broad",                dest="broad",       help = broad_help,    action = ST)
+    parser.add_argument("--skipmacs3",            dest="peaks",       help = peaks_help,    action = ST)
+    parser.add_argument("--nolambda",             dest="nolambda",    help = lambda_help,   action = ST)
+    parser.add_argument("--nomodel",              dest="nomodel",     help = nomodel_help,  action = ST)
+    parser.add_argument("--call-summits",         dest="summits",     help = summits_help,  action = ST)
+    parser.add_argument("--shift-size",           dest="shiftsize",   help = shift_help,    default=shift_size, required=False, metavar = 'bp')
+    parser.add_argument("--extend-size",          dest="extendsize",  help = extend_help,   default=extendsize, required=False, metavar = 'bp')
+    parser.add_argument("--macs-mode",            dest="macmode",     help = macs_help,     default='BEDPE',    required=False, metavar = 'BEDPE')
+    parser.add_argument("-c", "--controls",       dest="c",           help = c_help,        default=[],         required=False, metavar = c_metavar, nargs='+')
+    parser.add_argument("--max-gap",              dest="maxgap",      help = mgap_help,     default=0,          required=False, type=int)
+    parser.add_argument("--max-length",           dest="minlen",      help = mlen_help,     default=0,          required=False, type=int)
+    parser.add_argument("--max-number-chroms",    dest="maxnc",       help = maxnc_help,    default=max_nchrom, required=False, type=int)
+
+    ## RNA-seq and other vairables 
+    parser.add_argument("--rna-seq",              dest="rnas",       help = rnas_help,     action = ST)
+    parser.add_argument("--skipfastp",            dest="sfast",      help = skipq_help,    action = ST)
+    parser.add_argument("--skipdedup",            dest="skipdedup",  help = mark_help,     action = ST)
+    parser.add_argument("--dont-save-dups",       dest="save",       help = save_help,     action = ST)
+    parser.add_argument("--dedovetail",           dest="tails",      help = dove_help,     action = ST)
+    parser.add_argument("--sam",                  dest="tosam",      help = tosam_help,    action = ST)
+    parser.add_argument("--bam",                  dest="tobam",      help = tobam_help,    action = ST)
+    parser.add_argument("--wgs",                  dest="wgs",        help = wgs_help,      action = ST)
+
+    ## Set the paresed values as inputs
+    return parser.parse_args() 
 ## EOF 
