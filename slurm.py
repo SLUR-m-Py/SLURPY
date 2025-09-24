@@ -143,8 +143,9 @@ def main(executive_dir:str=slurpydir,
          vero_reference:str=vero_refpath,
          pipeline_steps:list=hic_pipeline,
          inhic:bool=False,
-         peakcalling:bool=False):
-    
+         peakcalling:bool=False,
+         count_mode:str='--atac-seq'):
+
     ## Set inputs from parser
     inputs = slurpy_args()
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -344,7 +345,6 @@ def main(executive_dir:str=slurpydir,
         experi_mode   = 'rna-seq'
         enzymelib     = 'none'
         max_dist      = 0
-        count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         print("INFO: Processing RNA-seq sample.")
 
@@ -364,7 +364,6 @@ def main(executive_dir:str=slurpydir,
         ## SEt hic vars to false and none 
         enzymelib     = 'none'
         max_dist      = max_dist if max_dist else 1000
-        count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         peakcalling   = not skippeaks
         print("INFO: Processing ATAC-seq sample, calling peaks with MACS3.")
@@ -372,7 +371,6 @@ def main(executive_dir:str=slurpydir,
     ## set wgs mode 
     elif wgs_seq:
         enzymelib     = 'none'
-        count_mod     = '--atac-seq'
         bwa_opts      = ',-M' if (bwa_opts == bwa_options) else bwa_opts
         print("INFO: Processing sample from whole-genome sequencing.")
 
@@ -380,6 +378,7 @@ def main(executive_dir:str=slurpydir,
         ## It is a Hi-C experiment
         experi_mode   = 'hic'
         inhic         = True 
+        count_mode    = ''
         ## Moved to trigger if statment correctly
         print("INFO: Running analysis with the %s Hi-C library."%enzymelib)
 
@@ -754,7 +753,7 @@ def main(executive_dir:str=slurpydir,
         ## Format command to remove uneedeed files 
         counting_sh   = f'{commands_dir}/{pix}A.thecount.sh'             ##   Set the bash file name 
         counting_repo = reportname(run_name,'thecount',i=f'{pix}A')   ##   Set the report 
-        counting_coms = [f'{executive_dir}/pairs2count.py -i {newf} -c {chunksize} {count_mod}\n' for newf in new_catfiles ]
+        counting_coms = [f'{executive_dir}/pairs2count.py -i {newf} -c {chunksize} {count_mode}\n' for newf in new_catfiles ]
         ## Format the command to clean up          
         writetofile(counting_sh, sbatch(counting_sh,4,the_cwd,counting_repo,nice=nice,nodelist=nodes) + counting_coms, debug)
         ## Append the clean up command to file
