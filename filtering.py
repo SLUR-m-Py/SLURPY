@@ -505,9 +505,8 @@ def main():
         pass 
 
     ## Set output file path, gather the not used dataframes and save out as single file
-    dd.read_csv(not_usede_paths,sep=hicsep).to_csv(makeoutpath(bedpe_path,'notused'),sep=hicsep,single_file=True,index=False,header=True)
-    #not_used_out = bedpe_path.split('.bedpe')[0] + '_notused'
-    #dd.read_csv(not_usede_paths,sep=hicsep).to_parquet(not_used_out,partition_on=sort_on_cols[:2],overwrite=True)
+    not_used_df = dd.read_csv(not_usede_paths,sep=hicsep)
+    not_used_df.to_csv(makeoutpath(bedpe_path,'notused'),sep=hicsep,single_file=True,index=False,header=True)
 
     ## Gather the valid dataframes
     bedpe = dd.read_csv(hic_valid_paths,sep=hicsep)

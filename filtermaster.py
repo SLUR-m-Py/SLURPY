@@ -23,8 +23,6 @@ from time import sleep
 from bwatobedpe import vectortile, missingreports, unfinishedreports, hic_flag
 ## Load in argparse
 import argparse
-## Bring in remove
-from os import remove
 ## Load in help messages
 from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 ## Bring in write to file
@@ -136,6 +134,9 @@ def main():
 
         ## Format commands 
         filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n']
+
+        for boo in (not forced),fileexists(filter_repo),fileexists(filter_file),(not unfinished(filter_repo)):
+            print(boo)
 
         ## If we are not forcing the run, then check if it exists
         if (not forced) and fileexists(filter_repo) and fileexists(filter_file) and (not unfinished(filter_repo)):

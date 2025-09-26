@@ -2,7 +2,7 @@
 ## Load in parase args ftn, optional variables, and reference paths 
 from parameters import slurpy_args, hic_options, hic_pipeline, samthreads, t2t_refpath, t2t_gtfpath, vero_refpath
 ## Load in directoris
-from parameters import fastqdir, splitsdir, diagdir, slurpydir, debugdir, aligndir, comsdir, bedtmpdir, hicdir, macs3dir, checkerdir
+from parameters import fastqdir, splitsdir, diagdir, slurpydir, debugdir, aligndir, comsdir, bedtmpdir, hicdir, macs3dir
 ## Load in ftns from bio tools for formating calls to fastp
 from biotools import fastcut, reportname, fastdry, getsamplename, sortfastq
 ## Load in ftn from bio tools for writing files and submittting jobs 
@@ -135,7 +135,6 @@ def main(executive_dir:str=slurpydir,
          bedpe_dir:str=bedtmpdir,
          hic_dir:str=hicdir,
          peaks_dir:str=macs3dir,
-         checks_folder:str=checkerdir,
          bwa_options:str=hic_options,
          samtools_ncpu:int=samthreads,
          human_reference:str=t2t_refpath,
@@ -387,7 +386,7 @@ def main(executive_dir:str=slurpydir,
     ##      CONFIRM THE HARD RESTART 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Format group dirs 
-    grouped_dirs = [logs_dir,alignment_dir,fastpsplits_dir,commands_dir,diagnostics_dir,bedpe_dir,hic_dir,checks_folder] + ([peaks_dir] if peakcalling else [])
+    grouped_dirs = [logs_dir,alignment_dir,fastpsplits_dir,commands_dir,diagnostics_dir,bedpe_dir,hic_dir] + ([peaks_dir] if peakcalling else [])
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
