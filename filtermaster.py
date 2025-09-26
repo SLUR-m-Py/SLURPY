@@ -12,23 +12,23 @@ All rights in the program are reserved by Triad National Security, LLC, and the 
 The Government is granted for itself and others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide license in this material to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
 """
 ## Bring in ftns and variables from defaluts 
-from defaults import fileexists, sortglob, sbatch, submitsbatch
+from defaults import sortglob, sbatch, submitsbatch
 ## Load in variables from parameters
 from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
 ## Load in directories from parameters
 from parameters import comsdir, debugdir, bedtmpdir, slurpydir
+## Load in help messages
+from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 ## load in sleep
 from time import sleep
 ## Load in report check 
 from bwatobedpe import vectortile, unfinishedreports, hic_flag
-## Load in argparse
-import argparse
-## Load in help messages
-from parameters import ST, Q_help, L_help, E_help, r_help, X_help, t_help, N_help, Z_help, m_help, P_help, force_help, node_help, dove_help, intra_help, j_help, hicex_help, slurmem_help
 ## Bring in write to file
 from myecho import writetofile
 ## Bring in finished check
 from checkwork import unfinished
+## Load in argparse
+import argparse
 
 ## Set stage in piepline
 pix = 2
@@ -135,11 +135,8 @@ def main():
         ## Format commands 
         filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n']
 
-        for boo in (not forced),fileexists(filter_repo),fileexists(filter_file),(not unfinished(filter_repo)):
-            print(boo)
-
         ## If we are not forcing the run, then check if it exists
-        if (not forced) and fileexists(filter_repo) and fileexists(filter_file) and (not unfinished(filter_repo)):
+        if (not forced) and (not unfinished(filter_repo)):
             print(f'INFO: Detected a finished run from {filter_file} in {filter_repo}, skipping.\n')
         else:
             ## Write the bwa command to file 

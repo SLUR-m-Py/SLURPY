@@ -16,12 +16,12 @@ from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprin
 from parameters import refmetavar, bwathreads, nice, hic_options, waittime, nparallel
 ## Load in directiory
 from parameters import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
+## Load in help messages from parameters 
+from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
 ## load in sleep
 from time import sleep
 ## Bring in tile and arange 
 from numpy import tile, arange
-## Bring in argparse and set parser
-import argparse
 ## Load in file size from os path
 from os.path import getsize
 ## load in remove
@@ -30,10 +30,18 @@ from os import remove
 from myecho import writetofile
 ## Bring in unfinished
 from checkwork import unfinished
+## Bring in argparse and set parser
+import argparse
 
 ## Set opttions for line count and step in pipelien 
 line_count  = 5000
 pix         = 1     
+
+## Set description and help messages for this script
+bwadescr   = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
+c_help     = 'The current working directory'
+l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
+hic_flag   = 'Flag to run in Hi-C mode.'
 
 ## Ftn for checkign if single 
 def issingle(r:str)-> bool: return '.singletons.' in r.lower()
@@ -78,15 +86,6 @@ def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool
     report  = f'{debugdir}/{pix}.bwa.to.bedpe.{sname}.log'
     ## Return the command and report 
     return [command+'\n'], report 
-
-## Load in help messages from parameters 
-from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
-
-## Set description and help messages for this script
-bwadescr   = 'A submission script that formats bwa/bedpe commands for paired fastq file from fastp splits of a given sample.'
-c_help     = 'The current working directory'
-l_help     = 'The number of lines from bwa to buffer in list. Default is: %s'%line_count
-hic_flag   = 'Flag to run in Hi-C mode.'
 
 def parse_args():
     ## Make the parse
@@ -175,7 +174,7 @@ def main():
                     f'bwa mem {options} $refpath $fread $rread | {slurpydir}/tobedpe.py $refpath {outfile} {line_count}\n']
         
         ## If we are not forcing the run, then check if it exists, and the report exists and has alredy been run, just skip
-        if (not forced) and fileexists(outfile) and fileexists(bwa_repo) and (not unfinished(bwa_repo)):
+        if (not forced) and (not unfinished(bwa_repo)) and fileexists(outfile):
             print(f'INFO: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}, skipping.\n')
         else:
             ## Write the bwa command to file 
@@ -183,11 +182,11 @@ def main():
             ## append the report and files
             bwa_files.append(bwa_file)
             bwa_repos.append(bwa_repo)
-            ## Gather previous bedpe files 
-            out_bedpe_files = sortglob(out_file_prefix+"*")
-            [remove(obf) for obf in out_bedpe_files]
-
-
+            ## Remove previous filtering log if it exists
+            filter_report = f'{debugdir}/{pix}.filter.bedpe.{out_file_prefix}.log'
+            ## Remove the filter log
+            remove(filter_report) if not unfinished(filter_report) else None 
+                
     ## Recount the nubmer submitted 
     to_submit = len(bwa_files)
     ## Iniate submitted 
