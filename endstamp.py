@@ -58,7 +58,7 @@ def sumcounts(inpaths:list,filtered=False) -> int:
         return int(sum([gettotal(loadjson(flog)) for flog in inpaths]))
 
 ## Define main
-def main():
+def main(logs_dir:str=debugdir):
     ## ------------------------------------------ Input Variables ------------------------------------------ ##
     ## Gather the file name, the start time stamp from input and calculate the end time stamp 
     filename,sstamp,estamp = sys.argv[1], float(sys.argv[2]), time.time()
@@ -68,7 +68,7 @@ def main():
     dt2 = datetime.fromtimestamp(estamp)
 
     ## Gather logs from dir
-    fastp_log = sortglob(f'./{debugdir}/*.fastp.*.log')
+    fastp_log = sortglob(f'./{logs_dir}/*.fastp.*.log')
 
     ## Format time stamp from fastp log if we find one 
     dt1 = datetime.fromtimestamp(getctime(fastp_log[0])) if len(fastp_log) else dt0 
@@ -79,9 +79,16 @@ def main():
     ## Write the timestamp to file 
     writetofile(filename,['SUBMIT TIME: %s\n'%dt0, 'START TIME: %s\n'%dt1, 'END TIME: %s\n'%dt2, 'RUN TIME: %s\n'%runtime],False)
 
+    ## Gather the wild cards
+    filter_wc = f'./{logs_dir}/*.filter.bedpe.*.log'
+    duplic_wc = f'./{logs_dir}/*.dedup.*.log'
+
     ## Gather filtering and duplicate logs
-    filter_logs = sortglob(f'./{debugdir}/*.filter.bedpe.*.log')
-    duplit_logs = sortglob(f'./{debugdir}/*.dedup.*.log')
+    filter_logs = sortglob(filter_wc)
+    duplit_logs = sortglob(duplic_wc)
+
+    ## Print the filter leng
+    print(len(filter_logs),len(duplit_logs))
 
     ## Gather counts across logs 
     mappings = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in filter_logs]).groupby('Mapping').sum()
