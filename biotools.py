@@ -249,6 +249,8 @@ def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:st
     ## If we are re running any part of the pipeline we will re code from here
     if rerunfrom: ## Set the dict 
         rerun_dict = dictzip(pipelinesteps,[pipelinesteps[i:] for i in range(len(pipelinesteps))])
+        ## Gather and remove old time step logs
+        [remove(ts) for ts in  sortglob(f'./{debugdir}/*.timestamp.*.log')]
         #print(rerun_dict)
         ## Recode the command dataframe to run 
         for r in rerun_dict[rerunfrom]:
