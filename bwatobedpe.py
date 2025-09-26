@@ -13,7 +13,9 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, fileexists, submitsbatch, sbatch, listzip, ifprint
 ## Load input vars from params
-from parameters import refmetavar, bwathreads, nice, hic_options, waittime, nparallel, splitsdir, comsdir, debugdir, slurpydir, bedtmpdir, checkerdir
+from parameters import refmetavar, bwathreads, nice, hic_options, waittime, nparallel
+## Load in directiory
+from parameters import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
 ## load in sleep
 from time import sleep
 ## Bring in tile and arange 
@@ -62,6 +64,12 @@ def sizecheck(read1,read2) -> list:
 
 ## Ftn for tiling jobs
 def vectortile(k,n): return tile(arange(k)+1,n)
+
+## ftn for making sure all files exist
+def missingreports(reports) -> bool: return bool(len(reports) - sum([fileexists(r) for r in reports]))
+
+## ftn for making sure reports are finished
+def unfinishedreports(reports) -> bool: return bool(sum([unfinished(f) for f in reports]))
 
 ## Ftn for formating the bwa master 
 def bwamaster(sname:str,refpath:str,threads:int,cwd:str,partition:str,debug:bool,nice:int,njobs:int,pix=pix,linecount=line_count,forced=False,nodelist=None,bwaopts='',memory=None) -> tuple[list[str], str]:
@@ -146,14 +154,10 @@ def main():
     sizewarn = 'WARNING: %s read pairs (in .fastq.gz) were detected to have no reads.'%(sizedif)
     ## PRint if the size dif is nonzero 
     ifprint(sizewarn,sizedif)
-    
-    ## format list of checks
-    bwa_checkers = [f'{checkerdir}/{i}.{sample_name}.bwa.log' for i in range(nreads)]
-    ## Remove the previous checks if any
-    [remove(bwa_check) for bwa_check in bwa_checkers if fileexists(bwa_check)]
 
-    ## Iniate list of bwa files
+    ## Iniate list of bwa files and reports 
     bwa_files   = []
+    bwa_repos   = []
 
      ## gather job numbers / names
     job_numbers = vectortile(nparallel,nreads)
@@ -165,21 +169,22 @@ def main():
         bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
         bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
         outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
-        bwa_check = bwa_checkers[i]
 
         ## format the command to bwa mem 
         bwa_coms = [f'refpath={ref_path}\n',
-                    f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {outfile} {line_count}\n',
-                    f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
-
+                    f'fread={r1}\n',
+                    f'rread={r2}\n',
+                    f'bwa mem {options} $refpath $fread $rread | {slurpydir}/tobedpe.py $refpath {outfile} {line_count}\n']
+        
         ## If we are not forcing the run, then check if it exists, and the report exists and has alredy been run, just skip
         if (not forced) and fileexists(outfile) and fileexists(bwa_repo) and (not unfinished(bwa_repo)):
-            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
+            print(f'INFO: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}, skipping.\n')
         else:
             ## Write the bwa command to file 
             writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes,memory=memory) + bwa_coms, debug)
             ## append the report and files
             bwa_files.append(bwa_file)
+            bwa_repos.append(bwa_repo)
 
     ## Recount the nubmer submitted 
     to_submit = len(bwa_files)
@@ -195,14 +200,19 @@ def main():
             ## Print job id
             print('Job ID: %s'%job_id)
             ## Wiat a few seconds
-            sleep(waittime)
+            sleep(2)
         except Exception as error:
             print(error)
 
-    ## While thekicker is true 
-    while not (sum([fileexists(f) for f in bwa_checkers]) == to_submit):
+    ## Wait untill the reports are written
+    while missingreports(bwa_repos):
         ## Wait a minitue 
-        sleep(2*waittime)
+        sleep(waittime)
+
+    ## Check the reports are finished 
+    while unfinishedreports(bwa_repos):
+        ## Wait a minitue 
+        sleep(waittime)
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))

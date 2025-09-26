@@ -13,12 +13,14 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 """
 ## Bring in ftns and variables from defaluts 
 from defaults import fileexists, sortglob, sbatch, submitsbatch
-## Load in params
-from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel, comsdir, debugdir, bedtmpdir, slurpydir, checkerdir
+## Load in variables from parameters
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
+## Load in directories from parameters
+from parameters import comsdir, debugdir, bedtmpdir, slurpydir
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwatobedpe import vectortile, hic_flag
+from bwatobedpe import vectortile, missingreports, unfinishedreports, hic_flag
 ## Load in argparse
 import argparse
 ## Bring in remove
@@ -118,13 +120,9 @@ def main():
     ## Check work
     assert nbedpe, "ERROR: Unable to find bedpe files associated with sample: %s"%sample_name
 
-    ## Format bed pe checks
-    bed_checkers = [f'{checkerdir}/{i}.{sample_name}.bedpe.log' for i in range(nbedpe)]
-    ## Remove the previous checks if any
-    [remove(bed_check) for bed_check in bed_checkers if fileexists(bed_check)]
-
-    ## Initiate filter files (.sh)
+    ## Initiate filter files (.sh) and reports (.txt)
     filter_files    = []
+    filter_repos    = []
 
     ## gather job numbers / names
     job_numbers = vectortile(nparallel,nbedpe)
@@ -135,20 +133,19 @@ def main():
         ## Format the report, file and check for this filt of bedpe split 
         filter_repo  = f'{debugdir}/{pix}.filter.bedpe.{i}.{sample_name}.log'
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
-        bed_check    = bed_checkers[i]
 
         ## Format commands 
-        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n',
-                         f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
+        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n']
 
         ## If we are not forcing the run, then check if it exists
         if (not forced) and fileexists(filter_repo) and fileexists(filter_file) and (not unfinished(filter_repo)):
-            print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
+            print(f'INFO: Detected a finished run from {filter_file} in {filter_repo}, skipping.\n')
         else:
             ## Write the bwa command to file 
             writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes,memory=memory) + filter_coms, debug)
             ## append the report and files 
             filter_files.append(filter_file)
+            filter_repos.append(filter_repo)
 
     ## Recount the nubmer submitted 
     to_submit = len(filter_files)
@@ -164,14 +161,19 @@ def main():
             ## Pring job id
             print('Job ID: %s'%job_id)
             ## Wiat a few seconds
-            sleep(waittime)
+            sleep(2)
         except Exception as error:
             print(error)
 
-    ## While thekicker is true 
-    while not (sum([fileexists(f) for f in bed_checkers]) == to_submit):
+    ## Wait untill the reports are written
+    while missingreports(filter_repos):
         ## Wait a minitue 
-        sleep(2*waittime)
+        sleep(waittime)
+
+    ## Check the reports are finished 
+    while unfinishedreports(filter_repos):
+        ## Wait a minitue 
+        sleep(waittime)
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
