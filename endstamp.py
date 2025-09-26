@@ -56,6 +56,26 @@ def sumcounts(inpaths:list,filtered=False) -> int:
         return int(sum([getfiltered(loadjson(flog)) for flog in inpaths]))
     else:
         return int(sum([gettotal(loadjson(flog)) for flog in inpaths]))
+    
+## Ftn for loading in log
+def logload(inpath) -> pd.DataFrame:return pd.read_csv(inpath,sep='\t',header=None,names=['Mapping','Counts']).dropna()
+
+## Ftn for gathering and filtering empty logs
+def gatherlogs(inpaths) -> list:
+    ## Load the logs
+    log_list = [logload(f) for f in inpaths]
+    ## Iniate filter
+    log_list_filt = []
+    ## Enumearte thrut he log liists, check thier shape 
+    for i,df in enumerate(log_list):
+        if df.shape[0]:
+            log_list_filt.append(df)
+        else:
+            print("WARNING: The log %s was empty; this is unexpected."%inpaths[i])
+    ## Check our work 
+    assert len(log_list_filt), "ERROR: found %s filtering or deduplication logs with zero content!"%len(inpaths)
+    ## Return the log list filterd
+    return log_list_filt
 
 ## Define main
 def main(logs_dir:str=debugdir):
@@ -87,12 +107,13 @@ def main(logs_dir:str=debugdir):
     filter_logs = sortglob(filter_wc)
     duplit_logs = sortglob(duplic_wc)
 
-    ## Print the filter leng
-    print(len(filter_logs),len(duplit_logs))
+    ## Format list of mappings
+    mappings_list = gatherlogs(filter_logs)
+    duplicat_list = gatherlogs(duplit_logs)
 
     ## Gather counts across logs 
-    mappings = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in filter_logs]).groupby('Mapping').sum()
-    duplicat = pd.concat([pd.read_csv(f,sep='\t',header=None,names=['Mapping','Counts']).dropna() for f in duplit_logs]).groupby('Mapping').sum()
+    mappings = pd.concat(mappings_list).groupby('Mapping').sum()
+    duplicat = pd.concat(duplicat_list).groupby('Mapping').sum()
 
     ## Copy new map
     newmap = pd.concat([mappings,duplicat],axis=0)

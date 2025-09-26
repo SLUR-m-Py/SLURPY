@@ -172,23 +172,21 @@ def main():
                     f'bwa mem {options} $refpath {r1} {r2} | {slurpydir}/tobedpe.py $refpath {outfile} {line_count}\n',
                     f'{slurpydir}/myecho.py Finished bwa alignment of split {i} {bwa_check}\n## EOF']
 
-        ## If we are not forcing the run, then check if it exists
-        if not forced:
-            ## If the report exists and has alredy been run, just skip
-            if fileexists(outfile) and fileexists(bwa_repo) and unfinished(bwa_repo):
-                print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
-                ## REformat coms so its just the check 
-                bwa_coms = [bwa_coms[-1]]
-        
-        ## Write the bwa command to file 
-        writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes,memory=memory) + bwa_coms, debug)
-        ## append the report and files
-        bwa_files.append(bwa_file)
+        ## If we are not forcing the run, then check if it exists, and the report exists and has alredy been run, just skip
+        if (not forced) and fileexists(outfile) and fileexists(bwa_repo) and (not unfinished(bwa_repo)):
+            print(f'WARNING: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}.\nINFO: Skipping.\n')
+        else:
+            ## Write the bwa command to file 
+            writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes,memory=memory) + bwa_coms, debug)
+            ## append the report and files
+            bwa_files.append(bwa_file)
 
+    ## Recount the nubmer submitted 
+    to_submit = len(bwa_files)
     ## Iniate submitted 
     submitted = 0
     ## While sub miiting 
-    while submitted < nreads:
+    while submitted < to_submit:
         ## Try to Submit the command to SLURM
         try:
             job_id = submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {bwa_files[submitted]}')
@@ -202,12 +200,12 @@ def main():
             print(error)
 
     ## While thekicker is true 
-    while not (sum([fileexists(f) for f in bwa_checkers]) == nreads):
+    while not (sum([fileexists(f) for f in bwa_checkers]) == to_submit):
         ## Wait a minitue 
         sleep(2*waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(nreads,sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
 
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## If the script is envoked by name 

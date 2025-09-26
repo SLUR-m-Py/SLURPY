@@ -94,6 +94,12 @@ def getwarnings(inpath:str) -> bool:
 
 ## Writing function to check for unfinsihed logs
 def unfinished(inpath:str) -> bool:
+    """
+    INPUT: The input path (inpath) to a log in .txt format.
+    OUTPUT: bool
+        Returns a boolean from a check of the last line of a log.
+        Observes if the word finished is the start of the last line (returns: False)
+    """
     with open(inpath,'r') as inhandle:
         for l in inhandle:
             pass 
@@ -101,8 +107,7 @@ def unfinished(inpath:str) -> bool:
     return not l.lower().startswith('finished')
 
 ## Ftn for defining logs name
-def logsvslog(n) -> str:
-    return 'logs' if n > 1 else 'log'
+def logsvslog(n) -> str: return 'logs' if n > 1 else 'log'
 
 ## Ftn for checking splits
 def checksplits():

@@ -142,22 +142,20 @@ def main():
                          f'{slurpydir}/myecho.py Finished bedpe filtering of split {i} {bed_check}\n## EOF']
 
         ## If we are not forcing the run, then check if it exists
-        if not forced:
-            ## If the report exists and has alredy been run, just skip
-            if fileexists(filter_repo) and fileexists(filter_file) and unfinished(filter_repo):
-                print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
-                ## Reformat the commands
-                filter_coms = [filter_coms[-1]]
+        if (not forced) and fileexists(filter_repo) and fileexists(filter_file) and (not unfinished(filter_repo)):
+            print(f'WARNING: Detected a finished run from {filter_file} in {filter_repo}.\nINFO: Skipping.\n')
+        else:
+            ## Write the bwa command to file 
+            writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes,memory=memory) + filter_coms, debug)
+            ## append the report and files 
+            filter_files.append(filter_file)
 
-        ## Write the bwa command to file 
-        writetofile(filter_file, sbatch(job_names[i],threads,the_cwd,filter_repo,nice=nice,nodelist=nodes,memory=memory) + filter_coms, debug)
-        ## append the report and files 
-        filter_files.append(filter_file)
-
+    ## Recount the nubmer submitted 
+    to_submit = len(filter_files)
     ## Iniate submitted 
     submitted = 0
     ## While sub miiting 
-    while submitted < nbedpe:
+    while submitted < to_submit:
         ## Try to Submit the command to SLURM
         try:
             job_id = submitsbatch(f'sbatch --partition={partitions} --dependency=singleton {filter_files[submitted]}')
@@ -171,12 +169,12 @@ def main():
             print(error)
 
     ## While thekicker is true 
-    while not (sum([fileexists(f) for f in bed_checkers]) == nbedpe):
+    while not (sum([fileexists(f) for f in bed_checkers]) == to_submit):
         ## Wait a minitue 
         sleep(2*waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(nbedpe,sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
 
 ## if the script is envoked
 if __name__ == "__main__":
