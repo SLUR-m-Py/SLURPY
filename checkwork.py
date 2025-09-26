@@ -113,11 +113,11 @@ def logsvslog(n) -> str: return 'logs' if n > 1 else 'log'
 def checksplits():
     ## GAther counts of fastq splits,  bwa checks, bedpe checks
     nsplits       = len([r for r in sortglob(f'./{splitsdir}/*_R1_*fastq.gz') if not (('singletons.' in r) or ('failed.' in r))])
-    nbwa_checks   = len(sortglob(f'./{checkerdir}/*.bwa.log'))
-    nbedpe_checks = len(sortglob(f'./{checkerdir}/*.bedpe.log'))
+    nbwa_checks   = len(sortglob(f'./{debugdir}/*.bwa.log'))
+    nbedpe_checks = len(sortglob(f'./{debugdir}/*.bedpe.log'))
     ## Print error to screen
-    ifprint('ERROR: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits), nbwa_checks < nsplits)
-    ifprint('ERROR: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits), nbedpe_checks < nsplits)
+    ifprint('WARNING: The number of parallele BWA MEM runs (%s) did not match the nubmer of splits (%s)'%(nbwa_checks,nsplits), nbwa_checks < nsplits)
+    ifprint('WARNING: The number of filtering runs (%s) did not match the nubmer of splits (%s)'%(nbedpe_checks,nsplits), nbedpe_checks < nsplits)
     pass 
 
 ## -------------------------- MAIN FTN --------------------------- ##
