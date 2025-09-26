@@ -184,9 +184,10 @@ def main():
             bwa_repos.append(bwa_repo)
             ## Remove previous filtering log if it exists
             filter_report = f'{debugdir}/{pix}.filter.bedpe.{out_file_prefix}.log'
-            ## Remove the filter log
-            remove(filter_report) if not unfinished(filter_report) else None 
-                
+            if fileexists(filter_report):
+                print(filter_report)
+                remove(filter_report)
+ 
     ## Recount the nubmer submitted 
     to_submit = len(bwa_files)
     ## Iniate submitted 
