@@ -65,9 +65,6 @@ def sizecheck(read1,read2) -> list:
 ## Ftn for tiling jobs
 def vectortile(k,n): return tile(arange(k)+1,n)
 
-## ftn for making sure all files exist
-def missingreports(reports) -> bool: return bool(len(reports) - sum([fileexists(r) for r in reports]))
-
 ## ftn for making sure reports are finished
 def unfinishedreports(reports) -> bool: return bool(sum([unfinished(f) for f in reports]))
 
@@ -208,11 +205,6 @@ def main():
             sleep(2)
         except Exception as error:
             print(error)
-
-    ## Wait untill the reports are written
-    while missingreports(bwa_repos):
-        ## Wait a minitue 
-        sleep(waittime)
 
     ## Check the reports are finished 
     while unfinishedreports(bwa_repos):

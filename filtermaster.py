@@ -20,7 +20,7 @@ from parameters import comsdir, debugdir, bedtmpdir, slurpydir
 ## load in sleep
 from time import sleep
 ## Load in report check 
-from bwatobedpe import vectortile, missingreports, unfinishedreports, hic_flag
+from bwatobedpe import vectortile, unfinishedreports, hic_flag
 ## Load in argparse
 import argparse
 ## Load in help messages
@@ -165,11 +165,6 @@ def main():
             sleep(2)
         except Exception as error:
             print(error)
-
-    ## Wait untill the reports are written
-    while missingreports(filter_repos):
-        ## Wait a minitue 
-        sleep(waittime)
 
     ## Check the reports are finished 
     while unfinishedreports(filter_repos):

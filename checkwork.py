@@ -100,11 +100,14 @@ def unfinished(inpath:str) -> bool:
         Returns a boolean from a check of the last line of a log.
         Observes if the word finished is the start of the last line (returns: False)
     """
-    with open(inpath,'r') as inhandle:
-        for l in inhandle:
-            pass 
-    ## Return those that have not finsihed
-    return not l.lower().startswith('finished')
+    if fileexists(inpath):
+        with open(inpath,'r') as inhandle:
+            for l in inhandle:
+                pass 
+        ## Return those that have not finsihed
+        return not l.lower().startswith('finished')
+    else:
+        return True 
 
 ## Ftn for defining logs name
 def logsvslog(n) -> str: return 'logs' if n > 1 else 'log'
