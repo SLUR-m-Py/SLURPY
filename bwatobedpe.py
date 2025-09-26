@@ -165,10 +165,11 @@ def main():
 
     ## Iterate thru the read pairs 
     for i, (r1,r2) in enumerate(read_pairs):
+        out_file_prefix = f'{i}.{sample_name}'
         ## SEt report and file name 
-        bwa_repo  = f'{debugdir}/{pix}.bwa.{i}.{sample_name}.log'
-        bwa_file  = f'{comsdir}/{pix}.bwa.{i}.{sample_name}.sh' 
-        outfile   = f'{bedtmpdir}/{i}.{sample_name}.bedpe'
+        bwa_repo  = f'{debugdir}/{pix}.bwa.{out_file_prefix}.log'
+        bwa_file  = f'{comsdir}/{pix}.bwa.{out_file_prefix}.sh' 
+        outfile   = f'{bedtmpdir}/{out_file_prefix}.bedpe'
 
         ## format the command to bwa mem 
         bwa_coms = [f'refpath={ref_path}\n',
@@ -185,6 +186,10 @@ def main():
             ## append the report and files
             bwa_files.append(bwa_file)
             bwa_repos.append(bwa_repo)
+            ## Gather previous bedpe files 
+            out_bedpe_files = sortglob(out_file_prefix+"*")
+            [remove(obf) for obf in out_bedpe_files]
+
 
     ## Recount the nubmer submitted 
     to_submit = len(bwa_files)
