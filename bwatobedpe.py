@@ -182,10 +182,13 @@ def main():
             ## append the report and files
             bwa_files.append(bwa_file)
             bwa_repos.append(bwa_repo)
-            ## Remove previous filtering log if it exists
-            filter_report = f'{debugdir}/{pix}.filter.bedpe.{out_file_prefix}.log'
+
+            ## Set the next filtering report 
+            filter_report = f'{debugdir}/{pix+1}.filter.bedpe.{out_file_prefix}.log'
+             ## Remove next filtering log exists from a previous run
             if fileexists(filter_report):
-                print(filter_report)
+                ## Print we are removing it
+                print('INFO: Removing previous filtering report: %s'%filter_report)
                 remove(filter_report)
  
     ## Recount the nubmer submitted 
