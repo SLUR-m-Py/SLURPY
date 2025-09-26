@@ -170,7 +170,7 @@ def main():
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
-
+## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## if the script is envoked
 if __name__ == "__main__":
     main()

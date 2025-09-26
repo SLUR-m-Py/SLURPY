@@ -17,7 +17,7 @@ from parameters import refmetavar, bwathreads, nice, hic_options, waittime, npar
 ## Load in directiory
 from parameters import splitsdir, comsdir, debugdir, slurpydir, bedtmpdir
 ## Load in help messages from parameters 
-from parameters import ST, s_help, r_help, b_help, P_help, L_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
+from parameters import ST, s_help, r_help, b_help, P_help, N_help, debug_help, force_help, node_help, j_help, B_help, slurmem_help
 ## load in sleep
 from time import sleep
 ## Bring in tile and arange 
@@ -216,7 +216,6 @@ def main():
 
     ## Print to log 
     print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
-
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## If the script is envoked by name 
 if __name__ == "__main__":
