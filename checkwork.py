@@ -26,7 +26,7 @@ from shutil import rmtree, copyfileobj
 ## Bring in sorted glob 
 from defaults import sortglob, fileexists, submitsbatch, readtable, ifprint
 ## Load in debug dir 
-from parameters import debugdir, splitsdir, hicdir, bedtmpdir, checkerdir, comsdir, macs3dir, aligndir, diagdir
+from parameters import debugdir, splitsdir, hicdir, bedtmpdir, comsdir, macs3dir, aligndir, diagdir
 ## bring in numpy 
 import numpy as np, sys, gzip
 ## laod in remove
@@ -35,7 +35,7 @@ from os import remove
 
 ## -------------------------------------------------------------------- ##
 ## Write vars
-directories = [splitsdir, hicdir, bedtmpdir, checkerdir]
+directories = [splitsdir, hicdir, bedtmpdir]
 ## Set the error message
 no_file_error = "WARNING: The input file path -- %s -- could not be found!"
 rm_file_error = "ERROR: Unable to gzip and remove input file: %s"
@@ -138,7 +138,7 @@ def main():
             [gzipfile(tozip,tozip+'.gz') for tozip in sys.argv[2:]]
         ## Resetting
         elif param.startswith('r') or param.startswith('q') or ('reset' in param) or ('quick' in param):
-            [rmtree(d,ignore_errors=True) for d in [debugdir, splitsdir, hicdir, bedtmpdir, checkerdir, comsdir, macs3dir, aligndir, diagdir]]
+            [rmtree(d,ignore_errors=True) for d in [debugdir, splitsdir, hicdir, bedtmpdir, comsdir, macs3dir, aligndir, diagdir]]
         ## Cancle the jobs
         elif param.startswith('can') or ('cancel' in param):
             ## Set command file path 
