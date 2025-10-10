@@ -198,7 +198,7 @@ def main():
         ## If the input path is gzipped
         if input_path.split('.')[-1] == 'gz':
             ## Initeate header bool for appending mode
-            header_bool = True
+            append_bool = True
             ## Chunk in data with pandas 
             with pd.read_csv(input_path,chunksize=chunk_size,sep=hicsep,usecols=short_cols) as chunks:
                 ## Iterate thru the chunks
@@ -209,9 +209,9 @@ def main():
                     ## Parse inter chromosome if we are doing so 
                     df = df[(df.Inter>0)] if getinter else df
                     ## Save out the chunk
-                    df[short_cols[:-1]].to_csv(output_path,header= header_bool,index=False,sep=hicsep, mode = 'w' if header_bool else 'a')
+                    df[short_cols[:-1]].to_csv(output_path,header=False,index=False,sep=hicsep, mode = 'w' if append_bool else 'a')
                     ## Set header after first save
-                    header_bool = False 
+                    append_bool = False 
             ## Print to the log that we have finished
             print("Finished converting input, gzipped bedpe file (%s) to short format (%s)."%(input_path,output_path))
 
