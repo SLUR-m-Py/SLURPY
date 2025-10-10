@@ -16,8 +16,12 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 import dask.dataframe as dd, pandas as pd, argparse
 ## loadin bam to bed converter
 from biotools import bam_to_bed
-## Load in parameters, like chunk size, and directories 
-from parameters import ST, chunksize, pairs_help, inter_help, shift_size, extendsize, shift_help, extend_help, hicsep, macs3dir
+## Load in file exists
+from defaults import fileexists
+## Load in parameters, directories and other needed variables
+from parameters import ST, chunksize, shift_size, extendsize, hicsep, macs3dir
+## Bring in help messages
+from parameters import pairs_help, inter_help,  shift_help, extend_help, Z_help
 """
 Juicer short format:
 
@@ -79,14 +83,24 @@ def formatbed(df:pd.DataFrame,old:list,shift:int,extend:int,strand='+') -> pd.Da
     ## Retunr bed 
     return bed 
 
+## Ftn to reset input path for seamless addition!
+def reset_input(inpath):
+    if fileexists(inpath):
+        return inpath
+    else:
+        gz_path = inpath + '.gz'
+        assert fileexists(gz_path), "ERROR: The given input file %s or its gzipped version do not exist!"%gz_path
+        return gz_path
+
 ## Define parser for argument gathering
 def parse_args():
     ## Make the parse
     parser = argparse.ArgumentParser(description=desc)
     ## Add the required arguments
-    parser.add_argument("-i",            dest="I", type=str, required=True,  help=I_help,      metavar='./path/to/input.bedpe') 
-    parser.add_argument("-s","--shift",  dest="S", type=int, required=False, help=shift_help,  default=shift_size)
-    parser.add_argument("-e","--extend", dest="E", type=int, required=False, help=extend_help, default=extendsize)
+    parser.add_argument("-i",               dest="I", type=str, required=True,  help=I_help,      metavar='./path/to/input.bedpe') 
+    parser.add_argument("-s","--shift",     dest="S", type=int, required=False, help=shift_help,  default=shift_size)
+    parser.add_argument("-e","--extend",    dest="E", type=int, required=False, help=extend_help, default=extendsize)
+    parser.add_argument("-Z","--chunksize", dest="Z", type=int, required=False, help=Z_help,      default=chunksize)
     ## Set options 
     parser.add_argument('--bed',         dest="B", help=B_help,      action = ST)
     parser.add_argument('--bedpe',       dest="M", help=M_help,      action = ST)
@@ -105,6 +119,7 @@ def main():
     input_path  = inputs.I          ## Set path to input bedpe file
     shift_size  = abs(inputs.S)     ## Set the shift size
     extendsize  = abs(inputs.E)     ## Set the size to extend read coverage
+    chunk_size  = inputs.Z          ## Set the chunk size 
     to_bed      = inputs.B          ## Converting to a single bed
     to_bedpe    = inputs.M          ## Converting to a bedpe (mas3) file
     makepairs   = inputs.P          ## Boolean flag to make into juicer's pairs format
@@ -116,9 +131,6 @@ def main():
         assert not getintra, inter_intra_error
     if getintra:
         assert not getinter, inter_intra_error
-
-    ## Check path
-    #assert file_end in input_path, "ERROR: We expected an input .bedpe file and didn't find that extension in: %s"%input_path
 
     ## Add the conditon of bam extension
     if input_path.split('.')[-1] == 'bam':
@@ -160,7 +172,6 @@ def main():
         with pd.read_csv(input_path,sep=hicsep,usecols=pos_cols,chunksize=chunksize) as chunks:
             ## Iterate thru chunks 
             for i,chunk in enumerate(chunks):
-
                 ## Assign the left and right chunk 
                 chunk['Left']  = chunk[pos_cols[1:]].min(axis=1) - 1
                 chunk['Right'] = chunk[pos_cols[1:]].max(axis=1) - 1
@@ -171,33 +182,53 @@ def main():
     elif makepairs:
         ## SEt output path
         output_path = input_path.split(file_end)[0] + '.pairs' 
-
         ## Load in data
         df = dd.read_csv(input_path,sep=hicsep,usecols=pairs_cols)
         ## Save out data in pairs format, should be tab seperated 
         df[pairs_cols].to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
-
         ## Print to log
         print("Finished converting input bedpe file (%s) to pairs format (%s)."%(input_path,output_path))
+
+    ## Otherwise, this is a short file, gzipped or not 
     else:
-        ## SEt output path
+        ## Reset input path for either gzipped or not bedpe file
+        input_path = reset_input(input_path)
+        ## Set output path
         output_path = input_path.split(file_end)[0] + '.short' 
+        ## If the input path is gzipped
+        if input_path.split('.')[-1] == 'gz':
+            ## Initeate header bool for appending mode
+            header_bool = True
+            ## Chunk in data with pandas 
+            with pd.read_csv(input_path,chunksize=chunk_size,sep=hicsep,usecols=short_cols) as chunks:
+                ## Iterate thru the chunks
+                for df in chunks:
+                    ## Remap mapq coulmns as our fragment dummy vars
+                    df['Mapq1'] = 0
+                    df['Mapq2'] = 1
+                    ## Parse inter chromosome if we are doing so 
+                    df = df[(df.Inter>0)] if getinter else df
+                    ## Save out the chunk
+                    df[short_cols[:-1]].to_csv(output_path,header= header_bool,index=False,sep=hicsep, mode = 'w' if header_bool else 'a')
+                    ## Set header after first save
+                    header_bool = False 
+            ## Print to the log that we have finished
+            print("Finished converting input, gzipped bedpe file (%s) to short format (%s)."%(input_path,output_path))
 
-        ## Load in data
-        df = dd.read_csv(input_path,sep=hicsep,usecols=short_cols)
-
-        ## Remap mapq coulmns as our fragment dummy vars
-        df['Mapq1'] = 0
-        df['Mapq2'] = 1
-
-        ## Parse inter chromosome
-        df = df[(df.Inter>0)] if getinter else df
-
-        ## Save out data
-        df[short_cols[:-1]].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
-
-        ## Print to log
-        print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path))
+        ## The input is not gzipped
+        else:
+            ## Load in data with dask dataframes
+            df = dd.read_csv(input_path,sep=hicsep,usecols=short_cols)
+            ## Remap mapq coulmns as our fragment dummy vars
+            df['Mapq1'] = 0
+            df['Mapq2'] = 1
+            ## Parse inter chromosome
+            df = df[(df.Inter>0)] if getinter else df
+            ## Save out data
+            df[short_cols[:-1]].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
+            ## Print to log
+            print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path))
+    pass 
 
 ## If the script is envoked 
 if __name__ == "__main__":
