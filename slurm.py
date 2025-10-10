@@ -28,7 +28,7 @@ from defaults import sbatch, ifprint, basenoext
 ## Load in write to file
 from myecho import writetofile
 ## Load in time
-import time
+from time import time
 """
 © 2023. Triad National Security, LLC. All rights reserved.
 This program was produced under U.S. Government contract 89233218CNA000001 for Los Alamos National Laboratory (LANL), which is operated by Triad National Security, LLC for the U.S. Department of Energy/National Nuclear Security Administration. 
@@ -227,6 +227,8 @@ def main(executive_dir:str=slurpydir,
     tosam           = inputs.tosam          ##     Boolean flag to convert .bedpe file to sam format
     tobam           = inputs.tobam          ##     Boolean flag to convert .bedpe file to bam format
 
+    ## Set the time stamp
+    stamp = time()
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
     ##      CORRECT SPLIT / Chunksize
@@ -390,14 +392,6 @@ def main(executive_dir:str=slurpydir,
     ## If there is a hard reset passed 
     confirmreset(grouped_dirs) if hardreset else None
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
-
-    ##      MORE MODULE LOADING (and time stamp setting)
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-    ## Set the unique time stamp
-    stamp = time.time()
-    ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
 
     ##      DIRECTORY MAKING & TIME STAMP SUBMISSION 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
@@ -595,34 +589,24 @@ def main(executive_dir:str=slurpydir,
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
-        ## OPTIONAL ANALYZES
+        ## OPTIONAL File conversions and analyses
         ## Set pipeline step 
         pix = 5
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         """
-        Optional analyzes
-        gene x gene counts
-        bedpe ---> short format
-        jucier pre command for hic creation 
+        Optional conversions / analyzes for Hi-C
+        5A: BEDPE to .short format
+        5B: BEDPE to pairs file format
+        5C: Short to Hi-C
+        5D: Pairs to mcool
+        5E: Inter-chromosomal parsing
+        5F: gene x gene counts
+        5G: Peak calling with MACS3 (for atac-seq)
+        5H: BEDPE to SAM/BAM
         """
-        ## GENE X GENE from HIC
         ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 5A. Create a feature space
         if inhic:  
-            if feature_space:
-                ## Iterate over chromosome list 
-                for i,coi in enumerate(chrlist):
-                    ## Set the report, commands, and gxg script file name 
-                    gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}A')
-                    gxg_commands = [f'{executive_dir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
-                    gxg_file     = f'{commands_dir}/{pix}A.gxg.{i}.{sample_name}.sh'
-                    ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
-                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
-                    ## Append to command list for calling/submission later 
-                    command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
-                pass 
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-
             ## BEDPE TO SHORT or PAIRS
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
             ## 5A. Make the bedpe file into a short file for juicer pre command 
@@ -632,24 +616,12 @@ def main(executive_dir:str=slurpydir,
                 ## Format the command
                 short_commands = [f'{executive_dir}/toshort.py -i {newcatfile}\n'] 
                 ## Set command file 
-                short_file = f'{commands_dir}/{pix}B.toshort.{sample_name}.sh'
+                short_file = f'{commands_dir}/{pix}A.toshort.{sample_name}.sh'
                 ## Wriet the short command to file
                 writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
                 ## append the short command
                 command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
-
-            if get_inter:
-                ## make a report
-                short_repo = reportname(sample_name,'inter.short',i=f'{pix}B')
-                ## Format the command
-                short_commands = [f'{executive_dir}/toshort.py --inter-only -i {newcatfile}\n'] 
-                ## Set command file 
-                short_file = f'{commands_dir}/{pix}B.inter.short.{sample_name}.sh'
-                ## Wriet the short command to file
-                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
-                ## append the short command
-                command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
-
+            
             ## 5B. Make the bedpe file into a short file for juicer pre command 
             if makepairs:
                 ## make a report
@@ -664,9 +636,9 @@ def main(executive_dir:str=slurpydir,
                 command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
                 ## Format the pairs file name
                 newpairsfile = newcatfile.split('.bedpe')[0] + '.pairs'
-            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
-            ##  HIC FILE CREATION / JUICER PRE 
+            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
+            ##  HIC/COOL FILE CREATION / JUICER PRE 
             ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
             ## 5C. IF we have a valid jar path
             if jarpath:
@@ -681,7 +653,7 @@ def main(executive_dir:str=slurpydir,
                 ## Append the concat command
                 command_files.append((jpre_file,sample_name,experi_mode,'hic',jpre_repo,0,''))
 
-            ## 5C. Otherwise, make a cooler and mcool file
+            ## 5D. Otherwise, make a cooler and mcool file
             if make_mcool: 
                 ## format call to cooler
                 """
@@ -692,8 +664,8 @@ def main(executive_dir:str=slurpydir,
                 outcool  = newpairsfile + '.cool'
                 outmcool = newpairsfile + '.mcool'
                 ## Set cooler report and file name 
-                coolrepo = reportname(sample_name,'mcool',i=f'{pix}C')
-                coolfile = f'{commands_dir}/{pix}C.mcool.{sample_name}.sh'
+                coolrepo = reportname(sample_name,'mcool',i=f'{pix}D')
+                coolfile = f'{commands_dir}/{pix}D.mcool.{sample_name}.sh'
                 ## Set cooler commands 
                 cooler_coms = [f'cooler cload pairs -c1 2 -p1 3 -c2 4 -p2 5 {pathtochrom}:{min(binsizes)} {newpairsfile} {outcool}\n',
                             f'cooler zoomify {outcool} -r {",".join(map(str,binsizes))} -o {outmcool}\n'
@@ -703,14 +675,41 @@ def main(executive_dir:str=slurpydir,
                 writetofile(coolfile, sbatch(coolfile,fastp_threads,the_cwd,coolrepo,nice=nice,nodelist=nodes,memory=slurm_mem) + cooler_coms, debug)
                 ## Append the concat command
                 command_files.append((coolfile,sample_name,experi_mode,'hic',coolrepo,0,''))
-            ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
+            ## 5E. Inter-chromosomsomal analysis 
+            if get_inter:
+                ## make a report
+                short_repo = reportname(sample_name,'inter.short',i=f'{pix}E')
+                ## Format the command
+                short_commands = [f'{executive_dir}/toshort.py --inter-only -i {newcatfile}\n'] 
+                ## Set command file 
+                short_file = f'{commands_dir}/{pix}E.inter.short.{sample_name}.sh'
+                ## Wriet the short command to file
+                writetofile(short_file,sbatch(short_file,daskthreads,the_cwd,short_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + short_commands, debug)
+                ## append the short command
+                command_files.append((short_file,sample_name,experi_mode,'toshort',short_repo,0,''))
+
+
+            ## 5F. Feature space analysis, currently disabled
+            if feature_space:
+                ## Iterate over chromosome list 
+                for i,coi in enumerate(chrlist):
+                    ## Set the report, commands, and gxg script file name 
+                    gxg_repo   = reportname(sample_start,'gxg%s'%i,i=f'{pix}F')
+                    gxg_commands = [f'{executive_dir}/gxgcounts.py -i {newcatfile} -c {coi} -f {feature_space} -t {nchrom}' + (' --merge\n' if not i else '\n')]
+                    gxg_file     = f'{commands_dir}/{pix}F.gxg.{i}.{sample_name}.sh'
+                    ## Write to file for the gxg script, pasing dask thread count, the cwd, commands and debug mode 
+                    writetofile(gxg_file,sbatch(gxg_file,daskthreads,the_cwd,gxg_repo,nice=nice,nodelist=nodes,memory=slurm_mem) + gxg_commands, debug)
+                    ## Append to command list for calling/submission later 
+                    command_files.append((gxg_file,sample_name,experi_mode,'gxg',gxg_repo,0,''))
+                
+        ## ------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
         ##      PEAK CALLING WITH MACS3
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 5D. If we are running analysis on atac-seq experiments and the peak calling is taking place 
+        ## 5G. If we are running analysis on atac-seq experiments and the peak calling is taking place 
         elif peakcalling:
             ## Format the macs3 call report name
-            macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}D'), f'{commands_dir}/{pix}D.macs3.{sample_name}.sh'
+            macs3_report, macs3_filename = reportname(sample_name,'macs3',i=f'{pix}G'), f'{commands_dir}/{pix}G.macs3.{sample_name}.sh'
             ## Format the name of the output peaks,  output bed or bedpe file
             peak_path   = f'{peaks_dir}/{sample_name}_peaks.broadPeak' if ifbroad else f'{peaks_dir}/{sample_name}_peaks.narrowPeak'
             outbed_file = f'{peaks_dir}/{sample_name}*.valid.{macs3mode.lower()}'
@@ -729,10 +728,10 @@ def main(executive_dir:str=slurpydir,
 
         ##      SAM or BAM CONVERSION
         ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
-        ## 5E. If we are converting bedpe to sam or bam
+        ## 5H. If we are converting bedpe to sam or bam
         if tosam or tobam:
             ## Format the sam file name
-            sam_filename = f'{commands_dir}/{pix}E.sam.{sample_name}.sh'
+            sam_filename = f'{commands_dir}/{pix}H.sam.{sample_name}.sh'
             ## format the commadn to pairs2sam
             sam_commands, sam_report = bedpetosam(newcatfile,pathtochrom,samtools_ncpu,tobam,sample_name)
             ## Wriet the mac
@@ -764,8 +763,8 @@ def main(executive_dir:str=slurpydir,
     ## 6B. Final timestamp, out clean up
     ## Format count commands 
     ## Set the timesampe assocaited file names 
-    timestamp_file   = f'{diagnostics_dir}/{run_name}.timestamp.{stamp}.txt'             ##     Name of the output file 
-    timestampsh      = f'{commands_dir}/{pix}B.time.stamp.sh'                         ##     Name of the .sh bash file 
+    timestamp_file   = f'{diagnostics_dir}/{run_name}.timestamp.{stamp}.txt'     ##     Name of the output file 
+    timestampsh      = f'{commands_dir}/{pix}B.time.stamp.sh'                    ##     Name of the .sh bash file 
     timestamp_repo = reportname(run_name,f'timestamp.{stamp}',i=f'{pix}B')       ##     Name of the log to report to 
     ## Formath time stamp and echo commands 
     times_commands = [f'{executive_dir}/endstamp.py {timestamp_file} {stamp}\n',
