@@ -14,7 +14,7 @@ The Government is granted for itself and others acting on its behalf a nonexclus
 ## Bring in ftns and variables from defaluts 
 from defaults import sortglob, sbatch, submitsbatch
 ## Load in variables from parameters
-from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel
+from parameters import map_q_thres, error_dist, daskthreads, nice, chunksize, waittime, nparallel, lib_default
 ## Load in directories from parameters
 from parameters import comsdir, debugdir, bedtmpdir, slurpydir
 ## Load in help messages
@@ -37,11 +37,11 @@ pix = 2
 def formatinput(inlist) -> str: return ' '.join([str(x) for x in inlist])
 
 ## Ftn for formating commands to this script 
-def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:str,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False,memory=None) -> tuple[list[str], str]:
-    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {library} -P {partitions} -j {njobs}'\
+def filtermaster(sname:str,refpath:str,cwd:str,xcludes:list,includes:list,mapq:int,errordistance:int,threads:int,library:list,partitions:str,debug:bool,nice:int,njobs:int,pix=pix,forced=False,chunksize=chunksize,maxdist=0,nodelist=None,dovetail=False,removeinter=False,hicexplorer=False,memory=None) -> tuple[list[str], str]:
+    command = f'{slurpydir}/filtermaster.py -s {sname} -r {refpath} -c {cwd} -q {mapq} -e {errordistance} -t {threads} -N {nice} -Z {chunksize} -M {maxdist} -x {formatinput(xcludes)} -i {formatinput(includes)} -l {formatinput(library)} -P {partitions} -j {njobs}'\
             + (' --dedovetail' if dovetail else '') + (' --debug' if debug else '') + (' --force' if forced else '') \
             + (' --intra-only' if removeinter else '')  + (' --nodelist %s'%' '.join(nodelist) if nodelist else '') \
-            + (' --hicexplorer' if hicexplorer else '') + (' --memory %s'%memory if memory else '')
+            + (' --hicexplorer' if hicexplorer else '') + (' --memory %s'%memory if memory else '') 
     ## Format the report 
     report  = f'{debugdir}/{pix}.filter.master.{sname}.log'
     ## Return the 
@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
     parser.add_argument("-q", dest="Q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-e", dest="E", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
-    parser.add_argument("-l", dest="L", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
+    parser.add_argument("-l", dest="L", nargs='+', required=False,  help=L_help, metavar='arima',     default=lib_default  )
     parser.add_argument("-P", dest="P", type=str,  required=False,  help=P_help, metavar='tb',        default = 'tb'       ) 
     parser.add_argument("-t", dest="T", type=int,  required=False,  help=t_help, metavar=daskthreads, default=daskthreads  )
     parser.add_argument("-N", dest="N", type=int,  required=False,  help=N_help, metavar = 'n',       default = nice       )
@@ -133,7 +133,7 @@ def main():
         filter_file  = f'{comsdir}/{pix}.filter.bedpe.{i}.{sample_name}.sh' 
 
         ## Format commands 
-        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {elibrary} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n']
+        filter_coms   = [f'{slurpydir}/filtering.py -b {bedpe} -e {error_dist} -l {" ".join(elibrary)} -q {map_q_thres} -r {ref_path} -x {formatinput(xcludos)} -i {formatinput(includos)} -Z {chunksize} -M {max_dist}' + (' --dedovetail' if dovetail else ' ') + (' --intra-only' if intra_only else '') +  (' --hicexplorer' if hicexplorer else '') + '\n']
 
         ## If we are not forcing the run, then check if it exists
         if (not forced) and (not unfinished(filter_repo)):

@@ -73,15 +73,15 @@ fastp_opts = ['--dont_eval_duplication','--disable_length_filtering','--disable_
 def fastpeel(r1:str, r2:str, w:int, s:int, ishic=True, pix=0, options:str=fastp_opts, toremoveend='.toberemoved.fastq.gz', singleend='.singletons.fastq.gz', failend='.failed.fastq.gz',z=4, fastp_splits_dir=splitsdir,diagnos=diagdir) -> tuple:
     """Formats calls to fastp given input fastq files."""
     ## Set variable names 
-    r1_bn    = basenoext(r1)                                 ##      Generate basename of first read 
-    r2_bn    = basenoext(r2)                                 ##      Generate basename of second read 
+    r1_bn    = basenoext(r1)                                        ##      Generate basename of first read 
+    r2_bn    = basenoext(r2)                                        ##      Generate basename of second read 
     temp1    = f'{fastp_splits_dir}/{r1_bn}{toremoveend}'           ##      Format the first temp file for splits to be remove
     temp2    = f'{fastp_splits_dir}/{r2_bn}{toremoveend}'           ##      Format the second temp file for splits to be remove 
     single1  = f'{fastp_splits_dir}/{r1_bn}{singleend}'             ##      Make singleton file from first split 
     single2  = f'{fastp_splits_dir}/{r2_bn}{singleend}'             ##      Make singleton file from second split 
     split1   = f'{fastp_splits_dir}/{basename(r1)}'                 ##      Set the first split name
     split2   = f'{fastp_splits_dir}/{basename(r2)}'                 ##      Create the second split name 
-    report   = reportname(getsamplename(r1),'fastp',i=pix)   ##      Format the report name
+    report   = reportname(getsamplename(r1),'fastp',i=pix)          ##      Format the report name
     failed   = f'{fastp_splits_dir}/{getsamplename(r1)}{failend}'   ##      Generate the list of the failed reads
     ## Format commands if filtering, then splitting is being performed
     ## Call the first run of fastp, json, and json are also returend
@@ -313,7 +313,9 @@ def main(executive_dir:str=slurpydir,
     ## Set the lib error
     lib_error = "ERROR: The passed library name of enzyme(s) used in Hi-C prep was not recognized."
     ## Check library if it was pased
-    assert enzymelib.lower() in ['mboi', 'dpnii','sau3ai','hindiii','arima','none'], lib_error
+    enzymelib = [el.lower() for el in enzymelib]
+    for enzy in enzymelib:
+        assert enzy.lower() in ['mboi','dpnii','ddel','sau3ai','hindiii','arima','none'], lib_error
 
     ## Check if we have a jarpath
     if jarpath:
@@ -376,10 +378,11 @@ def main(executive_dir:str=slurpydir,
         inhic         = True 
         count_mode    = ''
         ## Moved to trigger if statment correctly
-        print("INFO: Running analysis with the %s Hi-C library."%enzymelib)
+        en_end = 'libraries' if len(enzymelib) > 1 else 'library'
+        print(f'INFO: Running analysis with the {", ".join(enzymelib)} Hi-C {en_end}')
 
     ## Redefine enzymatic lib
-    enzymelib = 'none' if not inhic else enzymelib
+    enzymelib = ['none'] if not inhic else enzymelib
 
     ## Reset shift and extention size 
     shift_size,extendsize = (shift_size,extendsize) if nomodel else (0,0)

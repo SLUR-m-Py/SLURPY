@@ -58,7 +58,7 @@ parts        = ['tb']        ##     Defalut partition
 map_q_thres  = 30            ##     Minimum mapping quality threhosld 
 waittime     = 60            ##     Seconds of buffer time 
 error_dist   = 25000         ##     The idstance to check for erros 
-lib_default  = 'Arima'       ##     Defalut library used to make Hi-C experimetns 
+lib_default  = ['arima']     ##     Defalut library used to make Hi-C experimetns 
 hic_options  = ',-5SMP'      ##     Hi-C options passed to bwa 
 chunksize    = 950000        ##     Chunks size for parsing with pandas
 hicsep       = ' '           ##     Text deliminator 
@@ -116,7 +116,7 @@ c_help = "Path to control or input files used in ChIP-seq experiments. Must be a
 G_help = "Path to list of chromosomes (by name) to include in final analysis. Default behavior expects a tab seperated tsv or bed, comma seperated csv, or space seperated txt file with no header."
 g_help = "Size of the genome being analyzed, used as parameter for macs3. Inputs can be integers in bp or two letter short hand, for e.g. hs for homo sapiens. Default behavior is to calculate this value from the reference file."
 E_help = "Minimum fragment size of read pairs scanned for an intersecting restriction fragment site (if passed thru library parameter). Default is %s. These pairs are also marked for dangling ends and self-circles."%error_dist
-L_help = "The name of the restriction site enzyme (or library prep) used in Hi-C sample creation. Default is %s. Options include Arima, MboI, DpnII, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is also allowed, but checks for restriction sites and dangling ends will be skipped."%lib_default
+L_help = "The name of the restriction site enzyme(s) (or library prep) used in Hi-C sample creation. Default is %s. Options include Arima, MboI, DpnII, Ddel, Sau3AI, and HindIII. Note: passing none (i.e. Dovetail) is allowed but checks for restriction sites and dangling ends will be skipped. Passing multiple sets of sites is also allowed,."%lib_default[0]
 Z_help = "Number of rows loaded into pandas at a time. Default is: %s. WARNING: while increasing could speed up pipeline it could also cause memeory issues."%chunksize
 t_help = "The number of threads used in calls to functions and calculations with pandas and dask dataframes. Default is: %s."%daskthreads
 s_help = "The number of threads used in calls to samtools. Default is: %s"%samthreads
@@ -226,7 +226,7 @@ def slurpy_args(descr=slurpy_description):
     ## Set values for Hi-C analysis 
     parser.add_argument("-n", "--run-name",       dest="n",       type=str,  required=False, help = n_help, metavar = 'name',                 default = None         )
     parser.add_argument("-E", "--error-distance", dest="E",       type=int,  required=False, help = E_help, metavar = 'bp',                   default = error_dist   )
-    parser.add_argument("-L", "--library",        dest="L",       type=str,  required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
+    parser.add_argument("-L", "--library",        dest="L",       nargs='+', required=False, help = L_help, metavar = 'MboI',                 default = lib_default  )
     parser.add_argument("-Z", "--chunksize",      dest="Z",       type=int,  required=False, help = Z_help, metavar = 'n',                    default = chunksize    )
     parser.add_argument("-G", "--genomelist",     dest="G",       type=str,  required=False, help = G_help, metavar = './path/to/list.tsv',   default = False        )
     parser.add_argument("-J", "--jar-path",       dest="J",       type=str,  required=False, help = J_help, metavar = './path/to/juicer.jar', default = None         )

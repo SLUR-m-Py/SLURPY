@@ -20,7 +20,7 @@ filter_desc = "Filters an input bedpe file (space deliminated) representing Hi-C
 ## Bring in pandas
 import pandas as pd, dask.dataframe as dd, argparse
 ## Load in params
-from parameters import chunksize, map_q_thres, hicsep, error_dist
+from parameters import chunksize, map_q_thres, hicsep, error_dist, lib_default
 ## Bring in ftns from slurpy 
 from defaults import fileexists
 ## Bring in seqIO
@@ -38,22 +38,40 @@ def makeoutpath(inpath,coi) -> str:
     ## Return the head path 
     return head_path + f'.{coi}.bedpe' ## NOTE: We didn't go with a zfill here b/c we don't know how many chromosomes / contigs a user will have
 
+## Format dictionary of enzymatic restriciotn sites
+rest_site_dict = {'arima':['GATC', 'GAATC', 'GAGTC', 'GATTC', 'GACTC'],
+                  'mobi':['GATC'],
+                  'dpnii':['GATC'],
+                  'ddel':['CTAAG','CTCAG','CTTAG','CTGAG'],
+                  'sau3ai':['GATC'],
+                  'hindiii':['AAGCTT']}
+
+## and format their dangling ends 
+dang_site_dict = {'arima':['GATC', 'AATC', 'AGTC','ATTC', 'ACTC'],
+                  'mobi':['GATC'],
+                  'dpnii':['GATC'],
+                  'ddel':['CTAAG','CTCAG','CTTAG','CTGAG'], ## We need to check this
+                  'sau3ai':['GATC'],
+                  'hindiii':['AGCT']}
+
 ## Ftn for defninging restriciton sites 
-def returnsite(enzyme) -> tuple: 
+def returnsite(enzymes:list) -> tuple: 
     """Returns the restriction site sequences and dangaling sequences based on input Hi-C library enzyme."""
-    ## If we are working with the arima kit (which we are)
-    if (enzyme.lower() == 'arima'):
-        restsites, dangsites = ['GATC', 'GAATC', 'GAGTC', 'GATTC', 'GACTC'], ['GATC', 'AATC', 'AGTC','ATTC', 'ACTC']
-    ## The MobI , DpnII, or Sau3AI enzymes
-    elif enzyme.lower() in ['mboi', 'dpnii','sau3ai']:
-        restsites, dangsites = ['GATC'], ['GATC']
-    ## The HindIII enzyme
-    elif (enzyme.lower() == 'hindiii'):
-        restsites,dangsites = ['AAGCTT'],['AGCT']
-    else: ## otherwise return none
-        restsites, dangsites = False, False 
+    ## Iniate rest and dangling end sites
+    rest_sites, dang_sites = [], []
+    ## Iterate over the given enzymatic libraries
+    for enzyme in enzymes:
+        if enzyme not in rest_site_dict.keys():
+            print(f'[returnsite] INFO: failed to define restriction sites for {enzyme}.')
+            continue
+        ## If we are working with the arima kit (which we are)
+        for rs in rest_site_dict[enzyme]:
+            rest_sites.append(rs)
+        ## Loop here to the given list is flat
+        for ds in dang_site_dict[enzyme]:
+            dang_sites.append(ds)
     ## Return the sites
-    return restsites, dangsites
+    return rest_sites, dang_sites
 
 ## Calc the max len fo resistance sites 
 def maxrestlen(restsites) -> int: 
@@ -141,7 +159,7 @@ def parse_args():
     parser.add_argument("-r", dest="r", type=str,  required=True,   help=r_help, metavar='./path/to/ref.fasta'             )
     ## Add optional args
     parser.add_argument("-e", dest="e", type=int,  required=False,  help=E_help, metavar='n',         default=error_dist   )
-    parser.add_argument("-l", dest="l", type=str,  required=False,  help=L_help, metavar='Arima',     default='Arima'      )
+    parser.add_argument("-l", dest="l", nargs='+', required=False,  help=L_help, metavar='arima',     default=lib_default  )
     parser.add_argument("-q", dest="q", type=int,  required=False,  help=Q_help, metavar='n',         default=map_q_thres  )
     parser.add_argument("-x", dest="x", nargs='+', required=False,  help=X_help, metavar='chrM',      default=['chrM']     )
     parser.add_argument("-i", dest="i", nargs='+', required=False,  help=I_help, metavar='chr1 chr2', default=[]           )
@@ -352,7 +370,7 @@ def main():
                 pd.concat(not_used,axis=0).to_csv(not_usede_path,sep=hicsep,header=True,index=False) 
             
             ## If restriction sites were passed 
-            if restriciton_sites: 
+            if len(restriciton_sites): 
                 ## Gather the read pairs we plan to check for intra fragments
                 tocheck = bedpe[(bedpe.Distance<=error_dist) & (bedpe.Orientation.isin(['Outward','Inward'])) & (bedpe.Inter==0)].copy()
                 ## Count the checks
@@ -391,7 +409,7 @@ def main():
     intra_all_qnames = set()
     #print("Above if statment")
     ## If we are checking rest sites and we have dataframes to check 
-    if restriciton_sites and len(too_check_paths):
+    if len(restriciton_sites) and len(too_check_paths):
         ## Gather the complement of the restirction sites
         all_sites = (restriciton_sites + [str(Seq(r).complement()) for r in restriciton_sites]) if restriciton_sites else []
 
