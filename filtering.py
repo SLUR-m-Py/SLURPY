@@ -62,7 +62,7 @@ def returnsite(enzymes:list) -> tuple:
     ## Iterate over the given enzymatic libraries
     for enzyme in enzymes:
         if enzyme not in rest_site_dict.keys():
-            print(f'[returnsite] INFO: failed to define restriction sites for {enzyme}.')
+            print(f'[returnsite] INFO: failed to define restriction sites for {enzyme}.',flush=True)
             continue
         ## If we are working with the arima kit (which we are)
         for rs in rest_site_dict[enzyme]:
@@ -544,15 +544,15 @@ def main():
             #chrombed.sort_values(sort_on_cols).to_parquet(chrom_out_path,partition_on=sort_on_cols[:2],overwrite=True)
             chrombed.to_csv(chrom_out_path,index=False,header=True,single_file=True,sep=hicsep)
         else:
-            print("INFO: Zero filtered Hi-C contacts were retained on %s post processing"%chrom)
+            print("INFO: Zero filtered Hi-C contacts were retained on %s post processing"%chrom,flush=True)
 
     ## Write out the counts
     new_names = [   'Unmapped',    'Dovetailed',    'Excluded',    'LowQuality',   'InterRemoved',     'LargeFragment',  'SameFragment',    'Valid',       'InterHiC',      'IntraHiC']
     new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
     ## Iterate thru and print the counts to log 
-    [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
+    [print('INFO: %s\t%s'%(a,b),flush=True) for a,b in zip(new_names,new_count)]
     ## print to log
-    print("Finished filtering and splitting bedpe file: %s"%bedpe_path)
+    print("Finished filtering and splitting bedpe file: %s"%bedpe_path,flush=True)
 
 ## if the script is envoked
 if __name__ == "__main__":

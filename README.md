@@ -1,5 +1,5 @@
 # SLUR(M)-PY
-[SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.biorxiv.org/content/10.1101/2024.05.18.594827v3)
+[SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.tandfonline.com/doi/full/10.1080/17501911.2025.2568368)
 
 ## Setting up the computing environment
 SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.10.13) for a linex OS on a high-performance computing cluster. 
@@ -297,3 +297,17 @@ SLUR(M)-py has two arguments to control RAM usage, the “--memory”  and the �
 ## Call the memory profile script, no arguments are needed. 
 ./SLURPY/memoryprofile.py
 ```
+
+## Citing this pipeline
+
+Roth, Cullen, et al. "SLUR(M)-py: a SLURM powered Pythonic pipeline for parallel processing of 3D (Epi) genomic profiles." Epigenomics (2025): 1-15. 
+https://doi.org/10.1080/17501911.2025.2568368
+
+@article{roth2025slur,
+  title={SLUR (M)-py: a SLURM powered Pythonic pipeline for parallel processing of 3D (Epi) genomic profiles},
+  author={Roth, Cullen and Venu, Vrinda and Bacot, Sasha and Starkenburg, Shawn R and Steadman, Christina R},
+  journal={Epigenomics},
+  pages={1--15},
+  year={2025},
+  publisher={Taylor \& Francis}
+}
