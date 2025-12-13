@@ -177,7 +177,9 @@ short_help    = "A boolean flag to convert output bedpe file to short format for
 tosam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .sam format via samtools."
 tobam_help    = "Flag to convert output .bedpe file from SLUR(M)-py to .bam format via samtools."
 wgs_help      = "Passing this flag will run SLUR(M)-py in whole-genome sequencing (wgs) mode, parsing paired-end reads as if from wgs experiments."
-parent_help   = "The name of the node to spawn parent jobs on for bwa aligments and filtering (example c0001, default: None)"
+pnode_help    = "The name of the node (used in conjunction with --parent-part) to spawn parent jobs on; used for bwa aligments and filtering (example c0001, default: None)."
+ppart_help    = "The name of the partition (used in conjunction with --parent-node) to spawn parent jobs on; used for bwa aligments and filtering (example fast, default: None)."
+
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
 
@@ -237,7 +239,8 @@ def slurpy_args(descr=slurpy_description):
     parser.add_argument("-m", "--max-dist",       dest="m",       type=int,  required=False, help = m_help, metavar = '1000',                 default = max_dist     )
     #parser.add_argument("-gtf","--features",      dest="gxg",     type=str,  required=False, help = A_help, metavar= './path/to/my.gff',      default = 'none'       )
     parser.add_argument("--nodelist",             dest="nodes",   nargs='+', required=False, help = node_help,                                default = None         )
-    parser.add_argument("--parent-node",          dest="parent",  type=str,  required=False, help = parent_help,  metavar='c0001',            default = None         )
+    parser.add_argument("--parent-node",          dest="pnode",   type=str,  required=False, help = pnode_help,  metavar='c0001',             default = None         )
+    parser.add_argument("--parent-part",          dest="ppart",   type=str,  required=False, help = pnode_help,  metavar='fast',              default = None         )
     parser.add_argument("--memory",               dest="slurmem", type=str,  required=False, help = slurmem_help, metavar='40G',              default = None         )
 
     ## Set Pipeline boolean blags 

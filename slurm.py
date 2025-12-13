@@ -165,7 +165,6 @@ def main(executive_dir:str=slurpydir,
     rerun           = inputs.R              ##      Setp to rerun pipeline from 
     bwaix_jobid     = inputs.a              ##      The job id to have all submissions wait on   
     nice            = inputs.N              ##      Sets the nice parameter 
-    parent_node     = inputs.parent         ##      Pass the parent node for major job masters, like bwa and filter       
 
     ## Set threads across softwares                         
     nparallel       = inputs.j              ##      Number of parallel jobs to run at once acorss bwa and filter 
@@ -186,6 +185,8 @@ def main(executive_dir:str=slurpydir,
     max_dist        = inputs.m              ##      Maximum distance of paired end reads
     feature_space   = 'none'                ##      Path to a gff or bed file used in g x g interaction matrix / df 
     nodes           = inputs.nodes          ##      List of nodes 
+    parent_node     = inputs.pnode          ##      Pass the parent node for major job masters, like bwa and filter       
+    parent_part     = inputs.ppart          ##      Pass the partiton of parent spawn
     slurm_mem       = inputs.slurmem        ##      Amount of memory setting in SLURM
     
     ## Set pipeline boolean vars                    
@@ -274,11 +275,17 @@ def main(executive_dir:str=slurpydir,
     #print(reference_path)
 
     ## Set bwa master partition to mpi (FOR ROTH only)
-    bwa_partition   = 'gpu,fast,mpi,tb' if ist2t or isvero else partition
-    filt_partition  = bwa_partition     if ist2t or isvero else partition
-    clean_partition = bwa_partition     if ist2t or isvero else partition
-    time_partition  = bwa_partition     if ist2t or isvero else partition
-    dedup_partition = bwa_partition     if ist2t or isvero else partition
+    if (ist2t or isvero):
+        bwa_partition = 'gpu,fast,mpi,tb' 
+    elif parent_part:
+        bwa_partition = parent_part
+    else:
+        bwa_partition = partition
+    
+    ## Set partitions for, filter master, cleaning, timing 
+    filt_partition  = bwa_partition    
+    clean_partition = bwa_partition    
+    time_partition  = bwa_partition   
 
     ## Set nodelists to run bwa and filter master
     if (ist2t or isvero):
@@ -288,6 +295,7 @@ def main(executive_dir:str=slurpydir,
     else:
         bwanodes = None 
     
+    ## Set nodes for filtering 
     filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
@@ -822,7 +830,7 @@ def main(executive_dir:str=slurpydir,
     ##
     ##      3) SUBMITTING DEDUPLICATING AND SORTING 
     ## Submit the dedup and sort script 
-    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[3],pipeline_steps[2],stamp,dedup_partition,debug=debug,group='Experiment' if postmerging else 'Sample')
+    sub_sbatchs = sub_sbatchs + submitdependency(command_files,pipeline_steps[3],pipeline_steps[2],stamp,partition,debug=debug,group='Experiment' if postmerging else 'Sample')
     ##
     ##      4) SUBMITTING CONCATONATION 
     ## Submit the concatonation sciprt 
