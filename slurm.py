@@ -152,80 +152,81 @@ def main(executive_dir:str=slurpydir,
     ##      PASS ARGUMENTS & SET VARIABLES 
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
     ## Set required variables
-    reference_path  = inputs.r              ##     Set path to the reference genome
+    reference_path  = inputs.r              ##      Set path to the reference genome
 
     ## Set default vairables              
-    path_to_fastqs  = inputs.fq             ##     Set the path to the input fastqs, if non was passed, assumes they are at the level of the call to slurpy
-    splitsize       = inputs.F              ##     Number of splits in fastp, this is a line count, multiple by four to get actual read counts
-    threadn         = inputs.T              ##     Set the number of parallel runs of bwa 
-    partitions      = inputs.P              ##     Set the partition 
-    mito            = inputs.M              ##     Set the mito contig name 
-    excludes        = inputs.X              ##     List of chromosomes to exclude from analysis 
-    mapq            = inputs.Q              ##     Set the mapping quality threshold 
-    rerun           = inputs.R              ##     Setp to rerun pipeline from 
-    bwaix_jobid     = inputs.a              ##     The job id to have all submissions wait on   
-    nice            = inputs.N              ##     Sets the nice parameter 
+    path_to_fastqs  = inputs.fq             ##      Set the path to the input fastqs, if non was passed, assumes they are at the level of the call to slurpy
+    splitsize       = inputs.F              ##      Number of splits in fastp, this is a line count, multiple by four to get actual read counts
+    threadn         = inputs.T              ##      Set the number of parallel runs of bwa 
+    partitions      = inputs.P              ##      Set the partition 
+    mito            = inputs.M              ##      Set the mito contig name 
+    excludes        = inputs.X              ##      List of chromosomes to exclude from analysis 
+    mapq            = inputs.Q              ##      Set the mapping quality threshold 
+    rerun           = inputs.R              ##      Setp to rerun pipeline from 
+    bwaix_jobid     = inputs.a              ##      The job id to have all submissions wait on   
+    nice            = inputs.N              ##      Sets the nice parameter 
+    parent_node     = inputs.parent         ##      Pass the parent node for major job masters, like bwa and filter       
 
     ## Set threads across softwares                         
-    nparallel       = inputs.j              ##     Number of parallel jobs to run at once acorss bwa and filter 
-    fastp_threads   = inputs.f              ##     Number of fastp threads
-    daskthreads     = inputs.t              ##     Number of threads in dask
-    bwa_threads     = inputs.b              ##     Number of threads in bwa alignments
-    bwa_opts        = inputs.B              ##     Set options for bwa 
+    nparallel       = inputs.j              ##      Number of parallel jobs to run at once acorss bwa and filter 
+    fastp_threads   = inputs.f              ##      Number of fastp threads
+    daskthreads     = inputs.t              ##      Number of threads in dask
+    bwa_threads     = inputs.b              ##      Number of threads in bwa alignments
+    bwa_opts        = inputs.B              ##      Set options for bwa 
 
     ## Set variables for Hi-C                
-    run_name        = inputs.n              ##     The name of the samples 
-    error_dist      = inputs.E              ##     Distance in bp to check hi-C contacts for errors 
-    enzymelib       = inputs.L              ##     Restriction-enzyme library used in Hi-C prep 
-    chunksize       = inputs.Z              ##     Chunk size (row number) to load in with pandas 
-    pathtochrom     = inputs.G              ##     Path to list of chromosomes to use 
-    jarpath         = inputs.J              ##     Path to juicer jar file 
-    xmemory         = inputs.xmx            ##     Amount of memory passed to juicer pre command 
-    binsizes        = inputs.S              ##     Bins / resolutions used in hi-c analysis 
-    max_dist        = inputs.m              ##     Maximum distance of paired end reads
-    feature_space   = 'none'                ##     Path to a gff or bed file used in g x g interaction matrix / df 
-    nodes           = inputs.nodes          ##     List of nodes 
-    slurm_mem       = inputs.slurmem        ##     Amount of memory setting in SLURM
+    run_name        = inputs.n              ##      The name of the samples 
+    error_dist      = inputs.E              ##      Distance in bp to check hi-C contacts for errors 
+    enzymelib       = inputs.L              ##      Restriction-enzyme library used in Hi-C prep 
+    chunksize       = inputs.Z              ##      Chunk size (row number) to load in with pandas 
+    pathtochrom     = inputs.G              ##      Path to list of chromosomes to use 
+    jarpath         = inputs.J              ##      Path to juicer jar file 
+    xmemory         = inputs.xmx            ##      Amount of memory passed to juicer pre command 
+    binsizes        = inputs.S              ##      Bins / resolutions used in hi-c analysis 
+    max_dist        = inputs.m              ##      Maximum distance of paired end reads
+    feature_space   = 'none'                ##      Path to a gff or bed file used in g x g interaction matrix / df 
+    nodes           = inputs.nodes          ##      List of nodes 
+    slurm_mem       = inputs.slurmem        ##      Amount of memory setting in SLURM
     
     ## Set pipeline boolean vars                    
-    hardreset       = inputs.restart        ##     Resetart the slurpy run, removing previous
-    postmerging     = not inputs.merge      ##     Forces premerge of outputs 
-    force           = inputs.force          ##     Force overwrite of output alignment files 
-    debug           = inputs.debug          ##     Run in debug mode 
-    ifclean         = inputs.clean          ##     Flag to run clean up script 
-    counting        = not inputs.count      ##     Flag to count the read pairs
+    hardreset       = inputs.restart        ##      Resetart the slurpy run, removing previous
+    postmerging     = not inputs.merge      ##      Forces premerge of outputs 
+    force           = inputs.force          ##      Force overwrite of output alignment files 
+    debug           = inputs.debug          ##      Run in debug mode 
+    ifclean         = inputs.clean          ##      Flag to run clean up script 
+    counting        = not inputs.count      ##      Flag to count the read pairs
 
     ## Set Hi-C related boolean flasgs                  
-    toshort         = inputs.toshort        ##     Flag the make short file, kicks if jarpath was given 
-    makepairs       = inputs.makepairs      ##     Flag to make pairs file 
-    make_mcool      = inputs.mcool          ##     Flag to make mcool file  
-    hicexplorer     = inputs.hicexp         ##     Flag to run stricter filtering like Hi-C explorer
-    get_inter       = inputs.inter          ##     Flag to return inter chromosome counts in bedpe file
+    toshort         = inputs.toshort        ##      Flag the make short file, kicks if jarpath was given 
+    makepairs       = inputs.makepairs      ##      Flag to make pairs file 
+    make_mcool      = inputs.mcool          ##      Flag to make mcool file  
+    hicexplorer     = inputs.hicexp         ##      Flag to run stricter filtering like Hi-C explorer
+    get_inter       = inputs.inter          ##      Flag to return inter chromosome counts in bedpe file
     
     ## MACS3 related vars
-    atac_seq        = inputs.atac           ##     Boolean flag to run in atac-seq mode 
-    ifbroad         = inputs.broad          ##     Boolean to activate broader peak calling in macs3 
-    skippeaks       = inputs.peaks          ##     Skips peak calling with macs3 for atac-seq experiments
-    nolambda        = inputs.nolambda       ##     Flag to skip local lambda control in macs3
-    nomodel         = inputs.nomodel        ##     Flag to skip shifting model
-    callsummits     = inputs.summits        ##     Flag to call summits in macs3
-    shift_size      = inputs.shiftsize      ##     Value of shift size (bp)
-    extendsize      = inputs.extendsize     ##     Value of read extension 
-    macs3mode       = inputs.macmode        ##     Format in MACS3, eg. bedpe.
-    chip_control    = inputs.c              ##     Set the input controls for chip experiments
-    max_gap         = inputs.maxgap         ##     Max gap in used in MACS3    
-    min_len         = inputs.minlen         ##     Min lenght of peaks in MACS3
-    max_nchrom      = inputs.maxnc          ##     Max number of chromosomes 
+    atac_seq        = inputs.atac           ##      Boolean flag to run in atac-seq mode 
+    ifbroad         = inputs.broad          ##      Boolean to activate broader peak calling in macs3 
+    skippeaks       = inputs.peaks          ##      Skips peak calling with macs3 for atac-seq experiments
+    nolambda        = inputs.nolambda       ##      Flag to skip local lambda control in macs3
+    nomodel         = inputs.nomodel        ##      Flag to skip shifting model
+    callsummits     = inputs.summits        ##      Flag to call summits in macs3
+    shift_size      = inputs.shiftsize      ##      Value of shift size (bp)
+    extendsize      = inputs.extendsize     ##      Value of read extension 
+    macs3mode       = inputs.macmode        ##      Format in MACS3, eg. bedpe.
+    chip_control    = inputs.c              ##      Set the input controls for chip experiments
+    max_gap         = inputs.maxgap         ##      Max gap in used in MACS3    
+    min_len         = inputs.minlen         ##      Min lenght of peaks in MACS3
+    max_nchrom      = inputs.maxnc          ##      Max number of chromosomes 
 
     ## Set RNA-seq like vars 
-    rna_seq         = inputs.rnas           ##     Boolean flag to run in rna-seq mode 
-    wgs_seq         = inputs.wgs            ##     Boolean flag to run in wgs seq mode
-    sfastp          = inputs.sfast          ##     Flag to skip fastp filtering 
-    skipduplicates  = inputs.skipdedup      ##     Boolean to mark duplicates       
-    keep_dups       = inputs.save           ##     Boolean flag to save out duplicates once identified
-    dedovetail      = inputs.tails          ##     Boolean for dove tailing 
-    tosam           = inputs.tosam          ##     Boolean flag to convert .bedpe file to sam format
-    tobam           = inputs.tobam          ##     Boolean flag to convert .bedpe file to bam format
+    rna_seq         = inputs.rnas           ##      Boolean flag to run in rna-seq mode 
+    wgs_seq         = inputs.wgs            ##      Boolean flag to run in wgs seq mode
+    sfastp          = inputs.sfast          ##      Flag to skip fastp filtering 
+    skipduplicates  = inputs.skipdedup      ##      Boolean to mark duplicates       
+    keep_dups       = inputs.save           ##      Boolean flag to save out duplicates once identified
+    dedovetail      = inputs.tails          ##      Boolean for dove tailing 
+    tosam           = inputs.tosam          ##      Boolean flag to convert .bedpe file to sam format
+    tobam           = inputs.tobam          ##      Boolean flag to convert .bedpe file to bam format
 
     ## Set the time stamp
     stamp = time()
@@ -280,7 +281,13 @@ def main(executive_dir:str=slurpydir,
     dedup_partition = bwa_partition     if ist2t or isvero else partition
 
     ## Set nodelists to run bwa and filter master
-    bwanodes = ['c0826', 'c1002', 'c0701', 'c0702'] if (ist2t or isvero) else None 
+    if (ist2t or isvero):
+        bwanodes = ['c0826', 'c1002', 'c0701', 'c0702'] 
+    elif parent_node:
+        bwanodes = [parent_node]
+    else:
+        bwanodes = None 
+    
     filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 
