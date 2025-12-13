@@ -64,7 +64,7 @@ def sizecheck(read1,read2) -> list:
         ## If either is zero 
         if (getsize(r1) == 0) | (getsize(r2) == 0):
             ## Print a warning 
-            print("WARNING: the given number of read pairs from %s or %s was zero."%(r1,r2))
+            print("WARNING: the given number of read pairs from %s or %s was zero."%(r1,r2),flush=True)
         else:
             read_pairs.append((r1,r2))
     ## Return the read pairs 
@@ -175,7 +175,7 @@ def main():
         
         ## If we are not forcing the run, then check if it exists, and the report exists and has alredy been run, just skip
         if (not forced) and (not unfinished(bwa_repo)) and fileexists(outfile):
-            print(f'INFO: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}, skipping.\n')
+            print(f'INFO: Detected a finished run ({outfile}) from {bwa_file} in {bwa_repo}, skipping.\n',flush=True)
         else:
             ## Write the bwa command to file 
             writetofile(bwa_file, sbatch(job_names[i],thread_count,the_cwd,bwa_repo,nice=nice,nodelist=nodes,memory=memory) + bwa_coms, debug)
@@ -188,7 +188,7 @@ def main():
              ## Remove next filtering log exists from a previous run
             if fileexists(filter_report):
                 ## Print we are removing it
-                print('INFO: Removing previous filtering report: %s'%filter_report)
+                print('INFO: Removing previous filtering report: %s'%filter_report,flush=True)
                 remove(filter_report)
  
     ## Recount the nubmer submitted 
@@ -203,11 +203,11 @@ def main():
             ## Add to sub
             submitted += 1
             ## Print job id
-            print('Job ID: %s'%job_id)
+            print('Job ID: %s'%job_id,flush=True)
             ## Wiat a few seconds
-            sleep(2)
+            sleep(5)
         except Exception as error:
-            print(error)
+            print(error,flush=True)
 
     ## Check the reports are finished 
     while unfinishedreports(bwa_repos):
@@ -215,7 +215,7 @@ def main():
         sleep(waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name))
+    print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name),flush=True)
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## If the script is envoked by name 
 if __name__ == "__main__":

@@ -280,7 +280,7 @@ def main(executive_dir:str=slurpydir,
     dedup_partition = bwa_partition     if ist2t or isvero else partition
 
     ## Set nodelists to run bwa and filter master
-    bwanodes = ['c0826', 'c1002', 'c0701', 'c0702']
+    bwanodes = ['c0826', 'c1002', 'c0701', 'c0702'] if (ist2t or isvero) else None 
     filternodes = bwanodes
     ## ----------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 

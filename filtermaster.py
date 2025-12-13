@@ -159,7 +159,7 @@ def main():
             ## Pring job id
             print('Job ID: %s'%job_id,flush=True)
             ## Wiat a few seconds
-            sleep(3)
+            sleep(5)
         except Exception as error:
             print(error,flush=True)
 
@@ -169,7 +169,7 @@ def main():
         sleep(waittime)
 
     ## Print to log 
-    print("Finished %s bwa submissions for sample: %s"%(to_submit,sample_name),flush=True)
+    print("Finished %s filtering submissions for sample: %s"%(to_submit,sample_name),flush=True)
 ## --------------------------------------------------------------------------------------------------------------------------------------------------------------------- ##
 ## if the script is envoked
 if __name__ == "__main__":

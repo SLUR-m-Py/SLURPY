@@ -115,7 +115,7 @@ def main():
     ## Concatonate the input paths 
     assert (concatonation(inpaths,outputfile,removeheader) if len(inpaths) else True), "ERROR: Unable to concatonate files!"           
     ## print to log
-    print('Finished concatenation of %s input files to %s.'%(len(inpaths),outputfile))
+    print('Finished concatenation of %s input files to %s.'%(len(inpaths),outputfile),flush=True)
 
 ## If the script is called 
 if __name__ == "__main__":

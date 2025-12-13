@@ -138,7 +138,7 @@ def getoriented(s1,s2):
     elif (s1 > 0) and (s2 > 0):
         orientation = 'Left'
     else: ## Print an error 
-        print("WARNING: We have encountered an orientation we did not recognize")
+        print("WARNING: We have encountered an orientation we did not recognize",flush=True)
         orientation = 'Unknown'
     return orientation
 
@@ -384,7 +384,7 @@ def main():
     if len(lastc):
         postfilter(tomap,outfile,chromdict,toappend=bool(c)) #,enzyme_lib,errorsize,min_frag_s,refpath)
     ## PRint to log 
-    print("Finished parsing %s inputs from %s to %s"%(i,samname,outfile))
+    print("Finished parsing %s inputs from %s to %s"%(i,samname,outfile),flush=True)
 
 ## If the script is envoked by name 
 if __name__ == "__main__":

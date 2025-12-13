@@ -48,7 +48,7 @@ def dictzip(a,b) -> dict:
 def ifprint(message,bool):
     """Prints message given the boolean state."""
     ## Print the message
-    print(message) if bool else None
+    print(message,flush=True) if bool else None
     ## Return the boolean
     return bool 
     

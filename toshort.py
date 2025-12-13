@@ -139,7 +139,7 @@ def main():
         ## Call bam to bed ftn 
         bam_to_bed(input_path,output_path)
         ## PRint to screen
-        print("Finished converting input bam file (%s) to macs3 bedpe format (%s)."%(input_path,output_path))
+        print("Finished converting input bam file (%s) to macs3 bedpe format (%s)."%(input_path,output_path),flush=True)
 
     ## IF this is an atac-seq sample 
     elif to_bed:
@@ -162,7 +162,7 @@ def main():
                 ## Save out the chunk
                 chunk.to_csv(output_path,header=False,index=False,mode='a' if i else 'w',sep='\t')
         ## Pirnt to screen 
-        print("Finished converting input bedpe file (%s) to bed (%s)."%(input_path,output_path))
+        print("Finished converting input bedpe file (%s) to bed (%s)."%(input_path,output_path),flush=True)
 
     ## If in macs 3 mode 
     elif to_bedpe:
@@ -187,7 +187,7 @@ def main():
         ## Save out data in pairs format, should be tab seperated 
         df[pairs_cols].to_csv(output_path,single_file=True,header=False,index=False,sep='\t')
         ## Print to log
-        print("Finished converting input bedpe file (%s) to pairs format (%s)."%(input_path,output_path))
+        print("Finished converting input bedpe file (%s) to pairs format (%s)."%(input_path,output_path),flush=True)
 
     ## Otherwise, this is a short file, gzipped or not 
     else:
@@ -213,7 +213,7 @@ def main():
                     ## Set header after first save
                     append_bool = False 
             ## Print to the log that we have finished
-            print("Finished converting input, gzipped bedpe file (%s) to short format (%s)."%(input_path,output_path))
+            print("Finished converting input, gzipped bedpe file (%s) to short format (%s)."%(input_path,output_path),flush=True)
 
         ## The input is not gzipped
         else:
@@ -227,7 +227,7 @@ def main():
             ## Save out data
             df[short_cols[:-1]].to_csv(output_path,single_file=True,header=False,index=False,sep=hicsep)
             ## Print to log
-            print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path))
+            print("Finished converting input bedpe file (%s) to short format (%s)."%(input_path,output_path),flush=True)
     pass 
 
 ## If the script is envoked 

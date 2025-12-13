@@ -90,11 +90,11 @@ def main():
     input_paths = sortglob(input_wc)
     ## If no input paths were passed
     if not len(input_paths):
-        print("INFO: No input files were detected for chromosome files: %s"%input_wc)
-        print("Finished")
+        print("INFO: No input files were detected for chromosome files: %s"%input_wc,flush=True)
+        print("Finished",flush=True)
         return 
     ## Check our work 
-    print(input_paths) if debuging else None 
+    print(input_paths,flush=True) if debuging else None 
 
     ## Preset duplicate counts
     interdup_counts = 0
@@ -103,11 +103,11 @@ def main():
 
     ## Load the first 2 rows of the first bedpe file, print columsn 
     bedpe = pd.read_csv(input_paths[0],sep=hicsep,nrows=2)
-    print(bedpe.head()) if debuging else None 
+    print(bedpe.head(),flush=True) if debuging else None 
 
     ## Gather the column space names and print if debugin 
     column_names = bedpe.columns.tolist()
-    print(column_names) if debuging else None 
+    print(column_names,flush=True) if debuging else None 
 
     ## Set the index of the columns names we plan to sort on 
     chr1_ix = column_names.index('Chrn1') + 1
@@ -129,10 +129,10 @@ def main():
     ## Format the call to the sort command
     sort_command = f'LC_ALL=C sort -k{chr1_ix},{chr1_ix}n -k{chr2_ix},{chr2_ix}n -k{pos1_ix},{pos1_ix}n -k{pos2_ix},{pos2_ix}n {tmp_path} >> {sorted_path}'
     ## Print the command id debugging 
-    print(sort_command) if debuging else None 
+    print(sort_command,flush=True) if debuging else None 
     ## Call subprocess passing subcomand 
     k = subprocess.run(sort_command,shell=True)
-    print(k) if debuging else None 
+    print(k,flush=True) if debuging else None 
     
     ## Set up if statements, if we are BOTH soritng and deduplicateing our inputs contacts 
     if deduplicate:
@@ -219,9 +219,9 @@ def main():
     new_names = ['InterDuplicates', 'IntraDuplicates']
     new_count = [interdup_counts, intradup_counts]
     ## Iterate thru and print the counts to log 
-    [print('INFO: %s\t%s'%(a,b)) for a,b in zip(new_names,new_count)]
+    [print('INFO: %s\t%s'%(a,b),flush=True) for a,b in zip(new_names,new_count)]
     ## Print to log
-    print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s into %s"%(filebackend,output_path))
+    print("Finished concatonation, sorting, and deduplicating bedpe files ending with %s into %s"%(filebackend,output_path),flush=True)
     
 ## -------------------------------------- MAIN EXECUTABLE -------------------------------------------------- ##
 ## if the script is envoked
