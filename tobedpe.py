@@ -15,6 +15,8 @@ from defaults import dictzip, listzip
 from biotools import samnames, samtypes, loadref, getmatchsum
 ## Load in params
 from parameters import hicsep
+## Load in sleep 
+from time import sleep
 
 ## ------------------------ FUNCTION and VARIABLE FILTERING ------------------------------ ## 
 ## Make list of unique bits
@@ -383,6 +385,9 @@ def main():
     ## If the last chunk still exsits and has alignments 
     if len(lastc):
         postfilter(tomap,outfile,chromdict,toappend=bool(c)) #,enzyme_lib,errorsize,min_frag_s,refpath)
+    
+    ## Wait for the log to finish from the bwa
+    sleep(5)
     ## PRint to log 
     print("Finished parsing %s inputs from %s to %s"%(i,samname,outfile),flush=True)
 

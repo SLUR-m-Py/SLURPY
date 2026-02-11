@@ -195,6 +195,7 @@ def main():
     to_submit = len(bwa_files)
     ## Iniate submitted 
     submitted = 0
+    bigerrors = 0
     ## While sub miiting 
     while submitted < to_submit:
         ## Try to Submit the command to SLURM
@@ -206,8 +207,12 @@ def main():
             print('Job ID: %s'%job_id,flush=True)
             ## Wiat a few seconds
             sleep(5)
+            ## Reset bigerros
+            bigerrors = 0
         except Exception as error:
-            print(error,flush=True)
+            ## Add to big error
+            bigerrors += 1
+            ifprint(error,bigerrors > 10) 
 
     ## Check the reports are finished 
     while unfinishedreports(bwa_repos):

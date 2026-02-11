@@ -26,6 +26,8 @@ from defaults import fileexists
 ## Bring in seqIO
 from Bio import SeqIO
 from Bio.Seq import Seq
+## Load in time
+from time import sleep 
 
 ## Set columns to sort on
 sort_on_cols = ['Chrn1','Chrn2','Pos1','Pos2']
@@ -213,6 +215,9 @@ def main():
     validhic_counts = 0
     interhic_counts = 0
     intrahic_counts = 0
+
+    ## ADd a print statment to beging print to log
+    print('INFO: Starting chunk filtering of %s'%bedpe_path,flush=True)
 
     ## Load in the bedpe file using chunks 
     with pd.read_csv(bedpe_path,sep=hicsep,chunksize=chunksize) as chunks:
@@ -522,10 +527,18 @@ def main():
     else:
         pass 
 
+    ## Format the output not used path
+    not_used_out_path = makeoutpath(bedpe_path,'notused')
+    ## Add another print statment on number of formated not used paths 
+    print('INFO: Formatting %s files into not used read pairs file: %s'%(len(not_usede_paths),not_used_out_path), flush=True)
     ## Set output file path, gather the not used dataframes and save out as single file
     not_used_df = dd.read_csv(not_usede_paths,sep=hicsep)
-    not_used_df.to_csv(makeoutpath(bedpe_path,'notused'),sep=hicsep,single_file=True,index=False,header=True)
+    not_used_df.to_csv(not_used_out_path,sep=hicsep,single_file=True,index=False,header=True)
 
+    ## Format the output path
+    chrom_out_path_tmp = bedpe_path.split('.bedpe')[0] + '_valid_%s.bedpe'
+    ## Add another print statment on number of formated not used paths 
+    print('INFO: Formatting %s files across %s chromosomes into valid read pairs file: %s'%(len(hic_valid_paths),len(chrlist),chrom_out_path_tmp%'chr'), flush=True)
     ## Gather the valid dataframes
     bedpe = dd.read_csv(hic_valid_paths,sep=hicsep)
     ## Compute a sorted list of valid chromosomes by reference indexed number
@@ -534,7 +547,7 @@ def main():
     #[bedpe[(bedpe.Rname1==chrom)].sort_values(sort_on_cols).to_csv(makeoutpath(bedpe_path,'valid.%s'%chrom),sep=hicsep,single_file=True,index=False) for chrom in chromosomes]
     for chrom in chrlist:
         ## Set the chrom out path 
-        chrom_out_path = bedpe_path.split('.bedpe')[0] + '_valid_%s.bedpe'%chrom
+        chrom_out_path = chrom_out_path_tmp%chrom
         ## Parse ont he chrom
         chrombed = bedpe[(bedpe.Rname1==chrom)]
         ## set chrom count to one, we are assumign we will have Hi-C contacts per chromocome
@@ -551,6 +564,9 @@ def main():
     new_count = [unmapped_counts,dovetail_counts,excluded_counts,lowquals_counts,interchr_counts,largefrg_counts,errorfrg_counts,validhic_counts,interhic_counts,intrahic_counts]
     ## Iterate thru and print the counts to log 
     [print('INFO: %s\t%s'%(a,b),flush=True) for a,b in zip(new_names,new_count)]
+    
+    ## Wait for filtering to finish
+    sleep(5)
     ## print to log
     print("Finished filtering and splitting bedpe file: %s"%bedpe_path,flush=True)
 
