@@ -288,6 +288,8 @@ def submitfastp(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, tim
 ## Ftn for submission of jobs with dependencies 
 def submitdependency(command_df:pd.DataFrame, operation:str, dependent:list, timestamp:str, clusterpart:str, bylast=False, group='Sample', debug=False) -> list:
     """Formats and submits sbatch jobs from command dataframe based on operations and dependents"""
+    ## Cast command df job id as object
+    command_df['JobID'] = command_df['JobID'].astype('object')   # allows ints
     ## Initilzse cap and lists
     subsbatchs, dependent = [], makelist(dependent) + ['bwaix']
     ## group the 
@@ -312,8 +314,10 @@ def submitdependency(command_df:pd.DataFrame, operation:str, dependent:list, tim
             ifprint(intext,debug)
             ## Append to sub list
             subsbatchs.append(intext)
+            ## Set job val as string
+            jobid_val = fakejobid + m if (debug and runlocal) else submitsbatch(intext)
             ## Submit the job and append the job id to the dataframe 
-            command_df.loc[m,'JobID'] = fakejobid + m if (debug and runlocal) else submitsbatch(intext)
+            command_df.loc[m,'JobID'] = str(jobid_val)
     ## Return submitted sbatchs 
     return subsbatchs
 
