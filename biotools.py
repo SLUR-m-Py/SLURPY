@@ -263,6 +263,7 @@ def commandcontrol(commands:list, toreset:bool, pipelinesteps:list, rerunfrom:st
 ## Ftn for sub mitting fastp 
 def submitfastp(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, timestamp:str, debugmode=False) -> tuple:
     """Submits fastp command(s) to SLURM via sbatch."""
+    command_df['JobID'] = command_df['JobID'].astype('object')   # allows ints
     ## Check theinput sub sbatchs is a list
     assert type(subsbatchs) == list, "ERROR: We expected a list for the input submission!"
     ## See if we have a master job id
@@ -279,7 +280,9 @@ def submitfastp(command_df:pd.DataFrame, subsbatchs:list, nodepartition:str, tim
         ## Append to sub list
         subsbatchs.append(intext)
         ## Append the fastp job id 
-        command_df.loc[rix,'JobID'] = fakejobid + rix if (runlocal and debugmode) else submitsbatch(intext)
+        jobid_val = fakejobid + rix if (runlocal and debugmode) else submitsbatch(intext)
+        ## Add job val
+        command_df.loc[rix,'JobID'] = str(jobid_val)
         ## Print if we are in debug mode
         ifprint(intext,debugmode)
     ## Return the command df and subsbatcsh 
