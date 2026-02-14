@@ -1,53 +1,33 @@
 # SLUR(M)-PY
 [SLUR(M)-py: A SLURM Powered Pythonic Pipeline for Parallel Processing of 3D (Epi)genomic Profiles](https://www.tandfonline.com/doi/full/10.1080/17501911.2025.2568368)
 
-## Setting up the computing environment
-SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.10.13) for a linex OS on a high-performance computing cluster. 
-We recommend using conda to manage the python environment needed by SLUR(M)-py. 
-
-The easiest way to set up the needed computing environment is via conda and the listed [envirnoment.yml](https://github.com/SLUR-m-Py/SLURPY/blob/main/environment.yml) file. The conda command below will make the environment named "bioenv" from the environment.yml file.
-
-```
-conda env create -f environment.yml
-```
-
-### Alternative setup instructions
-Below are commands needed to set up the "bioenv" manually for running SLUR(M)-py. 
-
-```
-## Make a python environment named bioenv 
-conda create -n bioenv 
-
-## Activate the environment
-conda activate bioenv 
-
-## After making a new conda environment install needed packages.
-## Use conda to install needed mods, and bring in mods from bioconda
-conda install numpy pandas matplotlib seaborn dask biopython pysam samtools bwa -c bioconda 
-```
-
-### Troubleshooting Installation of MACS for peak calling
-For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use [macs3](https://macs3-project.github.io/MACS/) (the latest version of [macs2](https://pypi.org/project/MACS2/)). We recommend installing macs3 via pip (shown below). 
-
-```
-pip install macs3
-```
-
-A full list of the python libraries and their versions used to develop slurpy are listed within [python.dependencies.txt](https://github.com/SLUR-m-Py/SLURPY/blob/main/python.dependencies.txt).
-
 ## Installation of SLUR(M)-py
-Downloading the repository as a .zip archive is easiest. For developers a simple clone command with git works too:
+### Downloading the github
+Thank you for your interest in using SLUR(M)-py. To get started let's download the repository as a .zip archive. 
+Better yet, a simple clone command with git works too:
 
 ```
 git clone https://github.com/SLUR-m-Py/SLURPY.git
 ```
 
-Once slurpy is downloaded (and expanded), change the current directory to the local SLURPY directory and modify the python files as executables. 
+Once slurpy is downloaded (or expanded from the .zip), change the current directory to the local SLURPY directory and modify the python files as executables. 
+Use the chmod command to modify the .py files. 
 
 ```
 cd ./SLURPY
 chmod +x *.py 
+```
 
+### Setting up the computing environment
+SLUR(M)-py (pronounced slurpy) was developed using anaconda (python v 3.12) for a linex OS on a high-performance computing cluster. 
+We recommend using mamba or conda to manage the python environment needed by SLUR(M)-py. 
+
+The easiest way to set up the needed computing environment is via mamba or conda and the listed [envirnoment.yml](https://github.com/SLUR-m-Py/SLURPY/blob/main/environment.yml) file. 
+The mamba command below will make the environment named "bioenv" from the environment.yml file.
+We recommend using mamba but a user may replace "mamba" with "conda" should they wish to do so. 
+
+```
+mamba env create -f environment.yml
 ```
 
 ## Dependencies 
@@ -56,37 +36,6 @@ The suit of tools in [samtools](https://anaconda.org/bioconda/samtools) is also 
 
 ### The sort function
 New testing on the duplication step of SLUR(M)-py showed high memory usage and low speed when processing very large, human datasets; this often led to crashes on smaller nodes. To correct this, we implemented a new deduplication algorithm in SLUR(M)-py that utilizes the Linex core utility’s function [sort](https://en.wikipedia.org/wiki/Sort_(Unix)) to quickly sort (by chromosome and position) bedpe files for deduplication. This [new script](https://github.com/SLUR-m-Py/SLURPY/blob/main/deduphic.py) is currently the most memory efficient implementation we could integrate into SLUR(M)-py. We are assuming the sort function is already installed in our SLURM/Linex environment.
-
-### Troubleshooting, fastp install. 
-For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
-It is expected, that the fastp executable can be installed within the python/conda environment (shown above, at the top of this document). 
-However, should this fail, the executable can be downloaded and added to the current path (shown below). 
-
-```
-## Change directorys
-cd ./SLURPY
-
-## download the latest build, you may need to install wget
-conda install wget
-wget http://opengene.org/fastp/fastp
-
-## Modify the executable with chmod
-chmod a+x ./fastp
-
-## Check that fastp works
-./fastp -h
-
-## Add the fastp to path within a ~/.bashrc file
-export PATH=$PATH:</path/to/fastp>
-
-```
-
-Alternatively, fastp can be installed via a conda command.
-This step is not needed if the creation of the conda environment (shown above) works. 
-```
-## Install latest version of fastp
-conda install bioconda::fastp
-```
 
 ### juicer tools (optional)
 Here we currently use Juicer tools (specifically the juicer pre command) to process and format penultimate forms of Hi-C data (.bedpe) into a final .hic file. 
@@ -311,3 +260,57 @@ https://doi.org/10.1080/17501911.2025.2568368
   year={2025},
   publisher={Taylor \& Francis}
 }
+
+
+## Alternative setup instructions
+Below are commands needed to set up the "bioenv" manually for running SLUR(M)-py. 
+Again mamba could be used in place of conda. 
+
+```
+## Make a python environment named bioenv 
+conda create -n bioenv 
+
+## Activate the environment
+conda activate bioenv 
+
+## After making a new conda environment install needed packages.
+## Use conda to install needed mods, and bring in mods from bioconda
+conda install numpy pandas matplotlib seaborn dask biopython pysam samtools bwa -c bioconda 
+```
+
+### Troubleshooting Installation of MACS for peak calling
+For calling peaks in ATAC-seq and narrow peak ChIP-seq data sets we use [macs3](https://macs3-project.github.io/MACS/) (the latest version of [macs2](https://pypi.org/project/MACS2/)). We recommend installing macs3 via pip (shown below). 
+
+```
+pip install macs3
+```
+
+### Troubleshooting Installation of FASTP
+For splitting intial input read pairs into subsets for parallele processing we use [fastp](https://github.com/OpenGene/fastp).
+It is expected, that the fastp executable can be installed within the python/conda environment (shown above, at the top of this document). 
+However, should this fail, the executable can be downloaded and added to the current path (shown below). 
+
+```
+## Change directorys
+cd ./SLURPY
+
+## download the latest build, you may need to install wget
+conda install wget
+wget http://opengene.org/fastp/fastp
+
+## Modify the executable with chmod
+chmod a+x ./fastp
+
+## Check that fastp works
+./fastp -h
+
+## Add the fastp to path within a ~/.bashrc file
+export PATH=$PATH:</path/to/fastp>
+```
+
+Alternatively, fastp can be installed via a conda command.
+This step is not needed if the creation of the conda environment (shown above) works. 
+```
+## Install latest version of fastp
+conda install bioconda::fastp
+```
